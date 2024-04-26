@@ -1,0 +1,5 @@
+{
+    "board": "RPI_PICO",
+    "url": "https://github.com/hmaerki/fork_micropython/raw/hmaerki/XTAL/ports/rp2/build-RPI_PICO/firmware.uf2",
+    "micropython_version_text": "3.4.0; MicroPython v1.22.2-4.gf1d21e75a.dirty on 2024-02-25"
+}

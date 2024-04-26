@@ -1,0 +1,6 @@
+# -e .
+pytest
+pylint
+coverage[toml] 
+mypy 
+ruff 

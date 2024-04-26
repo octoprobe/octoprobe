@@ -1,0 +1,194 @@
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
+[project]
+name = "octoprobe"
+dynamic = ["version"]
+description = "Octoprobe HIL Testenvironment"
+readme = "README.md"
+requires-python = ">=3.12"
+license = {text = "MIT"}
+authors = [
+    { name = "Hans Märki", email = "buhtig.hans.maerki@ergoinfo.ch" },
+]
+classifiers = [
+    "Intended Audience :: Information Technology",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Software Development",
+    "Typing :: Typed",
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: MIT License",
+]
+dependencies = [
+    "usbhubctl"
+]
+
+[project.urls]
+Homepage = "https://github.com/octoprobe/octoprobe"
+Documentation = "https://github.com/octoprobe/octoprobe"
+Repository = "https://github.com/octoprobe/octoprobe"
+
+[project.scripts]
+op = "octoprobe.scripts.op:app"
+
+[project.optional-dependencies]
+
+standard = [
+]
+
+all = [
+]
+
+[tool.pdm]
+version = { source = "file", path = "octoprobe/__init__.py" }
+distribution = true
+
+[tool.pdm.build]
+package-dir = "."
+includes = ["octoprobe"]
+# source-includes = [
+#     "octoprobe/",
+#     "requirements*.txt",
+#     ]
+
+[tool.mypy]
+# strict = true
+enable_incomplete_feature = ["NewGenericSyntax"]
+
+[[tool.mypy.overrides]]
+module = "octoprobe.tests.*"
+ignore_missing_imports = true
+check_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = "serial.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "usb.*"
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+pythonpath = "./infrastructure_tutorial"
+addopts = [
+  # "-m", "not live",
+  "--strict-config",
+  "--strict-markers",
+  "--ignore=docs",
+]
+markers = [
+    "live: Test on real usb hubs",
+]
+testpaths = "tests"
+xfail_strict = true
+junit_family = "xunit2"
+filterwarnings = [
+    "error",
+    # TODO: needed by asyncio in Python 3.9.7 https://bugs.python.org/issue45097, try to remove on 3.9.8
+    'ignore:The loop argument is deprecated since Python 3\.8, and scheduled for removal in Python 3\.10:DeprecationWarning:asyncio',
+    'ignore:starlette.middleware.wsgi is deprecated and will be removed in a future release\..*:DeprecationWarning:starlette',
+    # TODO: remove after upgrading HTTPX to a version newer than 0.23.0
+    # Including PR: https://github.com/encode/httpx/pull/2309
+    "ignore:'cgi' is deprecated:DeprecationWarning",
+    # For passlib
+    "ignore:'crypt' is deprecated and slated for removal in Python 3.13:DeprecationWarning",
+    # TODO remove pytest-cov
+    'ignore::pytest.PytestDeprecationWarning:pytest_cov',
+    # TODO: remove after upgrading SQLAlchemy to a version that includes the following changes
+    # https://github.com/sqlalchemy/sqlalchemy/commit/59521abcc0676e936b31a523bd968fc157fef0c2
+    'ignore:datetime\.datetime\.utcfromtimestamp\(\) is deprecated and scheduled for removal in a future version\..*:DeprecationWarning:sqlalchemy',
+    # TODO: remove after upgrading python-jose to a version that explicitly supports Python 3.12
+    # also, if it won't receive an update, consider replacing python-jose with some alternative
+    # related issues:
+    #   - https://github.com/mpdavis/python-jose/issues/332
+    #   - https://github.com/mpdavis/python-jose/issues/334
+    'ignore:datetime\.datetime\.utcnow\(\) is deprecated and scheduled for removal in a future version\..*:DeprecationWarning:jose',
+]
+
+[tool.coverage.run]
+parallel = true
+source = [
+    "tests",
+    "octoprobe"
+]
+context = '${CONTEXT}'
+omit = [
+    "docs_src/response_model/tutorial003_04.py",
+    "docs_src/response_model/tutorial003_04_py310.py",
+]
+
+[tool.ruff]
+target-version = "py312"
+# All paths are relative to the project root, which is the directory containing the pyproject.toml.
+src = ["octoprobe", "infrastructure_tutorial"]
+exclude = ["assessments", "branding"]
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    # "I",  # isort
+    "I001", # isort
+    "B",  # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+]
+ignore = [
+    "E501",  # line too long, handled by black
+    "B008",  # do not perform function calls in argument defaults
+    "C901",  # too complex
+    # "W191",  # indentation contains tabs
+    "D",     # enable docstring checks
+]
+
+[tool.ruff.lint.per-file-ignores]
+"octoprobe/__init__.py" = ["F401", "I001"]
+
+[tool.ruff.lint.isort]
+# known-third-party = ["usbhubctl"]
+# known-local-folder = ["usbhubctl"]
+case-sensitive = true
+combine-as-imports = true
+order-by-type = false
+section-order = [
+  "future",
+  "standard-library",
+  "third-party",
+  "first-party",
+  "local-folder",
+]
+
+[tool.ruff.lint.pyupgrade]
+# Preserve types, even if a file imports `from __future__ import annotations`.
+keep-runtime-typing = true
+
+[tool.pylint."MESSAGES CONTROL"]
+disable = '''
+    missing-module-docstring,
+    missing-class-docstring,
+    missing-function-docstring,
+    logging-fstring-interpolation,
+    too-few-public-methods,
+    too-many-return-statements,
+    too-many-branches,
+    too-many-arguments,
+    too-many-instance-attributes,
+    unreachable,
+    line-too-long,
+    broad-exception-caught,
+'''
+
+[tool.pylint]
+max-line-length = 88
+disable = [
+    "R0801", # Similar lines in 2 files
+    "E1136", # unsubscriptable-object
+]

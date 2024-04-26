@@ -1,0 +1,29 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"[python]": {
+			"editor.formatOnSave": true,
+			"editor.defaultFormatter": "ms-python.black-formatter"
+		},
+		"ruff.enable": true,
+		"ruff.fixAll": true,
+		"ruff.lint.enable": true,
+		"ruff.lint.run": "onSave",
+		"mpremote.srcSubdirectory": "src",
+		"python.testing.pytestArgs": [
+			"."
+		],
+		"python.testing.cwd": "${workspaceFolder}/infrastructure_tutorial",
+		"python.testing.unittestEnabled": false,
+		"python.testing.pytestEnabled": true
+	},
+	"extensions": {
+		"recommendations": [
+			"charliermarsh.ruff"
+		]
+	}
+}
