@@ -1,4 +1,4 @@
-![octoprobe](branding/octoprobe/octoprobe_logo_v3_inkscape.png)
+![octoprobe](https://raw.githubusercontent.com/hmaerki/experiment_microoctopus/main/branding/octoprobe/octoprobe_logo_v3_inkscape.png)
 
 # HIL (Hardware in the Loop) testinfrastructure
 

@@ -27,7 +27,11 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
 ]
 dependencies = [
-    "usbhubctl"
+    "usbhubctl@git+https://github.com/octoprobe/usbhubctl#egg=main",
+    "pyudev",
+    "mpremote",
+    "typer-slim",
+    "Jinja2",
 ]
 
 [project.urls]
@@ -53,10 +57,10 @@ distribution = true
 [tool.pdm.build]
 package-dir = "."
 includes = ["octoprobe"]
-# source-includes = [
+source-includes = [
 #     "octoprobe/",
-#     "requirements*.txt",
-#     ]
+     "requirements*.txt",
+]
 
 [tool.mypy]
 # strict = true
