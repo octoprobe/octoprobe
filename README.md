@@ -37,12 +37,12 @@ See [Terms](design/terms.md)
 
 ### Tentacles / infrastructure_tutorial
 
-Kicad schmatics/pcb may be found [here](hardware/README.md).
+Kicad schmatics/pcb may be found [here](https://github.com/octoprobe/tentacle).
 
 A *infrastructure* describes how test using a set of tentacles.
 
 *infrastrucure_tutorial* is described here
-[here](infrastructure_tutorial/doc/README.md)
+[here](https://github.com/octoprobe/infrastructure_tutorial/blob/main/doc/README.md)
  and allows to test i2c, uart, onewire and timers.
 
 
