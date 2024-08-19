@@ -10,3 +10,6 @@ assert DIRECTORY_DOWNLOADS.is_dir()
 
 DIRECTORY_CACHE_FIRMWARE = DIRECTORY_DOWNLOADS / "cache_firmware"
 DIRECTORY_CACHE_FIRMWARE.mkdir(parents=True, exist_ok=True)
+
+DIRECTORY_USR_SBIN = pathlib.Path("/usr/sbin")
+assert DIRECTORY_USR_SBIN.is_dir()

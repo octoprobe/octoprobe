@@ -33,7 +33,7 @@ class TentacleInfra:
     * Allows to run micropython code on the RP2.
     """
 
-    RELAY_COUNT = 5
+    RELAY_COUNT = 7
     LIST_ALL_RELAYS = list(range(1, RELAY_COUNT + 1))
 
     @staticmethod
@@ -122,14 +122,17 @@ class TentacleInfra:
         """
 
         # Power off everything and release boot button
+        # print("Power off everything and release boot button")
         self.power.set_default_off()
         time.sleep(0.3)
         # Press Boot Button
+        # print("Press Boot Button")
         self.power.infraboot = False
         time.sleep(0.1)
 
         with udev.guard as guard:
-            # Power of RP2
+            # Power on RP2
+            # print("Power on RP2")
             self.power.infra = True
 
             event = guard.expect_event(
@@ -140,10 +143,12 @@ class TentacleInfra:
             )
 
             # Release Boot Button
+            # print("Release Boot Button")
             self.power.infraboot = True
 
         with udev.guard as guard:
             # This will flash the RP2
+            # print("Flash")
             rp2_flash_micropython(event, filename_uf2)
 
             # The RP2 will reboot in application mode

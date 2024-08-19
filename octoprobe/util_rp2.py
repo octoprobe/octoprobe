@@ -3,7 +3,7 @@ import pathlib
 import pyudev  # type: ignore
 from usbhubctl.util_subprocess import assert_root_and_s_bit, subprocess_run
 
-from .util_constants import DIRECTORY_DOWNLOADS
+from .util_constants import DIRECTORY_USR_SBIN
 from .util_pyudev import UdevEventBase, UdevFilter
 
 RP2_VENDOR = 0x2E8A
@@ -58,7 +58,7 @@ def rp2_flash_micropython(event: UdevEventBase, filename_uf2: pathlib.Path) -> N
     assert isinstance(event, UdevBootModeEvent)
     assert filename_uf2.is_file()
 
-    filename_picotool = DIRECTORY_DOWNLOADS / "picotool"
+    filename_picotool = DIRECTORY_USR_SBIN / "picotool"
     assert_root_and_s_bit(filename_picotool)
     args = [
         str(filename_picotool),

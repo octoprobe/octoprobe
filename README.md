@@ -9,10 +9,6 @@
 
 See [Terms](design/terms.md)
 
-Note: **microOctopus** has been renamed to **Octoprobe**
-
-Note: https://github.com/hmaerki/experiment_microoctopus will be moved to https://github.com/octoprobe soon.
-
 ## Goal
 
 * `octoprobe` allows to automatically test various micropython boards against various gadgets.

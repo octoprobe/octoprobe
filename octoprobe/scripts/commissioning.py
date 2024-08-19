@@ -35,14 +35,13 @@ def do_commissioning() -> None:
     """
     init_logging()
 
-    udev = UdevPoller()
-
     while True:
         c = Commissioning()
         try:
-            c.do_program_rp2(udev=udev)
-            while True:
-                c.do_commissioning()
+            with UdevPoller() as udev:
+                c.do_program_rp2(udev=udev)
+                while True:
+                    c.do_commissioning()
         except Exception as e:
             logger.warning(e)
             time.sleep(1.0)
@@ -116,8 +115,6 @@ class Commissioning:
         mcu_infra.exception_if_files_on_flash()
 
     def do_commissioning(self) -> None:
-        # plugs = UsbPlugs()
-        # plugs.power(hub_location=self.hub_location)
         self.tentacle_infra.power.error = True
         self.tentacle_infra.power.dut = True
         time.sleep(1.0)
@@ -127,12 +124,21 @@ class Commissioning:
 
         mcu_infra = self.tentacle_infra.mcu_infra
 
-        # mcu_infra.relays(relays_open=self.tentacle_infra.LIST_ALL_RELAYS)
-        for i0 in range(self.tentacle_infra.RELAY_COUNT):
-            mcu_infra.relays(relays_close=[i0 + 1])
-            time.sleep(1.0)
-            mcu_infra.relays(relays_open=[i0 + 1])
+        if False:
+            # Running von 1 to 7
+            for i0 in range(self.tentacle_infra.RELAY_COUNT):
+                mcu_infra.active_led(on=bool(i0 % 2))
 
-        # hubs.power(plugs=UsbPlugs.default_off())
-        # time.sleep(0.2)  # success: 0.0
-        # hubs.power(plugs=UsbPlugs({UsbPlug.INFRA: True}))
+                mcu_infra.relays(relays_close=[i0 + 1])
+                time.sleep(1.0)
+                mcu_infra.relays(relays_open=[i0 + 1])
+
+        if True:
+            # Alternating
+            even = [2, 4, 6]
+            odd = [1, 3, 5, 7]
+            mcu_infra.active_led(on=True)
+            mcu_infra.relays(relays_close=even, relays_open=odd)
+            time.sleep(1.0)
+            mcu_infra.active_led(on=False)
+            mcu_infra.relays(relays_close=odd, relays_open=even)
