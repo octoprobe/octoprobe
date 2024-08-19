@@ -9,6 +9,7 @@ from .. import util_usb_serial
 from ..util_power import PowerCycle, UsbPlug, UsbPlugs
 from . import typer_query
 from .commissioning import do_commissioning
+from .install import URL_RELEASE_DEFAULT, do_install
 
 # 'typer' does not work correctly with typing.Annotated
 # Required is: typing_extensions.Annotated
@@ -23,7 +24,18 @@ app = typer.Typer()
 
 
 @app.command()
+def install(url: str = URL_RELEASE_DEFAULT) -> None:
+    """
+    Installs some binaries which require root rights
+    """
+    do_install(url=url)
+
+
+@app.command()
 def commissioning() -> None:
+    """
+    Use this command to test new tentacles
+    """
     do_commissioning()
 
 

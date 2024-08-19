@@ -4,9 +4,8 @@ TAG_BOARD = "board"
 TAG_PROGRAMMER = "programmer"
 TAG_MCU = "mcu"
 
-DIRECTORY_OF_THIS_FILE = pathlib.Path(__file__).parent
-
-DIRECTORY_DOWNLOADS = DIRECTORY_OF_THIS_FILE / "downloads"
+DIRECTORY_DOWNLOADS = pathlib.Path.home() / "octoprobe_downloads"
+DIRECTORY_DOWNLOADS.mkdir(parents=True, exist_ok=tuple)
 assert DIRECTORY_DOWNLOADS.is_dir()
 
 DIRECTORY_CACHE_FIRMWARE = DIRECTORY_DOWNLOADS / "cache_firmware"

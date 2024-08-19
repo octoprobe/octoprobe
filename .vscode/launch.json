@@ -136,6 +136,21 @@
             "justMyCode": false,
         },
         {
+            "name": "Python: op install",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "octoprobe.scripts.op",
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "install",
+            ],
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            },
+            "console": "integratedTerminal",
+            "justMyCode": false,
+        },
+        {
             "name": "Python: op commissioning",
             "type": "debugpy",
             "request": "launch",
