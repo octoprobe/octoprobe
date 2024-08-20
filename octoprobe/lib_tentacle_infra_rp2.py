@@ -15,34 +15,6 @@ class InfraRP2:
     The interface is type save and all micropython code is hidden in this class.
     """
 
-    BASE_CODE_tentacle_v02 = """
-import os
-import sys
-from machine import Pin, unique_id
-import ubinascii
-
-rp2_unique_id = ubinascii.hexlify(unique_id()).decode('ascii')
-files_on_flash = len(os.listdir())
-micropython_version = sys.version
-
-pin_led_active = Pin('GPIO24', Pin.OUT)
-
-pin_relays = {
-    1: Pin('GPIO1', Pin.OUT),
-    2: Pin('GPIO2', Pin.OUT),
-    3: Pin('GPIO3', Pin.OUT),
-    4: Pin('GPIO4', Pin.OUT),
-    5: Pin('GPIO8', Pin.OUT), # Tentacle v0.2
-    # 5: Pin('GPIO5', Pin.OUT), # Tentacle v0.3
-    6: Pin('GPIO6', Pin.OUT),
-    7: Pin('GPIO7', Pin.OUT),
-}
-
-def set_relays(list_relays):
-    for i, close  in list_relays:
-        pin_relays[i].value(close)
-"""
-
     BASE_CODE = """
 import os
 import sys

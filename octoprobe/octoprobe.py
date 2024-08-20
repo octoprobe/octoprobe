@@ -7,8 +7,8 @@ from octoprobe import util_usb_serial
 from octoprobe.util_dut_programmers import FirmwareSpec
 from octoprobe.util_power import UsbPlug, UsbPlugs
 
-from .lib_infrastructure import Infrastructure
 from .lib_tentacle import Tentacle
+from .lib_testbed import Testbed
 from .util_pyudev import UdevPoller
 
 
@@ -19,11 +19,11 @@ class NTestRun:
 
     def __init__(
         self,
-        infrastructure: Infrastructure,
+        testbed: Testbed,
         firmware_spec: FirmwareSpec,
     ) -> None:
-        assert isinstance(infrastructure, Infrastructure)
-        self.infrastructure = infrastructure
+        assert isinstance(testbed, Testbed)
+        self.testbed = testbed
         self._udev_poller: UdevPoller | None = None
         self.firmware_spec = firmware_spec
 
@@ -49,7 +49,7 @@ class NTestRun:
         time.sleep(1.2)
 
         hubs = util_usb_serial.QueryResultTentacle.query(verbose=True)
-        for tentacle in self.infrastructure.tentacles:
+        for tentacle in self.testbed.tentacles:
             query_result_tentacle = hubs.get(
                 serial_number=tentacle.tentacle_serial_number
             )
@@ -66,7 +66,7 @@ class NTestRun:
         """
 
         # Instantiate poller BEFORE switching on power to avoid a race condition
-        for tentacle in self.infrastructure.tentacles:
+        for tentacle in self.testbed.tentacles:
             tentacle.infra.setup_infra(self.udev_poller)
 
     def session_teardown(self) -> None:
@@ -75,7 +75,7 @@ class NTestRun:
             self._udev_poller = None
 
     def function_prepare_dut(self) -> None:
-        for tentacle in self.infrastructure.tentacles:
+        for tentacle in self.testbed.tentacles:
             tentacle.power.dut = False
             tentacle.infra.mp_remote_close()
             if tentacle.dut is not None:
@@ -91,10 +91,6 @@ class NTestRun:
                 udev_poller=self.udev_poller,
                 firmware_spec=self.firmware_spec,
             )
-
-        # Why this sleep.
-        # If remove I2C test fails.
-        time.sleep(2.0)
 
         for tentacle in active_tentacles:
             tentacle.infra.mcu_infra.active_led(on=True)

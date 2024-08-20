@@ -47,7 +47,7 @@
         {
             "label": "pylint",
             "type": "shell",
-            "command": "PYTHONPATH=${workspaceFolder} python -m pylint octoprobe infrastructure_tutorial || true",
+            "command": "PYTHONPATH=${workspaceFolder} python -m pylint octoprobe || true",
             "options": {
                 "cwd": "${workspaceFolder}"
             },

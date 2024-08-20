@@ -35,28 +35,28 @@ See [Terms](design/terms.md)
   * However the pytest code itselve is provided by the tester together with the firmware.
 
 
-### Tentacles / infrastructure_tutorial
+### Tentacles / testbed_tutorial
 
 Kicad schmatics/pcb may be found [here](https://github.com/octoprobe/tentacle).
 
-A *infrastructure* describes how test using a set of tentacles.
+A *testbed* describes how test using a set of tentacles.
 
-*infrastrucure_tutorial* is described here
-[here](https://github.com/octoprobe/infrastructure_tutorial/blob/main/doc/README.md)
+*testbed_tutorial* is described here
+[here](https://github.com/octoprobe/testbed_tutorial/blob/main/doc/README.md)
  and allows to test i2c, uart, onewire and timers.
 
 
 **4 tentacles - ribbon cable**
 
-![](README_images/infrastructure_tutorial_4-ribbon.jpg)
+![](README_images/testbed_tutorial_4-ribbon.jpg)
 
 **4 tentacles - stacked**
 
-![](README_images/infrastructure_tutorial_4-stacked.jpg)
+![](README_images/testbed_tutorial_4-stacked.jpg)
 
 **MCU tentacle**
 
-![](README_images/infrastructure_tutorial_mcu_pico.jpg)
+![](README_images/testbed_tutorial_mcu_pico.jpg)
 
 ## Test flow
 

@@ -6,9 +6,9 @@ from octoprobe.lib_tentacle import Tentacle
 
 
 @dataclasses.dataclass
-class Infrastructure:
+class Testbed:
     """
-    A minimal infrastructure just contains tentacles.
+    A minimal testbed just contains tentacles.
     However, it might also include usb-hubs, wlan-accesspoints, etc.
     """
 

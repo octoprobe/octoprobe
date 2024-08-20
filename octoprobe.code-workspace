@@ -17,7 +17,7 @@
 		"python.testing.pytestArgs": [
 			"."
 		],
-		"python.testing.cwd": "${workspaceFolder}/infrastructure_tutorial",
+		"python.testing.cwd": "${workspaceFolder}",
 		"python.testing.unittestEnabled": false,
 		"python.testing.pytestEnabled": true
 	},
