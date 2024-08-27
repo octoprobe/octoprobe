@@ -1,5 +1,5 @@
+from .util_mcu_rp2 import UdevApplicationModeEvent, UdevBootModeEvent
 from .util_pyudev import UdevFilter
-from .util_rp2 import UdevApplicationModeEvent, UdevBootModeEvent
 
 PYBOARD_VENDOR_BOOT_MODE = 0x0483
 PYBOARD_PRODUCT_BOOT_MODE = 0xDF11

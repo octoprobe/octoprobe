@@ -41,9 +41,23 @@ class TentacleDut:
         self.dut_programmer = dut_programmer_factory(tags=tentacle_spec.tags)
 
     @property
+    def tentacle_spec(self) -> TentacleSpec:
+        return self._tentacle_spec
+
+    @property
     def mp_remote(self) -> MpRemote:
         assert self._mp_remote is not None
         return self._mp_remote
+
+    def get_tty(self) -> str:
+        """
+        Returns the tty (/dev/ttyACM1).
+        Frees the tty by calling: self.mp_remote_close()
+        """
+        assert self._mp_remote is not None
+        tty = self.mp_remote.state.transport.device_name
+        self.mp_remote_close()
+        return tty
 
     def mp_remote_close(self) -> None:
         if self._mp_remote is None:

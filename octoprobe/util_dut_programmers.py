@@ -11,9 +11,13 @@ from urllib.request import urlretrieve
 from usbhubctl.util_subprocess import subprocess_run
 
 from .util_baseclasses import PropertyString
-from .util_constants import DIRECTORY_CACHE_FIRMWARE, TAG_BOARD, TAG_PROGRAMMER
-from .util_pyboard import UDEV_FILTER_PYBOARD_BOOT_MODE
-from .util_rp2 import (
+from .util_constants import (
+    DIRECTORY_OCTOPROBE_CACHE_FIRMWARE,
+    TAG_BOARD,
+    TAG_PROGRAMMER,
+)
+from .util_mcu_pyboard import UDEV_FILTER_PYBOARD_BOOT_MODE
+from .util_mcu_rp2 import (
     UDEV_FILTER_RP2_BOOT_MODE,
     UdevBootModeEvent,
     rp2_flash_micropython,
@@ -23,6 +27,8 @@ if typing.TYPE_CHECKING:
     from octoprobe.lib_tentacle import Tentacle
 
     from .util_pyudev import UdevPoller
+
+IDX_RELAYS_DUT_BOOT = 1
 
 
 @dataclasses.dataclass
@@ -64,7 +70,7 @@ class FirmwareSpec:
         parse_result = urlparse(self.url)
         _directory, _separator, _filename = parse_result.path.rpartition("/")
 
-        filename = DIRECTORY_CACHE_FIRMWARE / _filename
+        filename = DIRECTORY_OCTOPROBE_CACHE_FIRMWARE / _filename
         if filename.exists():
             return filename
         tmp_filename, _headers = urlretrieve(url=self.url)
@@ -120,7 +126,7 @@ class DutProgrammerDfuUtil(DutProgrammer):
         assert tentacle.dut is not None
 
         # Press Boot Button
-        tentacle.infra.mcu_infra.relays(relays_close=[1])
+        tentacle.infra.mcu_infra.relays(relays_close=[IDX_RELAYS_DUT_BOOT])
 
         tentacle.power_dut_off_and_wait()
 
@@ -148,7 +154,7 @@ class DutProgrammerDfuUtil(DutProgrammer):
         subprocess_run(args=args, timeout_s=60.0)
 
         # Release Boot Button
-        tentacle.infra.mcu_infra.relays(relays_open=[1])
+        tentacle.infra.mcu_infra.relays(relays_open=[IDX_RELAYS_DUT_BOOT])
 
         return tentacle.dut.dut_mcu.application_mode_power_up(
             tentacle=tentacle, udev=udev
@@ -172,7 +178,7 @@ class DutProgrammerPicotool(DutProgrammer):
         tentacle.infra.power_dut_off_and_wait()
 
         # Press Boot Button
-        tentacle.infra.mcu_infra.relays(relays_close=[1])
+        tentacle.infra.mcu_infra.relays(relays_close=[IDX_RELAYS_DUT_BOOT])
 
         with udev.guard as guard:
             tentacle.power.dut = True
@@ -187,7 +193,7 @@ class DutProgrammerPicotool(DutProgrammer):
         assert isinstance(event, UdevBootModeEvent)
 
         # Release Boot Button
-        tentacle.infra.mcu_infra.relays(relays_open=[1])
+        tentacle.infra.mcu_infra.relays(relays_open=[IDX_RELAYS_DUT_BOOT])
 
         rp2_flash_micropython(event=event, filename_uf2=firmware_spec.filename)
 

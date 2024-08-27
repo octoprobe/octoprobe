@@ -15,8 +15,12 @@ import usbhubctl
 from serial.tools import list_ports
 from usbhubctl.known_hubs import octohub4
 
+from .util_mcu_rp2 import (
+    RP2_PRODUCT_APPLICATION_MODE,
+    RP2_PRODUCT_BOOT_MODE,
+    RP2_VENDOR,
+)
 from .util_power import PowerCycle, UsbPlug, UsbPlugs
-from .util_rp2 import RP2_PRODUCT_APPLICATION_MODE, RP2_PRODUCT_BOOT_MODE, RP2_VENDOR
 
 
 class SerialNumberNotFoundException(Exception):

@@ -9,12 +9,12 @@ from octoprobe.util_dut_programmers import FirmwareSpec
 from . import util_power, util_usb_serial
 from .lib_mpremote import MpRemote
 from .lib_tentacle_infra_rp2 import InfraRP2
-from .util_pyudev import UdevPoller
-from .util_rp2 import (
+from .util_mcu_rp2 import (
     UDEV_FILTER_RP2_APPLICATION_MODE,
     UDEV_FILTER_RP2_BOOT_MODE,
     rp2_flash_micropython,
 )
+from .util_pyudev import UdevPoller
 
 DIRECTORY_OF_THIS_FILE = pathlib.Path(__file__).parent
 

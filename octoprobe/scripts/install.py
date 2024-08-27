@@ -7,7 +7,7 @@ import shutil
 import tarfile
 from urllib.request import urlretrieve
 
-from octoprobe.util_constants import DIRECTORY_DOWNLOADS
+from octoprobe.util_constants import DIRECTORY_OCTOPROBE_DOWNLOADS
 
 logger = logging.getLogger(__file__)
 
@@ -32,11 +32,11 @@ def do_install(url: str) -> None:
 
     tmp_filename, _headers = urlretrieve(url=url)
 
-    directory_binaries = DIRECTORY_DOWNLOADS / "binaries"
+    directory_binaries = DIRECTORY_OCTOPROBE_DOWNLOADS / "binaries"
     shutil.rmtree(directory_binaries, ignore_errors=True)
     directory_binaries.mkdir(parents=True, exist_ok=True)
     with tarfile.open(tmp_filename, mode="r") as f:
-        f.extractall(DIRECTORY_DOWNLOADS)
+        f.extractall(DIRECTORY_OCTOPROBE_DOWNLOADS)
 
     try:
         d = directory_binaries.relative_to(pathlib.Path.home())

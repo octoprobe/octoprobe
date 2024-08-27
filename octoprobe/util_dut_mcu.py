@@ -3,8 +3,8 @@ import typing
 
 from octoprobe.util_baseclasses import PropertyString
 from octoprobe.util_constants import TAG_MCU
-from octoprobe.util_pyboard import UDEV_FILTER_PYBOARD_APPLICATION_MODE
-from octoprobe.util_rp2 import (
+from octoprobe.util_mcu_pyboard import UDEV_FILTER_PYBOARD_APPLICATION_MODE
+from octoprobe.util_mcu_rp2 import (
     UDEV_FILTER_RP2_APPLICATION_MODE,
     UdevApplicationModeEvent,
 )
