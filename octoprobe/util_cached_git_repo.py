@@ -24,19 +24,13 @@ class CachedGitRepo:
         return False: If no PYTEST_OPT_GIT_MICROPYTHON parameter was given.
         """
         if CachedGitRepo.singleton_cloned is None:
-            CachedGitRepo.singleton_cloned = self._clone(
-                directory=directory, git_spec=git_spec
-            )
+            logger.info(f"git clone {git_spec} -> {directory.name}")
+            self._clone(directory=directory, git_spec=git_spec)
+            CachedGitRepo.singleton_cloned = True
         return CachedGitRepo.singleton_cloned
 
-    def _clone(self, directory: pathlib.Path, git_spec: str) -> bool:
-        """
-        return True: If the repo was successfully cloned
-        return False: If no PYTEST_OPT_GIT_MICROPYTHON parameter was given.
-        """
+    def _clone(self, directory: pathlib.Path, git_spec: str) -> None:
         assert isinstance(git_spec, str)
-        if git_spec is None:
-            return False
 
         directory.parent.mkdir(parents=True, exist_ok=True)
         filename_git_url = directory.parent / f"{directory.name}_url.txt"
@@ -72,4 +66,3 @@ class CachedGitRepo:
             cwd=directory,
             timeout_s=20.0,
         )
-        return True

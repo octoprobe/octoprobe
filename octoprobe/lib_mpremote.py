@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 from typing import Any, Self
 
+from mpremote import mip  # type: ignore
 from mpremote.main import State  # type: ignore
 from mpremote.transport_serial import SerialTransport, TransportError  # type: ignore
 
@@ -40,6 +41,38 @@ class MpRemote:
 
     def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         self.close()
+
+    def mip_install_package(self, package: str) -> None:
+        assert isinstance(package, str)
+
+        # list package specifications, e.g. name, name@version, github:org/repo, github:org/repo@branch, gitlab:org/repo, gitlab:org/repo@branch
+        package = package
+
+        # package index to use (defaults to micropython-lib)
+        # See: https://github.com/micropython/micropython-lib/blob/v1.22.0/README.md
+        # mpremote connect /dev/ttyUSB0 mip install --index https://USERNAME.github.io/micropython-lib/mip/BRANCH_NAME PACKAGE_NAME
+        index: str | None = mip._PACKAGE_INDEX  # pylint: disable=W0212:protected-access
+
+        # destination direction on the device
+        target = "mip"
+
+        # Example package: github:org/repo@branch
+        # version -> 'branch'
+        version: str | None = None
+        if "@" in package:
+            package, version = package.split("@")
+
+        # download as compiled .mpy files (default)
+        mpy: bool = False
+
+        mip._install_package(  # pylint: disable=W0212:protected-access
+            transport=self.state.transport,
+            package=package,
+            index=index,
+            target=target,
+            version=version,
+            mpy=mpy,
+        )
 
     def exec_render(self, micropython_code: str, follow: bool = True, **kwargs) -> str:
         mp_program = render(micropython_code=micropython_code, **kwargs)
@@ -101,4 +134,6 @@ class MpRemote:
         return list(v)
 
     def close(self) -> None:
-        self.state.transport.close()
+        if self.state.transport is not None:
+            self.state.transport.close()
+            self.state.transport = None
