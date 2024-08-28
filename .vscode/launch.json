@@ -27,7 +27,7 @@
             "args": [
                 "--config-file",
                 "pyproject.toml",
-                "octoprobe",
+                "src",
             ],
             "console": "integratedTerminal",
         },
@@ -55,7 +55,7 @@
             "module": "octoprobe.main",
             "cwd": "${workspaceFolder}",
             "env": {
-                "PYTHONPATH": "${workspaceFolder}"
+                "PYTHONPATH": "${workspaceFolder}/src"
             },
             "console": "integratedTerminal",
             "justMyCode": false,
@@ -70,7 +70,7 @@
                 "install",
             ],
             "env": {
-                "PYTHONPATH": "${workspaceFolder}"
+                "PYTHONPATH": "${workspaceFolder}/src"
             },
             "console": "integratedTerminal",
             "justMyCode": false,
@@ -85,7 +85,7 @@
                 "commissioning",
             ],
             "env": {
-                "PYTHONPATH": "${workspaceFolder}"
+                "PYTHONPATH": "${workspaceFolder}/src"
             },
             "console": "integratedTerminal",
             "justMyCode": false,
@@ -101,7 +101,7 @@
                 "dut",
             ],
             "env": {
-                "PYTHONPATH": "${workspaceFolder}"
+                "PYTHONPATH": "${workspaceFolder}/src"
             },
             "console": "integratedTerminal",
             "justMyCode": false,
@@ -122,7 +122,7 @@
                 // "e4636874db124f35",
             ],
             "env": {
-                "PYTHONPATH": "${workspaceFolder}"
+                "PYTHONPATH": "${workspaceFolder}/src"
             },
             "console": "integratedTerminal",
             "justMyCode": false,
@@ -141,7 +141,7 @@
                 "dut",
             ],
             "env": {
-                "PYTHONPATH": "${workspaceFolder}"
+                "PYTHONPATH": "${workspaceFolder}/src"
             },
             "console": "integratedTerminal",
             "justMyCode": false,
@@ -157,7 +157,7 @@
                 "--verbose",
             ],
             "env": {
-                "PYTHONPATH": "${workspaceFolder}"
+                "PYTHONPATH": "${workspaceFolder}/src"
             },
             "console": "integratedTerminal",
             "justMyCode": false,

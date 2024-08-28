@@ -51,15 +51,15 @@ all = [
 ]
 
 [tool.pdm]
-version = { source = "file", path = "octoprobe/__init__.py" }
+version = { source = "file", path = "src/octoprobe/__init__.py" }
 distribution = true
 
 [tool.pdm.build]
-package-dir = "."
-includes = ["octoprobe"]
+package-dir = "src"
+includes = ["src/octoprobe"]
 source-includes = [
-#     "octoprobe/",
-     "requirements*.txt",
+     "LICENSE",
+     "README.md"
 ]
 
 [tool.mypy]
@@ -120,7 +120,7 @@ filterwarnings = [
 parallel = true
 source = [
     "tests",
-    "octoprobe"
+    "src"
 ]
 context = '${CONTEXT}'
 omit = [
@@ -131,7 +131,7 @@ omit = [
 [tool.ruff]
 target-version = "py312"
 # All paths are relative to the project root, which is the directory containing the pyproject.toml.
-src = ["octoprobe"]
+src = ["src"]
 exclude = ["assessments", "branding"]
 
 [tool.ruff.lint]
