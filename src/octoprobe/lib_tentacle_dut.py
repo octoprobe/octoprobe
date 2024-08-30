@@ -3,12 +3,12 @@ from __future__ import annotations
 import logging
 import typing
 
-from octoprobe.util_constants import TAG_BOARD, TAG_PROGRAMMER
+from octoprobe.util_constants import TAG_BOARDS, TAG_PROGRAMMER
 
 from .lib_mpremote import MpRemote
 from .util_baseclasses import TentacleSpec
 from .util_dut_mcu import TAG_MCU, dut_mcu_factory
-from .util_dut_programmers import FirmwareSpec, dut_programmer_factory
+from .util_dut_programmers import FirmwareSpecBase, dut_programmer_factory
 from .util_pyudev import UdevPoller
 
 logger = logging.getLogger(__file__)
@@ -31,8 +31,8 @@ class TentacleDut:
         assert isinstance(tentacle_spec, TentacleSpec)
 
         # Validate consistency
-        for tag in TAG_MCU, TAG_BOARD, TAG_PROGRAMMER:
-            tentacle_spec.get_property_mandatory(tag)
+        for tag in TAG_MCU, TAG_BOARDS, TAG_PROGRAMMER:
+            tentacle_spec.get_tag_mandatory(tag)
 
         self.label = label
         self._tentacle_spec = tentacle_spec
@@ -84,11 +84,11 @@ class TentacleDut:
 
     def dut_required_firmware_already_installed(
         self,
-        firmware_spec: FirmwareSpec,
+        firmware_spec: FirmwareSpecBase,
         exception_text: str | None = None,
     ) -> bool:
         installed_version = self.dut_installed_firmware_version()
-        assert isinstance(firmware_spec, FirmwareSpec)
+        assert isinstance(firmware_spec, FirmwareSpecBase)
         versions_equal = firmware_spec.micropython_version_text == installed_version
         if exception_text is not None:
             if not versions_equal:
@@ -101,11 +101,11 @@ class TentacleDut:
         self,
         tentacle: Tentacle,
         udev: UdevPoller,
-        firmware_spec: FirmwareSpec,
+        firmware_spec: FirmwareSpecBase,
     ) -> None:
         assert tentacle.__class__.__qualname__ == "Tentacle"
         assert isinstance(udev, UdevPoller)
-        assert isinstance(firmware_spec, FirmwareSpec)
+        assert isinstance(firmware_spec, FirmwareSpecBase)
 
         try:
             self.boot_and_init_mp_remote_dut(tentacle=tentacle, udev=udev)

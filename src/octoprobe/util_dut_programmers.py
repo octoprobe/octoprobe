@@ -13,7 +13,7 @@ from usbhubctl.util_subprocess import subprocess_run
 from .util_baseclasses import PropertyString
 from .util_constants import (
     DIRECTORY_OCTOPROBE_CACHE_FIRMWARE,
-    TAG_BOARD,
+    TAG_BOARDS,
     TAG_PROGRAMMER,
 )
 from .util_mcu_pyboard import UDEV_FILTER_PYBOARD_BOOT_MODE
@@ -22,6 +22,7 @@ from .util_mcu_rp2 import (
     UdevBootModeEvent,
     rp2_flash_micropython,
 )
+from .util_micropython_boards import BoardVariant, board_variants
 
 if typing.TYPE_CHECKING:
     from octoprobe.lib_tentacle import Tentacle
@@ -31,15 +32,14 @@ if typing.TYPE_CHECKING:
 IDX_RELAYS_DUT_BOOT = 1
 
 
-@dataclasses.dataclass
-class FirmwareSpec:
-    board: str
+@dataclasses.dataclass(frozen=True, repr=True)
+class FirmwareSpecBase(abc.ABC):
+    board_variant: BoardVariant
     """
-    Examples: PYBV11, RPI_PICO
-    """
-    url: str
-    """
-    Example: https://micropython.org/resources/firmware/PYBV11-20240222-v1.22.2.dfu
+    Examples:
+    PYBV11
+    PYBV11-THREAD
+    RPI_PICO
     """
 
     micropython_version_text: str
@@ -50,6 +50,57 @@ class FirmwareSpec:
     '3.4.0; MicroPython v1.20.0 on 2023-04-26'
     """
 
+    def __post_init__(self) -> None:
+        assert isinstance(self.board_variant, BoardVariant)
+        assert isinstance(self.micropython_version_text, str)
+
+    @property
+    @abc.abstractmethod
+    def filename(self) -> pathlib.Path: ...
+
+    def match_board(self, tentacle: Tentacle) -> bool:
+        """
+        Return True: If tentacles board matches the firmware_spec board.
+        """
+        # assert tentacle.tentacle_spec.tentacle_type.is_mcu
+        boards = tentacle.get_tag_mandatory(TAG_BOARDS)
+        for board_variant in board_variants(boards=boards):
+            assert isinstance(board_variant, BoardVariant)
+            if board_variant == self.board_variant:
+                # We found a board variant which we may test
+                return True
+        return False
+
+
+@dataclasses.dataclass(frozen=True, repr=True)
+class FirmwareBuildSpec(FirmwareSpecBase):
+    """
+    The firmware is specified by an url pointing to a micropython git repo.
+    This repo will then be cloned and the firmware compiled using mpbuild.
+    """
+
+    _filename: pathlib.Path
+
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        assert isinstance(self._filename, pathlib.Path)
+
+    @property
+    def filename(self) -> pathlib.Path:
+        return self._filename
+
+
+@dataclasses.dataclass(frozen=True, repr=True)
+class FirmwareDownloadSpec(FirmwareSpecBase):
+    """
+    The firmware is specified by an url where it may be downloaded.
+    """
+
+    url: str
+    """
+    Example: https://micropython.org/resources/firmware/PYBV11-20240222-v1.22.2.dfu
+    """
+
     _filename: pathlib.Path | None = None
     """
     Example: Downloads/PYBV11-20230426-v1.20.0.dfu
@@ -57,10 +108,16 @@ class FirmwareSpec:
     """
 
     def __post_init__(self) -> None:
-        pass
+        super().__post_init__()
+        assert isinstance(self.url, str)
+        assert isinstance(self._filename, pathlib.Path | None)
 
     def download(self) -> pathlib.Path:
         return self.filename
+
+    @property
+    def pytest_id(self) -> str:
+        return self.board_variant.label
 
     @property
     def filename(self) -> pathlib.Path:
@@ -78,27 +135,23 @@ class FirmwareSpec:
         pathlib.Path(tmp_filename).rename(target=filename)
         return filename
 
-    def match_board(self, tentacle: Tentacle) -> bool:
-        """
-        Return True: If tentacles board matches the firmware_spec board.
-        """
-        # assert tentacle.tentacle_spec.tentacle_type.is_mcu
-        board = tentacle.get_property(TAG_BOARD)
-        return board == self.board
-
     @staticmethod
-    def factory(filename: str) -> FirmwareSpec:
+    def factory(filename: str) -> FirmwareDownloadSpec:
         assert isinstance(filename, str)
-        return FirmwareSpec.factory2(pathlib.Path(filename))
+        return FirmwareDownloadSpec.factory2(pathlib.Path(filename))
 
     @staticmethod
-    def factory2(filename: pathlib.Path) -> FirmwareSpec:
+    def factory2(filename: pathlib.Path) -> FirmwareDownloadSpec:
         assert isinstance(filename, pathlib.Path)
         assert filename.is_file(), str(filename)
 
-        with filename.open("r") as f:
-            json_obj = json.load(f)
-        return FirmwareSpec(**json_obj)
+        try:
+            with filename.open("r") as f:
+                json_obj = json.load(f)
+            json_obj["board_variant"] = BoardVariant.factory(json_obj["board_variant"])
+            return FirmwareDownloadSpec(**json_obj)
+        except Exception as e:
+            raise ValueError(f"{filename}: Failed to read: {e!r}") from e
 
 
 class DutProgrammer(abc.ABC):
@@ -107,7 +160,7 @@ class DutProgrammer(abc.ABC):
         self,
         tentacle: Tentacle,
         udev: UdevPoller,
-        firmware_spec: FirmwareSpec,
+        firmware_spec: FirmwareDownloadSpec,
     ) -> str: ...
 
 
@@ -116,13 +169,13 @@ class DutProgrammerDfuUtil(DutProgrammer):
         self,
         tentacle: Tentacle,
         udev: UdevPoller,
-        firmware_spec: FirmwareSpec,
+        firmware_spec: FirmwareDownloadSpec,
     ) -> str:
         """
         Example return: /dev/ttyACM1
         """
         assert tentacle.__class__.__qualname__ == "Tentacle"
-        assert isinstance(firmware_spec, FirmwareSpec)
+        assert isinstance(firmware_spec, FirmwareDownloadSpec)
         assert tentacle.dut is not None
 
         # Press Boot Button
@@ -166,13 +219,13 @@ class DutProgrammerPicotool(DutProgrammer):
         self,
         tentacle: Tentacle,
         udev: UdevPoller,
-        firmware_spec: FirmwareSpec,
+        firmware_spec: FirmwareDownloadSpec,
     ) -> str:
         """
         Example return: /dev/ttyACM1
         """
         assert tentacle.__class__.__qualname__ == "Tentacle"
-        assert isinstance(firmware_spec, FirmwareSpec)
+        assert isinstance(firmware_spec, FirmwareDownloadSpec)
         assert tentacle.dut is not None
 
         tentacle.infra.power_dut_off_and_wait()

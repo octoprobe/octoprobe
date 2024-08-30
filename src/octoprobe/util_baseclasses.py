@@ -41,8 +41,12 @@ class TentacleSpec[TMcuConfig, TTentacleType: enum.StrEnum, TEnumFut: enum.StrEn
     relays_closed: dict[TEnumFut, list[int]]
     mcu_config: TMcuConfig | None = None
 
-    def get_property(self, tag: str) -> str | None:
+    def get_tag(self, tag: str) -> str | None:
         return PropertyString(self.tags).get_tag(tag)
 
-    def get_property_mandatory(self, tag: str) -> str:
+    def get_tag_mandatory(self, tag: str) -> str:
         return PropertyString(self.tags).get_tag_mandatory(tag)
+
+    @property
+    def is_mcu(self) -> bool:
+        return self.mcu_config is not None

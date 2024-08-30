@@ -13,8 +13,8 @@ from . import util_power, util_usb_serial
 from .lib_tentacle_dut import TentacleDut
 from .lib_tentacle_infra import TentacleInfra
 from .util_baseclasses import TentacleSpec
-from .util_dut_mcu import TAG_MCU
-from .util_dut_programmers import FirmwareSpec
+from .util_dut_programmers import FirmwareSpecBase
+from .util_micropython_boards import BoardVariant
 from .util_pyudev import UdevPoller
 
 logger = logging.getLogger(__file__)
@@ -54,8 +54,15 @@ class Tentacle[TTentacleSpec, TTentacleType: enum.StrEnum, TEnumFut: enum.StrEnu
             )
 
         self.dut = get_dut()
+        self._firmware_spec: FirmwareSpecBase | None = None
+        """
+        Specifies the firmware.
+        This will be updated for EVERY testfunction!
+        """
 
-    def flash_dut(self, udev_poller: UdevPoller, firmware_spec: FirmwareSpec) -> None:
+    def flash_dut(
+        self, udev_poller: UdevPoller, firmware_spec: FirmwareSpecBase
+    ) -> None:
         if self.dut is None:
             return
 
@@ -65,6 +72,25 @@ class Tentacle[TTentacleSpec, TTentacleType: enum.StrEnum, TEnumFut: enum.StrEnu
             udev=udev_poller,
             firmware_spec=firmware_spec,
         )
+
+    @property
+    def is_mcu(self) -> bool:
+        return self.tentacle_spec.is_mcu
+
+    @property
+    def firmware_spec(self) -> FirmwareSpecBase:
+        """
+        This is only valid for tentacles.is_mcu!
+        """
+        assert self.is_mcu, "firmware_spec only makes sense for 'is_mcu' tentacles."
+        assert self._firmware_spec is not None
+        return self._firmware_spec
+
+    @firmware_spec.setter
+    def firmware_spec(self, spec: FirmwareSpecBase) -> None:
+        assert self.is_mcu, "firmware_spec only makes sense for 'is_mcu' tentacles."
+        assert isinstance(spec, FirmwareSpecBase)
+        self._firmware_spec = spec
 
     @property
     def power(self) -> util_power.TentaclePlugsPower:
@@ -91,17 +117,26 @@ class Tentacle[TTentacleSpec, TTentacleType: enum.StrEnum, TEnumFut: enum.StrEnu
 
     @property
     def pytest_id(self) -> str:
-        name = self.tentacle_spec.tentacle_type.name
-        if name.startswith("TENTACLE_MCU"):
-            name = self.tentacle_spec.get_property_mandatory(TAG_MCU)
-        name = name.replace("TENTACLE_DEVICE_", "").replace("TENTACLE_", "")
-        return name + "_" + self.tentacle_serial_number[-4:]
+        name = self.tentacle_spec.label
+        name += self.tentacle_serial_number[-4:]
+        if self.is_mcu:
+            name += f"({self.firmware_spec.board_variant.label})"
+        return name
+
+    def pytest_id2(self, board_variant: BoardVariant | None) -> str:
+        if self.tentacle_spec.is_mcu:
+            assert board_variant is not None
+            name = board_variant.label
+        else:
+            name = self.tentacle_spec.label
+        name += self.tentacle_serial_number[-4:]
+        return name
 
     def get_property(self, tag: str) -> str | None:
         return self.tentacle_spec.get_property(tag=tag)
 
-    def get_property_mandatory(self, tag: str) -> str:
-        return self.tentacle_spec.get_property_mandatory(tag=tag)
+    def get_tag_mandatory(self, tag: str) -> str:
+        return self.tentacle_spec.get_tag_mandatory(tag=tag)
 
     @property
     @contextmanager

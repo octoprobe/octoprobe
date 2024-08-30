@@ -1,6 +1,6 @@
 import pathlib
 
-TAG_BOARD = "board"
+TAG_BOARDS = "boards"
 TAG_PROGRAMMER = "programmer"
 TAG_MCU = "mcu"
 

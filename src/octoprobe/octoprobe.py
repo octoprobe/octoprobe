@@ -4,7 +4,6 @@ import enum
 import time
 
 from octoprobe import util_usb_serial
-from octoprobe.util_dut_programmers import FirmwareSpec
 from octoprobe.util_power import UsbPlug, UsbPlugs
 
 from .lib_tentacle import Tentacle
@@ -17,15 +16,10 @@ class NTestRun:
     'TestRun' would be collected by pytest: So we name it 'NTestRun'
     """
 
-    def __init__(
-        self,
-        testbed: Testbed,
-        firmware_spec: FirmwareSpec,
-    ) -> None:
+    def __init__(self, testbed: Testbed) -> None:
         assert isinstance(testbed, Testbed)
         self.testbed = testbed
         self._udev_poller: UdevPoller | None = None
-        self.firmware_spec = firmware_spec
 
     @property
     def udev_poller(self) -> UdevPoller:
@@ -84,13 +78,12 @@ class NTestRun:
     def function_setup_dut(self, active_tentacles: list[Tentacle]) -> None:
         # Flash the MCU(s)
         for tentacle in active_tentacles:
-            if tentacle.dut is None:
-                continue
-            tentacle.infra.mcu_infra.active_led(on=True)
-            tentacle.flash_dut(
-                udev_poller=self.udev_poller,
-                firmware_spec=self.firmware_spec,
-            )
+            if tentacle.is_mcu:
+                tentacle.infra.mcu_infra.active_led(on=True)
+                tentacle.flash_dut(
+                    udev_poller=self.udev_poller,
+                    firmware_spec=tentacle.firmware_spec,
+                )
 
         for tentacle in active_tentacles:
             tentacle.infra.mcu_infra.active_led(on=True)

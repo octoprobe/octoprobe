@@ -4,7 +4,7 @@ import logging
 import pathlib
 import time
 
-from octoprobe.util_dut_programmers import FirmwareSpec
+from octoprobe.util_dut_programmers import FirmwareDownloadSpec, FirmwareSpecBase
 
 from . import util_power, util_usb_serial
 from .lib_mpremote import MpRemote
@@ -41,9 +41,9 @@ class TentacleInfra:
         return 1 <= i <= TentacleInfra.RELAY_COUNT
 
     @staticmethod
-    def get_firmware_spec() -> FirmwareSpec:
+    def get_firmware_spec() -> FirmwareSpecBase:
         json_filename = DIRECTORY_OF_THIS_FILE / "util_tentacle_infra_firmware.json"
-        return FirmwareSpec.factory2(filename=json_filename)
+        return FirmwareDownloadSpec.factory2(filename=json_filename)
 
     def __init__(self, label: str) -> None:
         assert isinstance(label, str)
@@ -89,6 +89,7 @@ class TentacleInfra:
             time.sleep(0.5)
 
     def rp2_test_mp_remote(self) -> None:
+        assert self.hub is not None
         unique_id = self.mcu_infra.get_unique_id()
         assert self.hub.rp2_serial_number == unique_id
 
@@ -100,8 +101,8 @@ class TentacleInfra:
         self._mp_remote = MpRemote(tty=self.hub.rp2_serial_port)
         self.rp2_test_mp_remote()
 
-    def verify_micropython_version(self, firmware_spec: FirmwareSpec) -> None:
-        assert isinstance(firmware_spec, FirmwareSpec)
+    def verify_micropython_version(self, firmware_spec: FirmwareSpecBase) -> None:
+        assert isinstance(firmware_spec, FirmwareSpecBase)
 
         installed_version = self.mcu_infra.get_micropython_version()
         versions_equal = firmware_spec.micropython_version_text == installed_version
