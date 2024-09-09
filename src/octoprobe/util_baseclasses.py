@@ -2,6 +2,32 @@ import dataclasses
 import enum  # pylint: disable=W0611:unused-import
 
 
+@dataclasses.dataclass
+class UsbID:
+    """
+    The usb specification defines a vendor and a product id
+    """
+
+    vendor_id: int
+    product_id: int
+
+
+@dataclasses.dataclass
+class BootApplicationUsbID:
+    """
+    A mcu typically has a different vendor-id/product-id in boot mode and application mode.
+    """
+
+    boot: UsbID
+    """
+    usb id's in boot/programming mode
+    """
+    application: UsbID
+    """
+    usb id's in application mode
+    """
+
+
 @dataclasses.dataclass(frozen=True)
 class PropertyString:
     """
@@ -40,6 +66,7 @@ class TentacleSpec[TMcuConfig, TTentacleType: enum.StrEnum, TEnumFut: enum.StrEn
     tags: str
     relays_closed: dict[TEnumFut, list[int]]
     mcu_config: TMcuConfig | None = None
+    mcu_usb_id: BootApplicationUsbID | None = None
 
     def get_tag(self, tag: str) -> str | None:
         return PropertyString(self.tags).get_tag(tag)

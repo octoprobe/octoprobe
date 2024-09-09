@@ -82,7 +82,7 @@ class Commissioning:
             if len(hubs) > 1:
                 if msg_period.do_print:
                     logger.warning(
-                        f"{len(hubs)} tentacles connected: Please disconnect tentacles!"
+                        f"{len(hubs)} tentacles connected: Please connect exactly one tentacle!"
                     )
                 time.sleep(0.5)
                 continue

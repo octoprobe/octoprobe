@@ -3,10 +3,10 @@ import typing
 
 from octoprobe.util_baseclasses import PropertyString
 from octoprobe.util_constants import TAG_MCU
-from octoprobe.util_mcu_pyboard import UDEV_FILTER_PYBOARD_APPLICATION_MODE
+from octoprobe.util_mcu_pyboard import pyboard_udev_filter_application_mode
 from octoprobe.util_mcu_rp2 import (
-    UDEV_FILTER_RP2_APPLICATION_MODE,
     UdevApplicationModeEvent,
+    rp2_udev_filter_application_mode,
 )
 
 if typing.TYPE_CHECKING:
@@ -45,8 +45,12 @@ class DutMicropythonSTM32(DutMcu):
         with udev.guard as guard:
             tentacle.power.dut = True
 
+            assert tentacle.tentacle_spec.mcu_usb_id is not None
+            udev_filter = pyboard_udev_filter_application_mode(
+                tentacle.tentacle_spec.mcu_usb_id.application
+            )
             event = guard.expect_event(
-                UDEV_FILTER_PYBOARD_APPLICATION_MODE,
+                udev_filter=udev_filter,
                 text_where=tentacle.dut.label,
                 text_expect="Expect mcu to become visible on udev after DfuUtil programming",
                 timeout_s=3.0,
@@ -76,8 +80,13 @@ class DutMicropythonRP2(DutMcu):
         with udev.guard as guard:
             tentacle.power.dut = True
 
+            assert tentacle.tentacle_spec.mcu_usb_id is not None
+            udev_filter = rp2_udev_filter_application_mode(
+                tentacle.tentacle_spec.mcu_usb_id.application
+            )
+
             event = guard.expect_event(
-                UDEV_FILTER_RP2_APPLICATION_MODE,
+                udev_filter=udev_filter,
                 text_where=tentacle.dut.label,
                 text_expect="Expect RP2 to become visible",
                 timeout_s=3.0,

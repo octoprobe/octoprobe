@@ -10,9 +10,11 @@ from . import util_power, util_usb_serial
 from .lib_mpremote import MpRemote
 from .lib_tentacle_infra_rp2 import InfraRP2
 from .util_mcu_rp2 import (
-    UDEV_FILTER_RP2_APPLICATION_MODE,
-    UDEV_FILTER_RP2_BOOT_MODE,
+    RPI_PICO_USB_ID,
+    UdevApplicationModeEvent,
     rp2_flash_micropython,
+    rp2_udev_filter_application_mode,
+    rp2_udev_filter_boot_mode,
 )
 from .util_pyudev import UdevPoller
 
@@ -136,8 +138,9 @@ class TentacleInfra:
             # print("Power on RP2")
             self.power.infra = True
 
+            udev_filter = rp2_udev_filter_boot_mode(RPI_PICO_USB_ID.boot)
             event = guard.expect_event(
-                UDEV_FILTER_RP2_BOOT_MODE,
+                udev_filter=udev_filter,
                 text_where=self.label,
                 text_expect="Expect RP2 in programming mode to become visible on udev after power on",
                 timeout_s=2.0,
@@ -154,11 +157,13 @@ class TentacleInfra:
 
             # The RP2 will reboot in application mode
             # and we wait for this event here
+            udev_filter = rp2_udev_filter_application_mode(RPI_PICO_USB_ID.application)
             event = udev.expect_event(
-                UDEV_FILTER_RP2_APPLICATION_MODE,
+                udev_filter=udev_filter,
                 text_where=self.label,
                 text_expect="Expect RP2 in application mode to become visible on udev after programming ",
                 timeout_s=3.0,
             )
 
+        assert isinstance(event, UdevApplicationModeEvent)
         self._mp_remote = MpRemote(tty=event.tty)

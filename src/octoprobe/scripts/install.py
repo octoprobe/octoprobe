@@ -17,7 +17,7 @@ assert FILENAME_LOGGING_JSON.is_file()
 
 
 URL_RELEASE_DEFAULT = (
-    "https://github.com/octoprobe/build_binaries/releases/download/v0.0.1/binaries.tgz"
+    "https://github.com/octoprobe/build_binaries/releases/latest/download/binaries.tgz"
 )
 
 

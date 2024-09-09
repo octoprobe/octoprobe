@@ -82,18 +82,23 @@ class TentacleDut:
         version = self.mp_remote.exec_raw("import sys; print(sys.version)")
         return version.strip()
 
-    def dut_required_firmware_already_installed(
+    def is_dut_required_firmware_already_installed(
         self,
         firmware_spec: FirmwareSpecBase,
         exception_text: str | None = None,
     ) -> bool:
-        installed_version = self.dut_installed_firmware_version()
         assert isinstance(firmware_spec, FirmwareSpecBase)
+
+        installed_version = self.dut_installed_firmware_version()
+        logger.info(f"Micropython Version installed: {installed_version}")
+        if firmware_spec.micropython_version_text is None:
+            # There is not expected version give.
+            return True
         versions_equal = firmware_spec.micropython_version_text == installed_version
         if exception_text is not None:
             if not versions_equal:
                 raise ValueError(
-                    f"{exception_text}: Version installed '{installed_version}', but expected '{firmware_spec.micropython_version_text}'!"
+                    f"{exception_text}: Version installed: {installed_version}\n  but expected: '{firmware_spec.micropython_version_text}'!"
                 )
         return versions_equal
 
@@ -109,11 +114,16 @@ class TentacleDut:
 
         try:
             self.boot_and_init_mp_remote_dut(tentacle=tentacle, udev=udev)
-            if self.dut_required_firmware_already_installed(
-                firmware_spec=firmware_spec
-            ):
-                logger.info(f"{self.label}: firmware is already installed")
-                return
+            if firmware_spec.micropython_version_text is None:
+                logger.info(
+                    f"No micropython_version_text provided for '{firmware_spec.board_variant.name_normalized}'! We could not verify if the firmware was correctly flashed!"
+                )
+            else:
+                if self.is_dut_required_firmware_already_installed(
+                    firmware_spec=firmware_spec
+                ):
+                    logger.info(f"{self.label}: firmware is already installed")
+                    return
 
         except TimeoutError as e:
             logger.debug(f"DUT seems not to have firmware installed: {e!r}")
@@ -125,7 +135,7 @@ class TentacleDut:
         )
         self._mp_remote = MpRemote(tty=tty)
 
-        self.dut_required_firmware_already_installed(
+        self.is_dut_required_firmware_already_installed(
             firmware_spec=firmware_spec,
             exception_text=f"DUT: After installing {firmware_spec.filename}",
         )

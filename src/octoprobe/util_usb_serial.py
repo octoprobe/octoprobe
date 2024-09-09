@@ -15,11 +15,7 @@ import usbhubctl
 from serial.tools import list_ports
 from usbhubctl.known_hubs import octohub4
 
-from .util_mcu_rp2 import (
-    RP2_PRODUCT_APPLICATION_MODE,
-    RP2_PRODUCT_BOOT_MODE,
-    RP2_VENDOR,
-)
+from .util_mcu_rp2 import RPI_PICO_USB_ID
 from .util_power import PowerCycle, UsbPlug, UsbPlugs
 
 
@@ -43,9 +39,9 @@ class QueryPySerial:
         result: list[serial.core.SysFs] = []
 
         for port in list_ports.comports():
-            if port.vid != RP2_VENDOR:
+            if port.vid != RPI_PICO_USB_ID.application.vendor_id:
                 continue
-            if port.pid != RP2_PRODUCT_APPLICATION_MODE:
+            if port.pid != RPI_PICO_USB_ID.application.product_id:
                 continue
             result.append(port)
 
@@ -53,7 +49,9 @@ class QueryPySerial:
 
     def _query_rp2_boot_mode(self) -> list[serial.core.SysFs]:
         devices = usb.core.find(
-            idVendor=RP2_VENDOR, idProduct=RP2_PRODUCT_BOOT_MODE, find_all=True
+            idVendor=RPI_PICO_USB_ID.boot.vendor_id,
+            idProduct=RPI_PICO_USB_ID.boot.product_id,
+            find_all=True,
         )
         return list(devices)
 

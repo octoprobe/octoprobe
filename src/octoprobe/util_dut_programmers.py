@@ -10,17 +10,18 @@ from urllib.request import urlretrieve
 
 from usbhubctl.util_subprocess import subprocess_run
 
+from octoprobe.util_mcu_pyboard import pyboard_udev_filter_boot_mode
+
 from .util_baseclasses import PropertyString
 from .util_constants import (
     DIRECTORY_OCTOPROBE_CACHE_FIRMWARE,
     TAG_BOARDS,
     TAG_PROGRAMMER,
 )
-from .util_mcu_pyboard import UDEV_FILTER_PYBOARD_BOOT_MODE
 from .util_mcu_rp2 import (
-    UDEV_FILTER_RP2_BOOT_MODE,
     UdevBootModeEvent,
     rp2_flash_micropython,
+    rp2_udev_filter_boot_mode,
 )
 from .util_micropython_boards import BoardVariant, board_variants
 
@@ -42,17 +43,19 @@ class FirmwareSpecBase(abc.ABC):
     RPI_PICO
     """
 
-    micropython_version_text: str
+    micropython_version_text: str | None
     """
     Example:
     >>> import sys
     >>> sys.version
     '3.4.0; MicroPython v1.20.0 on 2023-04-26'
+
+    None: If not known
     """
 
     def __post_init__(self) -> None:
         assert isinstance(self.board_variant, BoardVariant)
-        assert isinstance(self.micropython_version_text, str)
+        assert isinstance(self.micropython_version_text, str | None)
 
     @property
     @abc.abstractmethod
@@ -160,7 +163,7 @@ class DutProgrammer(abc.ABC):
         self,
         tentacle: Tentacle,
         udev: UdevPoller,
-        firmware_spec: FirmwareDownloadSpec,
+        firmware_spec: FirmwareSpecBase,
     ) -> str: ...
 
 
@@ -169,13 +172,13 @@ class DutProgrammerDfuUtil(DutProgrammer):
         self,
         tentacle: Tentacle,
         udev: UdevPoller,
-        firmware_spec: FirmwareDownloadSpec,
+        firmware_spec: FirmwareSpecBase,
     ) -> str:
         """
         Example return: /dev/ttyACM1
         """
         assert tentacle.__class__.__qualname__ == "Tentacle"
-        assert isinstance(firmware_spec, FirmwareDownloadSpec)
+        assert isinstance(firmware_spec, FirmwareSpecBase)
         assert tentacle.dut is not None
 
         # Press Boot Button
@@ -186,14 +189,18 @@ class DutProgrammerDfuUtil(DutProgrammer):
         with udev.guard as guard:
             tentacle.power.dut = True
 
+            assert tentacle.tentacle_spec.mcu_usb_id is not None
+            udev_filter = pyboard_udev_filter_boot_mode(
+                tentacle.tentacle_spec.mcu_usb_id.boot
+            )
+
             event = guard.expect_event(
-                UDEV_FILTER_PYBOARD_BOOT_MODE,
+                udev_filter=udev_filter,
                 text_where=tentacle.dut.label,
                 text_expect="Expect mcu to become visible on udev after power on",
                 timeout_s=3.0,
             )
 
-        print(f"EVENT PYBOARD: {event}")
         assert isinstance(event, UdevBootModeEvent)
         filename_dfu = firmware_spec.filename
         assert filename_dfu.is_file()
@@ -219,13 +226,13 @@ class DutProgrammerPicotool(DutProgrammer):
         self,
         tentacle: Tentacle,
         udev: UdevPoller,
-        firmware_spec: FirmwareDownloadSpec,
+        firmware_spec: FirmwareSpecBase,
     ) -> str:
         """
         Example return: /dev/ttyACM1
         """
         assert tentacle.__class__.__qualname__ == "Tentacle"
-        assert isinstance(firmware_spec, FirmwareDownloadSpec)
+        assert isinstance(firmware_spec, FirmwareSpecBase)
         assert tentacle.dut is not None
 
         tentacle.infra.power_dut_off_and_wait()
@@ -236,8 +243,13 @@ class DutProgrammerPicotool(DutProgrammer):
         with udev.guard as guard:
             tentacle.power.dut = True
 
+            assert tentacle.tentacle_spec.mcu_usb_id is not None
+            udev_filter = rp2_udev_filter_boot_mode(
+                tentacle.tentacle_spec.mcu_usb_id.boot
+            )
+
             event = guard.expect_event(
-                UDEV_FILTER_RP2_BOOT_MODE,
+                udev_filter=udev_filter,
                 text_where=tentacle.dut.label,
                 text_expect="Expect RP2 to become visible on udev after power on",
                 timeout_s=2.0,
@@ -251,7 +263,8 @@ class DutProgrammerPicotool(DutProgrammer):
         rp2_flash_micropython(event=event, filename_uf2=firmware_spec.filename)
 
         return tentacle.dut.dut_mcu.application_mode_power_up(
-            tentacle=tentacle, udev=udev
+            tentacle=tentacle,
+            udev=udev,
         )
 
 

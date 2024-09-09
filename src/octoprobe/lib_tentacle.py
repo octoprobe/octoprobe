@@ -66,7 +66,6 @@ class Tentacle[TTentacleSpec, TTentacleType: enum.StrEnum, TEnumFut: enum.StrEnu
         if self.dut is None:
             return
 
-        # with self.active_led:
         self.dut.flash_dut(
             tentacle=self,
             udev=udev_poller,
@@ -117,23 +116,23 @@ class Tentacle[TTentacleSpec, TTentacleType: enum.StrEnum, TEnumFut: enum.StrEnu
 
     @property
     def pytest_id(self) -> str:
-        name = self.tentacle_spec.label
-        name += self.tentacle_serial_number[-4:]
+        name = self.tentacle_serial_number[-4:]
+        name += self.tentacle_spec.label
         if self.is_mcu:
-            name += f"({self.firmware_spec.board_variant.label})"
+            name += f"({self.firmware_spec.board_variant.name_normalized})"
         return name
 
     def pytest_id2(self, board_variant: BoardVariant | None) -> str:
+        name = self.tentacle_serial_number[-4:]
         if self.tentacle_spec.is_mcu:
             assert board_variant is not None
-            name = board_variant.label
+            name += board_variant.name_normalized
         else:
-            name = self.tentacle_spec.label
-        name += self.tentacle_serial_number[-4:]
+            name += self.tentacle_spec.label
         return name
 
-    def get_property(self, tag: str) -> str | None:
-        return self.tentacle_spec.get_property(tag=tag)
+    def get_tag(self, tag: str) -> str | None:
+        return self.tentacle_spec.get_tag(tag=tag)
 
     def get_tag_mandatory(self, tag: str) -> str:
         return self.tentacle_spec.get_tag_mandatory(tag=tag)

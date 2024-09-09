@@ -28,7 +28,7 @@ PYBV11-DP_THREAD
 
 VARIANT_SEPARATOR = "-"
 """
-PYBV11-DP_THREAD
+PYBV11_DP_THREAD
 ->
 board: PYBV11
 variant: DP_THREAD
@@ -45,11 +45,12 @@ class BoardVariant:
         """
         Example 'board_variant': PYBV11-DP
         """
+        assert isinstance(board_variant, str)
         board, _, variant = board_variant.partition(VARIANT_SEPARATOR)
         return BoardVariant(board=board, variant=variant)
 
     @property
-    def label(self) -> str:
+    def name_normalized(self) -> str:
         if self.variant == "":
             return self.board
         return f"{self.board}{VARIANT_SEPARATOR}{self.variant}"

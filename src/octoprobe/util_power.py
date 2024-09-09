@@ -124,6 +124,9 @@ class TentaclePlugsPower:
 
     @property
     def dut(self) -> bool:
+        """
+        USB-Power for the DUT-MCU
+        """
         return self._plugs.plugs[UsbPlug.DUT]
 
     @dut.setter
