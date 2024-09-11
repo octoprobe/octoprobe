@@ -1,0 +1,7 @@
+esbonio
+myst-parser
+pallets-sphinx-themes
+sphinx
+sphinx-code-include
+sphinx-mermaid
+sphinxcontrib.jquery
