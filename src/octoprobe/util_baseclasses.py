@@ -56,8 +56,26 @@ class PropertyString:
         return None
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True, repr=True, eq=True)
 class TentacleSpec[TMcuConfig, TTentacleType: enum.StrEnum, TEnumFut: enum.StrEnum]:
+    """
+    Specification for a Tentacle, for example:
+
+    >>> TentacleSpec(
+        tentacle_type=TentacleType.TENTACLE_MCU,
+        futs=[EnumFut.FUT_I2C, EnumFut.FUT_UART],
+        category="Micropython Board",
+        label="pico",
+        tags="boards=RPI_PICO,mcu=rp2,programmer=picotool",
+
+    This class is heavely used in testcode and therefore has to support
+    typehints and code completion to ease the work of writing/maintaining testcode.
+
+    Therefore this class uses `generics
+    <https://docs.python.org/3/library/typing.html#generics>`_.
+    which allows to define parts of this class on testbed level.
+    """
+
     tentacle_type: TTentacleType
     futs: list[TEnumFut]
     category: str
@@ -69,6 +87,14 @@ class TentacleSpec[TMcuConfig, TTentacleType: enum.StrEnum, TEnumFut: enum.StrEn
     mcu_usb_id: BootApplicationUsbID | None = None
 
     def get_tag(self, tag: str) -> str | None:
+        """
+        Find a tag in a string like ``boards=RPI_PICO,mcu=rp2,programmer=picotool``.
+
+        :param tag: ``mcu`` in above string
+        :type tag: str
+        :return: In this example: ``rp2``
+        :rtype: str | None
+        """
         return PropertyString(self.tags).get_tag(tag)
 
     def get_tag_mandatory(self, tag: str) -> str:

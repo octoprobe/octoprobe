@@ -38,7 +38,7 @@ class Tentacle[TTentacleSpec, TTentacleType: enum.StrEnum, TEnumFut: enum.StrEnu
         ), f"Must not contain upper case letters: {tentacle_serial_number}"
 
         def _label(dut_or_infra: str) -> str:
-            return f"Tentacle {dut_or_infra} {tentacle_serial_number}({tentacle_spec.label})"
+            return f"Tentacle {dut_or_infra}{tentacle_serial_number}({tentacle_spec.label})"
 
         self.label = _label(dut_or_infra="")
         self.tentacle_serial_number = tentacle_serial_number
@@ -59,6 +59,9 @@ class Tentacle[TTentacleSpec, TTentacleType: enum.StrEnum, TEnumFut: enum.StrEnu
         Specifies the firmware.
         This will be updated for EVERY testfunction!
         """
+
+    def __repr__(self) -> str:
+        return self.label
 
     def flash_dut(
         self, udev_poller: UdevPoller, firmware_spec: FirmwareSpecBase

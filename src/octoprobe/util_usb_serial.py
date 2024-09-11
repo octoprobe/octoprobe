@@ -150,7 +150,7 @@ class QueryResultTentacles(list[QueryResultTentacle]):
         for result in self:
             if result.rp2_serial_number == serial_number:
                 return result
-        raise SerialNumberNotFoundException(f"{serial_number}")
+        raise SerialNumberNotFoundException(serial_number)
 
     def select(self, serials: list[str] | None) -> QueryResultTentacles:
         """

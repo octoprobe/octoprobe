@@ -5,6 +5,7 @@ import time
 
 from octoprobe import util_usb_serial
 from octoprobe.util_power import UsbPlug, UsbPlugs
+from octoprobe.util_usb_serial import SerialNumberNotFoundException
 
 from .lib_tentacle import Tentacle
 from .lib_testbed import Testbed
@@ -13,7 +14,9 @@ from .util_pyudev import UdevPoller
 
 class NTestRun:
     """
-    'TestRun' would be collected by pytest: So we name it 'NTestRun'
+    Why this class is called 'NTestRun':
+
+        pytest collects all classes starting w'TestRun' would be collected by pytest: So we name it 'NTestRun'
     """
 
     def __init__(self, testbed: Testbed) -> None:
@@ -44,19 +47,24 @@ class NTestRun:
 
         hubs = util_usb_serial.QueryResultTentacle.query(verbose=True)
         for tentacle in self.testbed.tentacles:
-            query_result_tentacle = hubs.get(
-                serial_number=tentacle.tentacle_serial_number
-            )
+            try:
+                query_result_tentacle = hubs.get(
+                    serial_number=tentacle.tentacle_serial_number
+                )
+            except SerialNumberNotFoundException as e:
+                raise SerialNumberNotFoundException(tentacle.label) from e
             tentacle.assign_connected_hub(query_result_tentacle=query_result_tentacle)
 
     def function_setup_infra(self) -> None:
         """
-        Power off all other known usb power plugs
+        Power off all other known usb power plugs.
+
         For each active tentacle:
-          Power on infa
-          Flash firmware
-          Get serial numbers and assert if it does not match the config
-          Return tty
+
+        * Power on infa
+        * Flash firmware
+        * Get serial numbers and assert if it does not match the config
+        * Return tty
         """
 
         # Instantiate poller BEFORE switching on power to avoid a race condition

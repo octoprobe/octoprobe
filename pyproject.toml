@@ -6,12 +6,13 @@ build-backend = "pdm.backend"
 name = "octoprobe"
 dynamic = ["version"]
 description = "Octoprobe HIL Testenvironment"
-readme = "README.md"
+readme = "README.rst"
 requires-python = ">=3.12"
 license = {text = "MIT"}
 authors = [
     { name = "Hans Märki", email = "buhtig.hans.maerki@ergoinfo.ch" },
 ]
+
 classifiers = [
     "Intended Audience :: Information Technology",
     "Operating System :: POSIX :: Linux",
@@ -26,6 +27,7 @@ classifiers = [
     "Intended Audience :: System Administrators",
     "License :: OSI Approved :: MIT License",
 ]
+
 dependencies = [
     "usbhubctl@git+https://github.com/octoprobe/usbhubctl#egg=main",
     "pyudev",
@@ -41,13 +43,39 @@ Repository = "https://github.com/octoprobe/octoprobe"
 
 [project.scripts]
 op = "octoprobe.scripts.op:app"
+rst_sections_validator = "octoprobe.util_rst.rst_sections_validator:validate"
+rst_sections_level_updown = "octoprobe.util_rst.rst_sections_level_updown:app"
 
 [project.optional-dependencies]
 
 standard = [
+    "usbhubctl@git+https://github.com/octoprobe/usbhubctl#egg=main",
+    "pyudev",
+    "mpremote",
+    "typer-slim",
+    "Jinja2",
 ]
 
 all = [
+]
+
+doc = [
+    "esbonio",
+    "myst-parser",
+    "pallets-sphinx-themes",
+    "sphinx",
+    "sphinx-code-include",
+    "sphinx-mermaid",
+    "sphinxcontrib.jquery",
+]
+
+dev = [
+    # "-e .
+    "pytest",
+    "pylint",
+    "coverage[toml]",
+    "mypy",
+    "ruff",
 ]
 
 [tool.pdm]
@@ -59,7 +87,7 @@ package-dir = "src"
 includes = ["src/octoprobe"]
 source-includes = [
      "LICENSE",
-     "README.md"
+     "README.rst"
 ]
 
 [tool.mypy]

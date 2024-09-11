@@ -139,3 +139,12 @@ class TentacleDut:
             firmware_spec=firmware_spec,
             exception_text=f"DUT: After installing {firmware_spec.filename}",
         )
+
+    def inspection_exit(self) -> typing.NoReturn:
+        import os
+
+        print(
+            f"Exiting without cleanup. You may now take over the MCU on port="
+            + self.mp_remote.state.transport.serial.port
+        )
+        os._exit(42)

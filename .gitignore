@@ -4,6 +4,7 @@
 **/~*.lck
 **/__pycache__/
 **/*.py_
+docs/_build/
 hardware/pcb_experiment_usb10.tgz
 hardware/octoprobe_kicad_v*/production/*
 hardware/octoprobe_kicad_v*/00_project_library.bak
