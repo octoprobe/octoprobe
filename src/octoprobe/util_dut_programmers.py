@@ -4,6 +4,7 @@ import abc
 import dataclasses
 import json
 import pathlib
+import shutil
 import typing
 from urllib.parse import urlparse
 from urllib.request import urlretrieve
@@ -135,7 +136,7 @@ class FirmwareDownloadSpec(FirmwareSpecBase):
             return filename
         tmp_filename, _headers = urlretrieve(url=self.url)
 
-        pathlib.Path(tmp_filename).rename(target=filename)
+        shutil.move(src=tmp_filename, dst=filename)
         return filename
 
     @staticmethod
@@ -151,10 +152,16 @@ class FirmwareDownloadSpec(FirmwareSpecBase):
         try:
             with filename.open("r") as f:
                 json_obj = json.load(f)
-            json_obj["board_variant"] = BoardVariant.factory(json_obj["board_variant"])
-            return FirmwareDownloadSpec(**json_obj)
+            return FirmwareDownloadSpec.factory_json(json_obj=json_obj)
         except Exception as e:
             raise ValueError(f"{filename}: Failed to read: {e!r}") from e
+
+    @staticmethod
+    def factory_json(json_obj: dict[str, typing.Any]) -> FirmwareDownloadSpec:
+        assert isinstance(json_obj, dict)
+
+        json_obj["board_variant"] = BoardVariant.factory(json_obj["board_variant"])
+        return FirmwareDownloadSpec(**json_obj)
 
 
 class DutProgrammer(abc.ABC):

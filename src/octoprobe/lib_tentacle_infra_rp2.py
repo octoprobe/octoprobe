@@ -77,18 +77,28 @@ def set_relays(list_relays):
         relays_close: list[int] | None = None,
         relays_open: list[int] | None = None,
     ) -> None:
+        """
+        If the same relays appears in 'relays_open' and 'relays_close': The relay will be CLOSED.
+        """
         if relays_close is None:
             relays_close = []
         if relays_open is None:
             relays_open = []
+
         assert isinstance(relays_close, list)
         assert isinstance(relays_open, list)
+
         self._load_base_code()
+
         for i in relays_close + relays_open:
             assert self._infra.is_valid_relay_index(i)
-        list_relays = [(number, True) for number in relays_close] + [
-            (number, False) for number in relays_open
-        ]
+
+        dict_relays = {}
+        for i in relays_open:
+            dict_relays[i] = False
+        for i in relays_close:
+            dict_relays[i] = True
+        list_relays = list(dict_relays.items())
 
         self._infra.mp_remote.exec_raw(cmd=f"set_relays({list_relays})")
 

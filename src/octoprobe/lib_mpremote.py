@@ -133,7 +133,13 @@ class MpRemote:
         assert isinstance(v, list | tuple)
         return list(v)
 
-    def close(self) -> None:
+    def close(self) -> str | None:
+        """
+        Return the serial port which was closed.
+        """
+        serial_port = None
         if self.state.transport is not None:
             self.state.transport.close()
+            serial_port = self.state.transport.serial.port
             self.state.transport = None
+        return serial_port

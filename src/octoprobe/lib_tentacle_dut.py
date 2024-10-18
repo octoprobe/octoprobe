@@ -59,7 +59,10 @@ class TentacleDut:
         self.mp_remote_close()
         return tty
 
-    def mp_remote_close(self) -> None:
+    def mp_remote_close(self) -> str:
+        """
+        Return the serial port which was closed.
+        """
         if self._mp_remote is None:
             return
         self._mp_remote.close()

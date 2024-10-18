@@ -62,11 +62,15 @@ class TentacleInfra:
         assert isinstance(query_result_tentacle, util_usb_serial.QueryResultTentacle)
         self.hub = query_result_tentacle
 
-    def mp_remote_close(self) -> None:
+    def mp_remote_close(self) -> str| None:
+        """
+        Return the serial port which was closed.
+        """
         if self._mp_remote is None:
-            return
-        self._mp_remote.close()
+            return None
+        serial_port = self._mp_remote.close()
         self._mp_remote = None
+        return serial_port
 
     @property
     def mp_remote(self) -> MpRemote:

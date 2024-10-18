@@ -112,5 +112,4 @@ class NTestRun:
         assert len(futs) == 1
         fut = futs[0]
         for tentacle in tentacles:
-            list_relays = tentacle.tentacle_spec.relays_closed[fut]
-            tentacle.infra.mcu_infra.relays(relays_close=list_relays)
+            tentacle.set_relays_by_FUT(fut=fut)

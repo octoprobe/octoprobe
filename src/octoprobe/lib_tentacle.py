@@ -4,6 +4,7 @@ import dataclasses
 import enum  # pylint: disable=unused-import
 import io
 import logging
+import textwrap
 from collections.abc import Iterator
 from contextlib import contextmanager
 
@@ -148,6 +149,31 @@ class Tentacle[TTentacleSpec, TTentacleType: enum.StrEnum, TEnumFut: enum.StrEnu
             yield
         finally:
             self.infra.mcu_infra.active_led(on=False)
+
+    def set_relays_by_FUT(self, fut: enum.StrEnum, open_others: bool = False) -> None:
+        relays_open = self.infra.LIST_ALL_RELAYS if open_others else []
+        try:
+            list_relays = self.tentacle_spec.relays_closed[fut]
+        except KeyError as e:
+            raise KeyError(
+                f"{self.description_short}: Does not specify: tentacle_spec.relays_closed[{fut.name}]"
+            ) from e
+        self.infra.mcu_infra.relays(relays_close=list_relays, relays_open=relays_open)
+
+    def dut_boot_and_init_mp_remote(self, udev: UdevPoller) -> None:
+        assert isinstance(udev, UdevPoller)
+
+        assert self.dut is not None
+        self.dut.boot_and_init_mp_remote_dut(tentacle=self, udev=udev)
+
+    @staticmethod
+    def tentacles_description_short(tentacles: list[Tentacle]) -> str:
+        f = io.StringIO()
+        f.write("TENTACLES\n")
+        for tentacle in tentacles:
+            f.write(textwrap.indent(tentacle.description_short, prefix="  "))
+
+        return f.getvalue()
 
 
 @dataclasses.dataclass

@@ -93,15 +93,18 @@ class UsbPlugs:
 class TentaclePlugsPower:
     """
     We do not know the power state for each usb plug from the usb subsystem.
-    But this class caches the state writtein in 'self._plugs'.
+    But this class caches the state written in 'self._plugs'.
     So we can create proberties to retrieve the power state.
+
+    TODO: Make sure that this class cant be used without beeing correctly initialized!
+    TODO: The getters should throw an exception!
     """
 
     def __init__(self, hub_location: Location) -> None:
         self._hub_location = hub_location
         self._plugs = UsbPlugs()
 
-    def set_default_off(self) -> bool:
+    def set_default_off(self) -> None:
         plugs = UsbPlugs.default_off()
         plugs.power(self._hub_location)
         self._plugs.copy_from(plugs)
