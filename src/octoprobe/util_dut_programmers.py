@@ -3,11 +3,13 @@ from __future__ import annotations
 import abc
 import dataclasses
 import json
+import logging
 import pathlib
 import shutil
 import typing
 from urllib.parse import urlparse
 from urllib.request import urlretrieve
+from urllib.error import HTTPError
 
 from usbhubctl.util_subprocess import subprocess_run
 
@@ -30,6 +32,9 @@ if typing.TYPE_CHECKING:
     from octoprobe.lib_tentacle import Tentacle
 
     from .util_pyudev import UdevPoller
+
+
+logger = logging.getLogger(__file__)
 
 IDX_RELAYS_DUT_BOOT = 1
 
@@ -134,7 +139,10 @@ class FirmwareDownloadSpec(FirmwareSpecBase):
         filename = DIRECTORY_OCTOPROBE_CACHE_FIRMWARE / _filename
         if filename.exists():
             return filename
-        tmp_filename, _headers = urlretrieve(url=self.url)
+        try:
+            tmp_filename, _headers = urlretrieve(url=self.url)
+        except HTTPError as e:
+            raise ValueError(f"{self.url}: {e}") from e
 
         shutil.move(src=tmp_filename, dst=filename)
         return filename
