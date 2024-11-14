@@ -92,8 +92,14 @@ class MpRemote:
                 # ret, ret_err = state.transport.follow(timeout=None, data_consumer=stdout_write_bytes)
                 ret, ret_err = self.state.transport.follow(timeout=None)
                 if ret_err:
-                    logger.warning(ret_err)
-                    raise ExceptionCmdFailed(ret_err)
+                    lines = [
+                        ret_err.decode("ascii"),
+                        "micropython-code:",
+                        "v" * 20,
+                        cmd,
+                        "^" * 20,
+                    ]
+                    raise ExceptionCmdFailed("\n".join(lines))
         except TransportError as er:
             logger.warning(er)
             raise ExceptionTransport(er) from er

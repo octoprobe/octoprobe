@@ -93,7 +93,7 @@ class TentacleDut:
         assert isinstance(firmware_spec, FirmwareSpecBase)
 
         installed_version = self.dut_installed_firmware_version()
-        logger.info(f"Micropython Version installed: {installed_version}")
+        logger.info(f"{self.label}: Micropython Version installed: {installed_version}")
         if firmware_spec.micropython_version_text is None:
             # There is not expected version give.
             return True
