@@ -59,14 +59,15 @@ class TentacleDut:
         self.mp_remote_close()
         return tty
 
-    def mp_remote_close(self) -> str:
+    def mp_remote_close(self) -> str | None:
         """
         Return the serial port which was closed.
         """
         if self._mp_remote is None:
-            return
-        self._mp_remote.close()
+            return None
+        serial_port = self._mp_remote.close()
         self._mp_remote = None
+        return serial_port
 
     def boot_and_init_mp_remote_dut(self, tentacle: Tentacle, udev: UdevPoller) -> None:
         assert tentacle.__class__.__qualname__ == "Tentacle"

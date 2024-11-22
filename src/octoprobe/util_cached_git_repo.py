@@ -7,6 +7,9 @@ from .util_subprocess import subprocess_run
 logger = logging.getLogger(__file__)
 
 
+GIT_CLONE_TIMEOUT_S = 60.0
+
+
 class CachedGitRepo:
     """
     Lacy cloning of the repo.
@@ -66,13 +69,13 @@ class CachedGitRepo:
             _stdout = subprocess_run(
                 args=["git", "fetch", "--all"],
                 cwd=self.directory_cache,
-                timeout_s=20.0,
+                timeout_s=GIT_CLONE_TIMEOUT_S,
             )
         else:
             _stdout = subprocess_run(
                 args=["git", "clone", self.url, self.directory.name],
                 cwd=self.directory.parent,
-                timeout_s=20.0,
+                timeout_s=GIT_CLONE_TIMEOUT_S,
             )
         _stdout = subprocess_run(
             args=["git", "checkout", "--force", self.branch],
