@@ -66,18 +66,24 @@ class CachedGitRepo:
 
     def _clone(self) -> None:
         if (self.directory / ".git").is_dir():
-            _stdout = subprocess_run(
+            subprocess_run(
                 args=["git", "fetch", "--all"],
                 cwd=self.directory_cache,
                 timeout_s=GIT_CLONE_TIMEOUT_S,
             )
         else:
-            _stdout = subprocess_run(
+            subprocess_run(
                 args=["git", "clone", self.url, self.directory.name],
                 cwd=self.directory.parent,
                 timeout_s=GIT_CLONE_TIMEOUT_S,
             )
-        _stdout = subprocess_run(
+        if False:
+            subprocess_run(
+                args=["git", "clean", "-fXd"],
+                cwd=self.directory,
+                timeout_s=20.0,
+            )
+        subprocess_run(
             args=["git", "checkout", "--force", self.branch],
             cwd=self.directory,
             timeout_s=20.0,

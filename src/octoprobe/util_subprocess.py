@@ -35,8 +35,10 @@ def subprocess_run(args: list[str], cwd: pathlib.Path, timeout_s: float = 10.0) 
     stderr = proc.stderr.strip()
 
     logger.debug(
-        f"EXEC {args_text}: returncode={proc.returncode}, duration={time.monotonic()-begin_s:0.3f}s"
+        f"EXEC {args_text}"
     )
+    logger.debug(f"  duration={time.monotonic()-begin_s:0.3f}s")
+    logger.debug(f"  returncode={proc.returncode}")
     logger.debug(f"  stdout: {stdout}")
     logger.debug(f"  stderr: {stderr}")
 
