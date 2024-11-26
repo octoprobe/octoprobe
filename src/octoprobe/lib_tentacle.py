@@ -5,8 +5,8 @@ import enum  # pylint: disable=unused-import
 import io
 import logging
 import textwrap
-from collections.abc import Iterator
 from contextlib import contextmanager
+from collections.abc import Iterator
 
 from usbhubctl import DualConnectedHub, Hub
 
@@ -14,7 +14,7 @@ from . import util_power, util_usb_serial
 from .lib_tentacle_dut import TentacleDut
 from .lib_tentacle_infra import TentacleInfra
 from .util_baseclasses import TentacleSpec
-from .util_dut_programmers import FirmwareSpecBase
+from .util_dut_programmers import FirmwareBuildSpec, FirmwareSpecBase
 from .util_micropython_boards import BoardVariant
 from .util_pyudev import UdevPoller
 
@@ -65,7 +65,7 @@ class Tentacle[TTentacleSpec, TTentacleType: enum.StrEnum, TEnumFut: enum.StrEnu
         return self.label
 
     def flash_dut(
-        self, udev_poller: UdevPoller, firmware_spec: FirmwareSpecBase
+        self, udev_poller: UdevPoller, firmware_spec: FirmwareBuildSpec
     ) -> None:
         if self.dut is None:
             return

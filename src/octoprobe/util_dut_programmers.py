@@ -7,9 +7,9 @@ import logging
 import pathlib
 import shutil
 import typing
+from urllib.error import HTTPError
 from urllib.parse import urlparse
 from urllib.request import urlretrieve
-from urllib.error import HTTPError
 
 from usbhubctl.util_subprocess import subprocess_run
 
@@ -88,14 +88,23 @@ class FirmwareBuildSpec(FirmwareSpecBase):
     This repo will then be cloned and the firmware compiled using mpbuild.
     """
 
-    _filename: pathlib.Path
+    _filename: pathlib.Path | None = None
 
     def __post_init__(self) -> None:
         super().__post_init__()
-        assert isinstance(self._filename, pathlib.Path)
+        assert isinstance(self._filename, pathlib.Path | None)
 
     @property
     def filename(self) -> pathlib.Path:
+        if self._filename is None:
+            raise ValueError(
+                f"Firmware for '{self.board_variant.name_normalized}': Firmware filename is not defined. Probably the firmware has not been compiled yet."
+            )
+        if not self._filename.is_file():
+            raise ValueError(
+                f"Firmware for '{self.board_variant.name_normalized}': Firmware does not exist: {self._filename}"
+            )
+
         return self._filename
 
 
@@ -178,8 +187,8 @@ class DutProgrammer(abc.ABC):
         self,
         tentacle: Tentacle,
         udev: UdevPoller,
-        firmware_spec: FirmwareSpecBase,
-    ) -> str: ...
+        firmware_spec: FirmwareBuildSpec,
+    ) -> None: ...
 
 
 class DutProgrammerDfuUtil(DutProgrammer):
@@ -187,13 +196,11 @@ class DutProgrammerDfuUtil(DutProgrammer):
         self,
         tentacle: Tentacle,
         udev: UdevPoller,
-        firmware_spec: FirmwareSpecBase,
-    ) -> str:
-        """
-        Example return: /dev/ttyACM1
-        """
+        firmware_spec: FirmwareBuildSpec,
+    ) -> None:
+        """ """
         assert tentacle.__class__.__qualname__ == "Tentacle"
-        assert isinstance(firmware_spec, FirmwareSpecBase)
+        assert isinstance(firmware_spec, FirmwareBuildSpec)
         assert tentacle.dut is not None
 
         # Press Boot Button
@@ -218,7 +225,6 @@ class DutProgrammerDfuUtil(DutProgrammer):
 
         assert isinstance(event, UdevBootModeEvent)
         filename_dfu = firmware_spec.filename
-        assert filename_dfu.is_file()
         args = [
             "dfu-util",
             "--serial",
@@ -231,21 +237,15 @@ class DutProgrammerDfuUtil(DutProgrammer):
         # Release Boot Button
         tentacle.infra.mcu_infra.relays(relays_open=[IDX_RELAYS_DUT_BOOT])
 
-        return tentacle.dut.dut_mcu.application_mode_power_up(
-            tentacle=tentacle, udev=udev
-        )
-
 
 class DutProgrammerPicotool(DutProgrammer):
     def flash(
         self,
         tentacle: Tentacle,
         udev: UdevPoller,
-        firmware_spec: FirmwareSpecBase,
-    ) -> str:
-        """
-        Example return: /dev/ttyACM1
-        """
+        firmware_spec: FirmwareBuildSpec,
+    ) -> None:
+        """ """
         assert tentacle.__class__.__qualname__ == "Tentacle"
         assert isinstance(firmware_spec, FirmwareSpecBase)
         assert tentacle.dut is not None
@@ -276,11 +276,6 @@ class DutProgrammerPicotool(DutProgrammer):
         tentacle.infra.mcu_infra.relays(relays_open=[IDX_RELAYS_DUT_BOOT])
 
         rp2_flash_micropython(event=event, filename_uf2=firmware_spec.filename)
-
-        return tentacle.dut.dut_mcu.application_mode_power_up(
-            tentacle=tentacle,
-            udev=udev,
-        )
 
 
 def dut_programmer_factory(tags: str) -> DutProgrammer:

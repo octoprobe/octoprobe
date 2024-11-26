@@ -74,7 +74,7 @@ def rp2_udev_filter_application_mode(usb_id: UsbID) -> UdevFilter:
 
 def rp2_flash_micropython(event: UdevEventBase, filename_uf2: pathlib.Path) -> None:
     assert isinstance(event, UdevBootModeEvent)
-    assert filename_uf2.is_file()
+    assert filename_uf2.is_file(), str(filename_uf2)
 
     filename_picotool = DIRECTORY_USR_SBIN / "picotool"
     assert_root_and_s_bit(filename_picotool)

@@ -8,7 +8,11 @@ from octoprobe.util_constants import TAG_BOARDS, TAG_PROGRAMMER
 from .lib_mpremote import MpRemote
 from .util_baseclasses import TentacleSpec
 from .util_dut_mcu import TAG_MCU, dut_mcu_factory
-from .util_dut_programmers import FirmwareSpecBase, dut_programmer_factory
+from .util_dut_programmers import (
+    FirmwareBuildSpec,
+    FirmwareSpecBase,
+    dut_programmer_factory,
+)
 from .util_pyudev import UdevPoller
 
 logger = logging.getLogger(__file__)
@@ -39,6 +43,7 @@ class TentacleDut:
         self._mp_remote: MpRemote | None = None
         self.dut_mcu = dut_mcu_factory(tags=tentacle_spec.tags)
         self.dut_programmer = dut_programmer_factory(tags=tentacle_spec.tags)
+        self.dut_flashed_variant_normalized: str = "not flashed yet"
 
     @property
     def tentacle_spec(self) -> TentacleSpec:
@@ -54,7 +59,6 @@ class TentacleDut:
         Returns the tty (/dev/ttyACM1).
         Frees the tty by calling: self.mp_remote_close()
         """
-        assert self._mp_remote is not None
         tty = self.mp_remote.state.transport.device_name
         self.mp_remote_close()
         return tty
@@ -70,6 +74,9 @@ class TentacleDut:
         return serial_port
 
     def boot_and_init_mp_remote_dut(self, tentacle: Tentacle, udev: UdevPoller) -> None:
+        """
+        Eventually, self._mp_remote will be initialized
+        """
         assert tentacle.__class__.__qualname__ == "Tentacle"
         assert self._mp_remote is None
         tty = self.dut_mcu.application_mode_power_up(tentacle=tentacle, udev=udev)
@@ -110,45 +117,69 @@ class TentacleDut:
         self,
         tentacle: Tentacle,
         udev: UdevPoller,
-        firmware_spec: FirmwareSpecBase,
+        firmware_spec: FirmwareBuildSpec,
     ) -> None:
+        """
+        Will flash the firmware if it is not already flashed.
+
+        Eventually self._mp_remote will be initialized
+        """
         assert tentacle.__class__.__qualname__ == "Tentacle"
         assert isinstance(udev, UdevPoller)
-        assert isinstance(firmware_spec, FirmwareSpecBase)
+        assert isinstance(firmware_spec, FirmwareBuildSpec)
 
         try:
             self.boot_and_init_mp_remote_dut(tentacle=tentacle, udev=udev)
+
             if firmware_spec.micropython_version_text is None:
                 logger.info(
-                    f"No micropython_version_text provided for '{firmware_spec.board_variant.name_normalized}'! We could not verify if the firmware was correctly flashed!"
+                    f"{self.label}: No 'micropython_version_text' provided for '{firmware_spec.board_variant.name_normalized}'! We can not verify if the firmware is correctly flashed!"
                 )
+                if (
+                    self.dut_flashed_variant_normalized
+                    == firmware_spec.board_variant.name_normalized
+                ):
+                    logger.info(
+                        f"{self.label}: Has already been flashed with '{firmware_spec.board_variant.name_normalized}'!"
+                    )
+                    return
             else:
                 if self.is_dut_required_firmware_already_installed(
                     firmware_spec=firmware_spec
                 ):
-                    logger.info(f"{self.label}: firmware is already installed")
+                    logger.info(f"{self.label}: Firmware is already installed")
                     return
 
         except TimeoutError as e:
-            logger.debug(f"DUT seems not to have firmware installed: {e!r}")
+            logger.debug(f"{self.label}: Seems not to have firmware installed: {e!r}")
 
-        tty = self.dut_programmer.flash(
+        logger.info(
+            f"{self.label}: About to flash '{firmware_spec.board_variant.name_normalized}'!"
+        )
+        self.dut_programmer.flash(
             tentacle=tentacle,
             udev=udev,
             firmware_spec=firmware_spec,
         )
-        self._mp_remote = MpRemote(tty=tty)
 
+        tty = self.dut_mcu.application_mode_power_up(
+            tentacle=tentacle,
+            udev=udev,
+        )
+        self._mp_remote = MpRemote(tty=tty)
         self.is_dut_required_firmware_already_installed(
             firmware_spec=firmware_spec,
-            exception_text=f"DUT: After installing {firmware_spec.filename}",
+            exception_text=f"{self.label}: After installing {firmware_spec.filename}",
+        )
+        self.dut_flashed_variant_normalized = (
+            firmware_spec.board_variant.name_normalized
         )
 
     def inspection_exit(self) -> typing.NoReturn:
         import os
 
         print(
-            f"Exiting without cleanup. You may now take over the MCU on port="
+            "Exiting without cleanup. You may now take over the MCU on port="
             + self.mp_remote.state.transport.serial.port
         )
         os._exit(42)

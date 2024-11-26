@@ -3,6 +3,8 @@ from __future__ import annotations
 import enum
 import time
 
+from testbed.util_firmware_mpbuild import FirmwareBuilder
+
 from octoprobe import util_usb_serial
 from octoprobe.util_power import UsbPlug, UsbPlugs
 from octoprobe.util_usb_serial import SerialNumberNotFoundException
@@ -19,10 +21,16 @@ class NTestRun:
         pytest collects all classes starting w'TestRun' would be collected by pytest: So we name it 'NTestRun'
     """
 
-    def __init__(self, testbed: Testbed) -> None:
+    def __init__(self, testbed: Testbed, firmware_git_url: str | None) -> None:
         assert isinstance(testbed, Testbed)
+
         self.testbed = testbed
         self._udev_poller: UdevPoller | None = None
+        self.firmware_builder = (
+            None
+            if firmware_git_url is None
+            else FirmwareBuilder(firmware_git_url=firmware_git_url)
+        )
 
     @property
     def udev_poller(self) -> UdevPoller:
@@ -55,6 +63,11 @@ class NTestRun:
                 raise SerialNumberNotFoundException(tentacle.label) from e
             tentacle.assign_connected_hub(query_result_tentacle=query_result_tentacle)
 
+    def session_teardown(self) -> None:
+        if self._udev_poller is not None:
+            self._udev_poller.close()
+            self._udev_poller = None
+
     def function_setup_infra(self) -> None:
         """
         Power off all other known usb power plugs.
@@ -70,11 +83,21 @@ class NTestRun:
         # Instantiate poller BEFORE switching on power to avoid a race condition
         for tentacle in self.testbed.tentacles:
             tentacle.infra.setup_infra(self.udev_poller)
+            tentacle.infra.mcu_infra.active_led(on=False)
 
-    def session_teardown(self) -> None:
-        if self._udev_poller is not None:
-            self._udev_poller.close()
-            self._udev_poller = None
+    def function_build_firmwares(self, active_tentacles: list[Tentacle]) -> None:
+        """
+        Build the firmwares
+        """
+        if self.firmware_builder is None:
+            return
+
+        for tentacle in active_tentacles:
+            if tentacle.is_mcu:
+                spec = self.firmware_builder.build_firmware(
+                    firmware_spec=tentacle.firmware_spec
+                )
+                tentacle.firmware_spec = spec
 
     def function_prepare_dut(self) -> None:
         for tentacle in self.testbed.tentacles:
