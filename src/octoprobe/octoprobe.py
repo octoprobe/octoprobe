@@ -51,7 +51,8 @@ class NTestRun:
         hubs.power(plugs=UsbPlugs({UsbPlug.INFRA: True}))
         # Without hub inbetween: failed: 0.4, success: 0.5
         # With hub inbetween: failed: 0.7, success: 0.8
-        time.sleep(1.2)
+        # RSHTECH 7 port hub produced errors using 1.2s
+        time.sleep(2.0)
 
         hubs = util_usb_serial.QueryResultTentacle.query(verbose=True)
         for tentacle in self.testbed.tentacles:
