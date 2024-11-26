@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import typing
 
 from octoprobe.util_constants import TAG_BOARDS, TAG_PROGRAMMER
@@ -9,7 +10,6 @@ from .lib_mpremote import MpRemote
 from .util_baseclasses import TentacleSpec
 from .util_dut_mcu import TAG_MCU, dut_mcu_factory
 from .util_dut_programmers import (
-    FirmwareBuildSpec,
     FirmwareSpecBase,
     dut_programmer_factory,
 )
@@ -117,7 +117,7 @@ class TentacleDut:
         self,
         tentacle: Tentacle,
         udev: UdevPoller,
-        firmware_spec: FirmwareBuildSpec,
+        firmware_spec: FirmwareSpecBase,
     ) -> None:
         """
         Will flash the firmware if it is not already flashed.
@@ -126,7 +126,7 @@ class TentacleDut:
         """
         assert tentacle.__class__.__qualname__ == "Tentacle"
         assert isinstance(udev, UdevPoller)
-        assert isinstance(firmware_spec, FirmwareBuildSpec)
+        assert isinstance(firmware_spec, FirmwareSpecBase)
 
         try:
             self.boot_and_init_mp_remote_dut(tentacle=tentacle, udev=udev)
@@ -176,10 +176,14 @@ class TentacleDut:
         )
 
     def inspection_exit(self) -> typing.NoReturn:
-        import os
+        msg = "Exiting without cleanup. "
+        if (self._mp_remote is None) or (self._mp_remote.state.transport is None):
+            msg += "mp_remote is not initialized and the serial port not known"
+        else:
+            msg += (
+                "You may now take over the MCU on port="
+                + self.mp_remote.state.transport.serial.port
+            )
 
-        print(
-            "Exiting without cleanup. You may now take over the MCU on port="
-            + self.mp_remote.state.transport.serial.port
-        )
+        logger.warning(msg)
         os._exit(42)

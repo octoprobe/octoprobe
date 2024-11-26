@@ -9,11 +9,10 @@ from octoprobe.util_dut_programmers import FirmwareDownloadSpec, FirmwareSpecBas
 from . import util_power, util_usb_serial
 from .lib_mpremote import MpRemote
 from .lib_tentacle_infra_rp2 import InfraRP2
+from .util_mcu import UdevApplicationModeEvent, udev_filter_application_mode
 from .util_mcu_rp2 import (
     RPI_PICO_USB_ID,
-    UdevApplicationModeEvent,
-    rp2_flash_micropython,
-    rp2_udev_filter_application_mode,
+    picotool_flash_micropython,
     rp2_udev_filter_boot_mode,
 )
 from .util_pyudev import UdevPoller
@@ -43,7 +42,7 @@ class TentacleInfra:
         return 1 <= i <= TentacleInfra.RELAY_COUNT
 
     @staticmethod
-    def get_firmware_spec() -> FirmwareSpecBase:
+    def get_firmware_spec() -> FirmwareDownloadSpec:
         json_filename = DIRECTORY_OF_THIS_FILE / "util_tentacle_infra_firmware.json"
         return FirmwareDownloadSpec.factory2(filename=json_filename)
 
@@ -62,7 +61,7 @@ class TentacleInfra:
         assert isinstance(query_result_tentacle, util_usb_serial.QueryResultTentacle)
         self.hub = query_result_tentacle
 
-    def mp_remote_close(self) -> str| None:
+    def mp_remote_close(self) -> str | None:
         """
         Return the serial port which was closed.
         """
@@ -120,7 +119,7 @@ class TentacleInfra:
     def flash(
         self,
         udev: UdevPoller,
-        filename_uf2: pathlib.Path,
+        filename_firmware: pathlib.Path,
     ) -> None:
         """
         Flashed the RP2.
@@ -157,11 +156,11 @@ class TentacleInfra:
         with udev.guard as guard:
             # This will flash the RP2
             # print("Flash")
-            rp2_flash_micropython(event, filename_uf2)
+            picotool_flash_micropython(event, filename_firmware)
 
             # The RP2 will reboot in application mode
             # and we wait for this event here
-            udev_filter = rp2_udev_filter_application_mode(RPI_PICO_USB_ID.application)
+            udev_filter = udev_filter_application_mode(RPI_PICO_USB_ID.application)
             event = udev.expect_event(
                 udev_filter=udev_filter,
                 text_where=self.label,

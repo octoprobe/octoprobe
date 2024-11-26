@@ -6,8 +6,8 @@ not follow 'LEVEL_VALID'.
 import pathlib
 import re
 import sys
-import typer
 
+import typer
 
 app = typer.Typer()
 
@@ -20,6 +20,9 @@ SECTION_PATTERN = re.compile(
 LEVEL_VALID = '=-^~"'
 
 CURRENT_DIRECTORY = pathlib.Path().cwd()
+
+# pylint: disable=W0640:cell-var-from-loop
+# ruff: noqa: B023  # Function definition does not bind loop variable
 
 
 class RstValidator:
@@ -36,6 +39,7 @@ class RstValidator:
         count_section_idx0 = 0
         lines = content.splitlines()
         last_level_idx0 = 0
+
         for i, line in enumerate(lines):
 
             if SECTION_PATTERN.match(line):

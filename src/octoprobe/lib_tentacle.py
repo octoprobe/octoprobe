@@ -5,8 +5,8 @@ import enum  # pylint: disable=unused-import
 import io
 import logging
 import textwrap
-from contextlib import contextmanager
 from collections.abc import Iterator
+from contextlib import contextmanager
 
 from usbhubctl import DualConnectedHub, Hub
 
@@ -14,8 +14,7 @@ from . import util_power, util_usb_serial
 from .lib_tentacle_dut import TentacleDut
 from .lib_tentacle_infra import TentacleInfra
 from .util_baseclasses import TentacleSpec
-from .util_dut_programmers import FirmwareBuildSpec, FirmwareSpecBase
-from .util_micropython_boards import BoardVariant
+from .util_dut_programmers import FirmwareSpecBase
 from .util_pyudev import UdevPoller
 
 logger = logging.getLogger(__file__)
@@ -31,9 +30,11 @@ class Tentacle[TTentacleSpec, TTentacleType: enum.StrEnum, TEnumFut: enum.StrEnu
         self,
         tentacle_serial_number: str,
         tentacle_spec: TentacleSpec[TTentacleSpec, TTentacleType, TEnumFut],
+        hw_version: str,
     ) -> None:
         assert isinstance(tentacle_serial_number, str)
         assert isinstance(tentacle_spec, TentacleSpec)
+        assert isinstance(hw_version, str)
         assert (
             tentacle_serial_number == tentacle_serial_number.lower()
         ), f"Must not contain upper case letters: {tentacle_serial_number}"
@@ -56,7 +57,7 @@ class Tentacle[TTentacleSpec, TTentacleType: enum.StrEnum, TEnumFut: enum.StrEnu
                 tentacle_spec=tentacle_spec,
             )
 
-        self.dut = get_dut()
+        self._dut = get_dut()
         self._firmware_spec: FirmwareSpecBase | None = None
         """
         Specifies the firmware.
@@ -67,7 +68,7 @@ class Tentacle[TTentacleSpec, TTentacleType: enum.StrEnum, TEnumFut: enum.StrEnu
         return self.label
 
     def flash_dut(
-        self, udev_poller: UdevPoller, firmware_spec: FirmwareBuildSpec
+        self, udev_poller: UdevPoller, firmware_spec: FirmwareSpecBase
     ) -> None:
         if self.dut is None:
             return
@@ -77,6 +78,11 @@ class Tentacle[TTentacleSpec, TTentacleType: enum.StrEnum, TEnumFut: enum.StrEnu
             udev=udev_poller,
             firmware_spec=firmware_spec,
         )
+
+    @property
+    def dut(self) -> TentacleDut:
+        assert self._dut is not None
+        return self._dut
 
     @property
     def is_mcu(self) -> bool:
@@ -154,7 +160,10 @@ class Tentacle[TTentacleSpec, TTentacleType: enum.StrEnum, TEnumFut: enum.StrEnu
         finally:
             self.infra.mcu_infra.active_led(on=False)
 
-    def set_relays_by_FUT(self, fut: enum.StrEnum, open_others: bool = False) -> None:
+    def set_relays_by_FUT(self, fut: TEnumFut, open_others: bool = False) -> None:
+        assert isinstance(fut, enum.StrEnum)
+        assert isinstance(open_others, bool)
+
         relays_open = self.infra.LIST_ALL_RELAYS if open_others else []
         try:
             list_relays = self.tentacle_spec.relays_closed[fut]

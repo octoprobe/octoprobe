@@ -21,9 +21,10 @@ from .util_constants import (
     TAG_BOARDS,
     TAG_PROGRAMMER,
 )
+from .util_mcu_esp import esptool_flash_micropython
 from .util_mcu_rp2 import (
-    UdevBootModeEvent,
-    rp2_flash_micropython,
+    Rp2UdevBootModeEvent,
+    picotool_flash_micropython,
     rp2_udev_filter_boot_mode,
 )
 from .util_micropython_boards import BoardVariant, board_variants
@@ -134,10 +135,6 @@ class FirmwareDownloadSpec(FirmwareSpecBase):
         return self.filename
 
     @property
-    def pytest_id(self) -> str:
-        return self.board_variant.label
-
-    @property
     def filename(self) -> pathlib.Path:
         """
         Download firmware if not already there
@@ -187,7 +184,7 @@ class DutProgrammer(abc.ABC):
         self,
         tentacle: Tentacle,
         udev: UdevPoller,
-        firmware_spec: FirmwareBuildSpec,
+        firmware_spec: FirmwareSpecBase,
     ) -> None: ...
 
 
@@ -196,11 +193,12 @@ class DutProgrammerDfuUtil(DutProgrammer):
         self,
         tentacle: Tentacle,
         udev: UdevPoller,
-        firmware_spec: FirmwareBuildSpec,
+        firmware_spec: FirmwareSpecBase,
     ) -> None:
         """ """
         assert tentacle.__class__.__qualname__ == "Tentacle"
         assert isinstance(firmware_spec, FirmwareBuildSpec)
+        assert len(tentacle.tentacle_spec.programmer_args) == 0, "Not yet supported"
         assert tentacle.dut is not None
 
         # Press Boot Button
@@ -223,7 +221,7 @@ class DutProgrammerDfuUtil(DutProgrammer):
                 timeout_s=3.0,
             )
 
-        assert isinstance(event, UdevBootModeEvent)
+        assert isinstance(event, Rp2UdevBootModeEvent)
         filename_dfu = firmware_spec.filename
         args = [
             "dfu-util",
@@ -243,11 +241,12 @@ class DutProgrammerPicotool(DutProgrammer):
         self,
         tentacle: Tentacle,
         udev: UdevPoller,
-        firmware_spec: FirmwareBuildSpec,
+        firmware_spec: FirmwareSpecBase,
     ) -> None:
         """ """
         assert tentacle.__class__.__qualname__ == "Tentacle"
         assert isinstance(firmware_spec, FirmwareSpecBase)
+        assert len(tentacle.tentacle_spec.programmer_args) == 0, "Not yet supported"
         assert tentacle.dut is not None
 
         tentacle.infra.power_dut_off_and_wait()
@@ -270,12 +269,40 @@ class DutProgrammerPicotool(DutProgrammer):
                 timeout_s=2.0,
             )
 
-        assert isinstance(event, UdevBootModeEvent)
+        assert isinstance(event, Rp2UdevBootModeEvent)
 
         # Release Boot Button
         tentacle.infra.mcu_infra.relays(relays_open=[IDX_RELAYS_DUT_BOOT])
 
-        rp2_flash_micropython(event=event, filename_uf2=firmware_spec.filename)
+        picotool_flash_micropython(
+            event=event, filename_firmware=firmware_spec.filename
+        )
+
+
+class DutProgrammerEsptool(DutProgrammer):
+    def flash(
+        self,
+        tentacle: Tentacle,
+        udev: UdevPoller,
+        firmware_spec: FirmwareSpecBase,
+    ) -> None:
+        """
+        The exp8622 does not require to be booted into boot(programming) mode.
+        So we can reuse the port name from mp_remote
+        """
+        assert tentacle.__class__.__qualname__ == "Tentacle"
+        assert isinstance(firmware_spec, FirmwareSpecBase)
+
+        assert tentacle.dut is not None
+        assert tentacle.dut.mp_remote is not None
+        tty = tentacle.dut.mp_remote.close()
+        assert tty is not None
+
+        esptool_flash_micropython(
+            tty=tty,
+            filename_firmware=firmware_spec.filename,
+            programmer_args=tentacle.tentacle_spec.programmer_args,
+        )
 
 
 def dut_programmer_factory(tags: str) -> DutProgrammer:
@@ -287,4 +314,6 @@ def dut_programmer_factory(tags: str) -> DutProgrammer:
         return DutProgrammerPicotool()
     if programmer == "dfu-util":
         return DutProgrammerDfuUtil()
+    if programmer == "esptool":
+        return DutProgrammerEsptool()
     raise ValueError(f"Unknown '{programmer}' in '{tags}'!")

@@ -1,5 +1,5 @@
 """
-This file implements generic code for all boards with a RP2040/RP2350 mcu or alike.
+This file implements generic logic for all boards with a RP2040/RP2350 mcu or alike.
 """
 
 import pathlib
@@ -23,7 +23,7 @@ RPI_PICO2_USB_ID = BootApplicationUsbID(
 )
 
 
-class UdevBootModeEvent(UdevEventBase):
+class Rp2UdevBootModeEvent(UdevEventBase):
     def __init__(self, device: pyudev.Device):
         self.serial = device.properties["ID_SERIAL_SHORT"]
         self.dev_num = int(device.properties["DEVNUM"])
@@ -33,19 +33,11 @@ class UdevBootModeEvent(UdevEventBase):
         return f"{self.__class__.__name__}(serial={self.serial}, bus_num={self.bus_num}, dev_num={self.dev_num})"
 
 
-class UdevApplicationModeEvent(UdevEventBase):
-    def __init__(self, device: pyudev.Device):
-        self.tty = device.device_node
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(tty={self.tty})"
-
-
 def rp2_udev_filter_boot_mode(usb_id: UsbID) -> UdevFilter:
     assert isinstance(usb_id, UsbID)
     return UdevFilter(
         label="Raspberry Pi Pico Boot Mode",
-        udev_event_class=UdevBootModeEvent,
+        udev_event_class=Rp2UdevBootModeEvent,
         id_vendor=usb_id.vendor_id,
         id_product=usb_id.product_id,
         subsystem="usb",
@@ -56,25 +48,11 @@ def rp2_udev_filter_boot_mode(usb_id: UsbID) -> UdevFilter:
     )
 
 
-def rp2_udev_filter_application_mode(usb_id: UsbID) -> UdevFilter:
-    assert isinstance(usb_id, UsbID)
-    return UdevFilter(
-        label="Raspberry Pi Pico Application Mone",
-        udev_event_class=UdevApplicationModeEvent,
-        id_vendor=usb_id.vendor_id,
-        id_product=usb_id.product_id,
-        subsystem="tty",
-        device_type=None,
-        actions=[
-            "add",
-            "remove",
-        ],
-    )
-
-
-def rp2_flash_micropython(event: UdevEventBase, filename_uf2: pathlib.Path) -> None:
-    assert isinstance(event, UdevBootModeEvent)
-    assert filename_uf2.is_file(), str(filename_uf2)
+def picotool_flash_micropython(
+    event: UdevEventBase, filename_firmware: pathlib.Path
+) -> None:
+    assert isinstance(event, Rp2UdevBootModeEvent)
+    assert filename_firmware.is_file(), str(filename_firmware)
 
     filename_picotool = DIRECTORY_USR_SBIN / "picotool"
     assert_root_and_s_bit(filename_picotool)
@@ -84,7 +62,7 @@ def rp2_flash_micropython(event: UdevEventBase, filename_uf2: pathlib.Path) -> N
         "--update",
         # "--verify",
         "--execute",
-        str(filename_uf2),
+        str(filename_firmware),
         "--bus",
         str(event.bus_num),
         "--address",

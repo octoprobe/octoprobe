@@ -46,7 +46,7 @@ class MpRemote:
         assert isinstance(package, str)
 
         # list package specifications, e.g. name, name@version, github:org/repo, github:org/repo@branch, gitlab:org/repo, gitlab:org/repo@branch
-        package = package
+        # package = package
 
         # package index to use (defaults to micropython-lib)
         # See: https://github.com/micropython/micropython-lib/blob/v1.22.0/README.md

@@ -77,6 +77,7 @@ class TentacleSpec[TMcuConfig, TTentacleType: enum.StrEnum, TEnumFut: enum.StrEn
     """
 
     tentacle_type: TTentacleType
+    tentacle_tag: str
     futs: list[TEnumFut]
     category: str
     label: str
@@ -85,6 +86,19 @@ class TentacleSpec[TMcuConfig, TTentacleType: enum.StrEnum, TEnumFut: enum.StrEn
     relays_closed: dict[TEnumFut, list[int]]
     mcu_config: TMcuConfig | None = None
     mcu_usb_id: BootApplicationUsbID | None = None
+    programmer_args: list[str] = dataclasses.field(default_factory=list)
+
+    def __post_init__(self) -> None:
+        assert isinstance(self.tentacle_type, enum.StrEnum)
+        assert isinstance(self.tentacle_tag, str)
+        assert isinstance(self.futs, list)
+        assert isinstance(self.category, str)
+        assert isinstance(self.label, str)
+        assert isinstance(self.doc, str)
+        assert isinstance(self.tags, str)
+        assert isinstance(self.relays_closed, dict)
+        assert isinstance(self.mcu_usb_id, BootApplicationUsbID | None)
+        assert isinstance(self.programmer_args, list)
 
     def get_tag(self, tag: str) -> str | None:
         """

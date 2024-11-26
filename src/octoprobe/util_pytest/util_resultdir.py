@@ -135,7 +135,7 @@ class ResultsDir:
         """
         self.directory_test.mkdir(parents=True, exist_ok=True)
 
-    def __call__(self, filename: str, sub_directory: str = None) -> ResultFile:
+    def __call__(self, filename: str, sub_directory: str | None = None) -> ResultFile:
         return ResultFile(
             resultsdir=self,
             filename=filename,

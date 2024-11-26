@@ -101,7 +101,7 @@ class Commissioning:
         firmware_spec = self.tentacle_infra.get_firmware_spec()
         firmware_spec.download()
 
-        self.tentacle_infra.flash(udev=udev, filename_uf2=firmware_spec.filename)
+        self.tentacle_infra.flash(udev=udev, filename_firmware=firmware_spec.filename)
         self.tentacle_infra.verify_micropython_version(firmware_spec=firmware_spec)
 
         mcu_infra = self.tentacle_infra.mcu_infra

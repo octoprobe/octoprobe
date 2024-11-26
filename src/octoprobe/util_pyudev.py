@@ -27,6 +27,9 @@ class UdevEventBase(abc.ABC):
 class UdevFilter:
     label: str
     udev_event_class: type[UdevEventBase]
+    """
+    Use Generics to propagate the return type of UdevPoller.expect_event()
+    """
     id_vendor: int
     id_product: int
     subsystem: str

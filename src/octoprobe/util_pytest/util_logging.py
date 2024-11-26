@@ -24,9 +24,10 @@ def init_logging() -> None:
 class Log:
     def __init__(self, directory: pathlib.Path, name: str, level: int) -> None:
         """
-        Write logging to logfile
+        Create a logfile.
+        Add a logging handler and eventually remove it again.
         """
-        self._handler = logging.FileHandler(
+        self._handler: logging.FileHandler | None = logging.FileHandler(
             directory / f"logger_{level}_{name}.log", mode="w"
         )
         self._handler.level = level
@@ -49,7 +50,8 @@ class Log:
 class Logs:
     def __init__(self, directory: pathlib.Path) -> None:
         """
-        Write logging to logfile
+        Create three logfiles (error, info, debug) to the given directory.
+        Add logging handlers and eventually remove them again.
         """
         assert isinstance(directory, pathlib.Path)
 

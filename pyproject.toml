@@ -32,6 +32,7 @@ dependencies = [
     "usbhubctl@git+https://github.com/octoprobe/usbhubctl#egg=main",
     "pyudev",
     "mpremote",
+    "esptool",
     "typer-slim",
     "Jinja2",
 ]
@@ -204,18 +205,23 @@ keep-runtime-typing = true
 
 [tool.pylint."MESSAGES CONTROL"]
 disable = '''
-    missing-module-docstring,
+    broad-exception-caught,
+    empty-docstring,
+    invalid-name,
+    line-too-long,
+    logging-fstring-interpolation,
     missing-class-docstring,
     missing-function-docstring,
-    logging-fstring-interpolation,
+    missing-module-docstring,
     too-few-public-methods,
-    too-many-return-statements,
-    too-many-branches,
     too-many-arguments,
+    too-many-branches,
     too-many-instance-attributes,
+    too-many-positional-arguments,
+    too-many-return-statements,
     unreachable,
-    line-too-long,
-    broad-exception-caught,
+    unused-argument,
+    using-constant-test,
 '''
 
 [tool.pylint]

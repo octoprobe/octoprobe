@@ -44,21 +44,21 @@ class Testbed:
         line_criterial = f"Criteria tentacle_type='{tentacle_type}', serial='{serial}'."
 
         if len(list_tentacles) == 0:
-            lines: list[str] = [
+            lines1: list[str] = [
                 "No tentacles found.",
                 line_criterial,
                 "These tenacles are configured:",
                 self.description_short,
             ]
-            raise ValueError("\n".join(lines))
+            raise ValueError("\n".join(lines1))
 
         if len(list_tentacles) > 1:
-            lines: list[str] = [
+            lines2: list[str] = [
                 f"{len(list_tentacles)} tentacles match. Please specify serial.",
                 line_criterial,
                 "These tenacles are configured and already selected:",
                 Tentacle.tentacles_description_short(tentacles=list_tentacles),
             ]
-            raise ValueError("\n".join(lines))
+            raise ValueError("\n".join(lines2))
 
         return list_tentacles[0]

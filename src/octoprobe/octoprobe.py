@@ -1,17 +1,20 @@
 from __future__ import annotations
 
 import enum
+import pathlib
 import time
 
 from testbed.util_firmware_mpbuild import FirmwareBuilder
 
 from octoprobe import util_usb_serial
 from octoprobe.util_power import UsbPlug, UsbPlugs
-from octoprobe.util_usb_serial import SerialNumberNotFoundException
+from octoprobe.util_usb_serial import QueryResultTentacles
 
 from .lib_tentacle import Tentacle
 from .lib_testbed import Testbed
 from .util_pyudev import UdevPoller
+
+FULL_POWERCYCLE_ALL_TENTACLES = False
 
 
 class NTestRun:
@@ -38,7 +41,8 @@ class NTestRun:
             self._udev_poller = UdevPoller()
         return self._udev_poller
 
-    def session_powercycle_tentacles(self) -> None:
+    @staticmethod
+    def session_powercycle_tentacles() -> QueryResultTentacles:
         """
         Powers all RP2 infra.
         Finds all tentacle by finding rp2_unique_id of the RP2 infra.
@@ -46,23 +50,29 @@ class NTestRun:
         # We have to reset the power for all rp2-infra to become visible
         hubs = util_usb_serial.QueryResultTentacle.query(verbose=False)
         hubs = hubs.select(serials=None)
-        hubs.power(plugs=UsbPlugs.default_off())
-        time.sleep(0.2)  # success: 0.0
-        hubs.power(plugs=UsbPlugs({UsbPlug.INFRA: True}))
-        # Without hub inbetween: failed: 0.4, success: 0.5
-        # With hub inbetween: failed: 0.7, success: 0.8
-        # RSHTECH 7 port hub produced errors using 1.2s
-        time.sleep(2.0)
-
-        hubs = util_usb_serial.QueryResultTentacle.query(verbose=True)
-        for tentacle in self.testbed.tentacles:
-            try:
-                query_result_tentacle = hubs.get(
-                    serial_number=tentacle.tentacle_serial_number
+        if FULL_POWERCYCLE_ALL_TENTACLES:
+            # Powercycling ALL hubs
+            hubs.power(plugs=UsbPlugs.default_off())
+            time.sleep(0.2)  # success: 0.0
+            hubs.power(plugs=UsbPlugs({UsbPlug.INFRA: True}))
+            # Without hub inbetween: failed: 0.4, success: 0.5
+            # With hub inbetween: failed: 0.7, success: 0.8
+            # RSHTECH 7 port hub produced errors using 1.2s
+            time.sleep(2.0)
+        else:
+            hubs.power(
+                plugs=UsbPlugs(
+                    {
+                        UsbPlug.INFRA: True,
+                        UsbPlug.INFRABOOT: True,
+                        UsbPlug.DUT: False,
+                        UsbPlug.ERROR: False,
+                    }
                 )
-            except SerialNumberNotFoundException as e:
-                raise SerialNumberNotFoundException(tentacle.label) from e
-            tentacle.assign_connected_hub(query_result_tentacle=query_result_tentacle)
+            )
+            time.sleep(2.0)
+
+        return util_usb_serial.QueryResultTentacle.query(verbose=True)
 
     def session_teardown(self) -> None:
         if self._udev_poller is not None:
@@ -86,7 +96,19 @@ class NTestRun:
             tentacle.infra.setup_infra(self.udev_poller)
             tentacle.infra.mcu_infra.active_led(on=False)
 
-    def function_build_firmwares(self, active_tentacles: list[Tentacle]) -> None:
+            if not FULL_POWERCYCLE_ALL_TENTACLES:
+                # As the tentacle infra has NOT been powercycled, we
+                # have to reset the relays
+                tentacle.infra.mcu_infra.relays(
+                    relays_close=[],
+                    relays_open=[1, 2, 3, 4, 5, 6, 7],
+                )
+
+    def function_build_firmwares(
+        self,
+        active_tentacles: list[Tentacle],
+        testresults_mpbuild: pathlib.Path,
+    ) -> None:
         """
         Build the firmwares
         """
@@ -96,15 +118,17 @@ class NTestRun:
         for tentacle in active_tentacles:
             if tentacle.is_mcu:
                 spec = self.firmware_builder.build_firmware(
-                    firmware_spec=tentacle.firmware_spec
+                    firmware_spec=tentacle.firmware_spec,
+                    testresults_mpbuild=testresults_mpbuild,
                 )
+                # After building, the spec is more detailed: Reassign it!
                 tentacle.firmware_spec = spec
 
     def function_prepare_dut(self) -> None:
         for tentacle in self.testbed.tentacles:
             tentacle.power.dut = False
             tentacle.infra.mp_remote_close()
-            if tentacle.dut is not None:
+            if tentacle.is_mcu:
                 tentacle.dut.mp_remote_close()
 
     def function_setup_dut(self, active_tentacles: list[Tentacle]) -> None:
