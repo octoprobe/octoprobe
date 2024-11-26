@@ -38,12 +38,14 @@ class Tentacle[TTentacleSpec, TTentacleType: enum.StrEnum, TEnumFut: enum.StrEnu
             tentacle_serial_number == tentacle_serial_number.lower()
         ), f"Must not contain upper case letters: {tentacle_serial_number}"
 
-        def _label(dut_or_infra: str) -> str:
-            return f"Tentacle {dut_or_infra}{tentacle_serial_number}({tentacle_spec.label})"
-
-        self.label = _label(dut_or_infra="")
         self.tentacle_serial_number = tentacle_serial_number
         self.tentacle_spec = tentacle_spec
+
+        def _label(dut_or_infra: str) -> str:
+            # return f"Tentacle {dut_or_infra}{tentacle_serial_number}({tentacle_spec.label})"
+            return f"Tentacle {dut_or_infra}{self.label_short}"
+
+        self.label = _label(dut_or_infra="")
         self.infra = TentacleInfra(label=_label(dut_or_infra="INFRA "))
 
         def get_dut() -> TentacleDut | None:
@@ -119,20 +121,22 @@ class Tentacle[TTentacleSpec, TTentacleType: enum.StrEnum, TEnumFut: enum.StrEnu
         self.infra.assign_connected_hub(query_result_tentacle=query_result_tentacle)
 
     @property
+    def label_short(self) -> str:
+        """
+        Example: 1831pico2
+        Example: 1331daq
+        """
+        return self.tentacle_serial_number[-4:] + self.tentacle_spec.label
+
+    @property
     def pytest_id(self) -> str:
-        name = self.tentacle_serial_number[-4:]
-        name += self.tentacle_spec.label
+        """
+        Example: 1831pico2(RPI_PICO2-RISCV)
+        Example: 1331daq
+        """
+        name = self.label_short
         if self.is_mcu:
             name += f"({self.firmware_spec.board_variant.name_normalized})"
-        return name
-
-    def pytest_id2(self, board_variant: BoardVariant | None) -> str:
-        name = self.tentacle_serial_number[-4:]
-        if self.tentacle_spec.is_mcu:
-            assert board_variant is not None
-            name += board_variant.name_normalized
-        else:
-            name += self.tentacle_spec.label
         return name
 
     def get_tag(self, tag: str) -> str | None:
