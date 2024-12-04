@@ -117,7 +117,7 @@ class NTestRun:
 
         for tentacle in active_tentacles:
             if tentacle.is_mcu:
-                spec = self.firmware_builder.build_firmware(
+                spec = self.firmware_builder.build(
                     firmware_spec=tentacle.firmware_spec,
                     testresults_mpbuild=testresults_mpbuild,
                 )

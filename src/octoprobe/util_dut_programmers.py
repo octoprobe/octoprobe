@@ -294,7 +294,7 @@ class DutProgrammerEsptool(DutProgrammer):
         assert isinstance(firmware_spec, FirmwareSpecBase)
 
         assert tentacle.dut is not None
-        assert tentacle.dut.mp_remote is not None
+        assert tentacle.dut.mp_remote_is_initialized
         tty = tentacle.dut.mp_remote.close()
         assert tty is not None
 

@@ -54,6 +54,10 @@ class TentacleDut:
         assert self._mp_remote is not None
         return self._mp_remote
 
+    @property
+    def mp_remote_is_initialized(self) -> bool:
+        return self._mp_remote is not None
+
     def get_tty(self) -> str:
         """
         Returns the tty (/dev/ttyACM1).
@@ -129,6 +133,7 @@ class TentacleDut:
         assert isinstance(firmware_spec, FirmwareSpecBase)
 
         try:
+            # TODO: Handle situation where DUT does not respond
             self.boot_and_init_mp_remote_dut(tentacle=tentacle, udev=udev)
 
             if firmware_spec.micropython_version_text is None:

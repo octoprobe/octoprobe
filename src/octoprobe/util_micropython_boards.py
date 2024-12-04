@@ -39,6 +39,10 @@ variant: DP_THREAD
 class BoardVariant:
     board: str
     variant: str
+    """
+    Example: "" for default variant
+    Example: "RISCV" for variant 'RISCV'
+    """
 
     @staticmethod
     def factory(board_variant: str) -> BoardVariant:
