@@ -62,6 +62,7 @@ class Tentacle[TTentacleSpec, TTentacleType: enum.StrEnum, TEnumFut: enum.StrEnu
         """
         Specifies the firmware.
         This will be updated for EVERY testfunction!
+        If None: Use firmware already on the DUT.
         """
 
     def __repr__(self) -> str:
@@ -87,6 +88,13 @@ class Tentacle[TTentacleSpec, TTentacleType: enum.StrEnum, TEnumFut: enum.StrEnu
     @property
     def is_mcu(self) -> bool:
         return self.tentacle_spec.is_mcu
+
+    def do_not_flash_firmware(self) -> None:
+        self._firmware_spec = None
+
+    @property
+    def has_firmware_spec(self) -> bool:
+        return self._firmware_spec is not None
 
     @property
     def firmware_spec(self) -> FirmwareSpecBase:
@@ -142,7 +150,10 @@ class Tentacle[TTentacleSpec, TTentacleType: enum.StrEnum, TEnumFut: enum.StrEnu
         """
         name = self.label_short
         if self.is_mcu:
-            name += f"({self.firmware_spec.board_variant.name_normalized})"
+            if self.firmware_spec is None:
+                name += "(no-flashing)"
+            else:
+                name += f"({self.firmware_spec.board_variant.name_normalized})"
         return name
 
     def get_tag(self, tag: str) -> str | None:

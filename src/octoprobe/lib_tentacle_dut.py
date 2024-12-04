@@ -136,6 +136,9 @@ class TentacleDut:
             # TODO: Handle situation where DUT does not respond
             self.boot_and_init_mp_remote_dut(tentacle=tentacle, udev=udev)
 
+            if not firmware_spec.do_flash:
+                return
+
             if firmware_spec.micropython_version_text is None:
                 logger.info(
                     f"{self.label}: No 'micropython_version_text' provided for '{firmware_spec.board_variant.name_normalized}'! We can not verify if the firmware is correctly flashed!"

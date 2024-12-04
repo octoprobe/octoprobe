@@ -65,6 +65,10 @@ class FirmwareSpecBase(abc.ABC):
         assert isinstance(self.micropython_version_text, str | None)
 
     @property
+    def do_flash(self) -> bool:
+        return True
+
+    @property
     @abc.abstractmethod
     def filename(self) -> pathlib.Path: ...
 
@@ -80,6 +84,30 @@ class FirmwareSpecBase(abc.ABC):
                 # We found a board variant which we may test
                 return True
         return False
+
+
+@dataclasses.dataclass(frozen=True, repr=True)
+class FirmwareNoFlashingSpec(FirmwareSpecBase):
+    @property
+    def filename(self) -> pathlib.Path:
+        raise NotImplementedError()
+
+    def match_board(self, tentacle: Tentacle) -> bool:
+        """
+        Return True: If tentacles board matches the firmware_spec board.
+        """
+        return True
+
+    @property
+    def do_flash(self) -> bool:
+        return False
+
+    @staticmethod
+    def factory() -> FirmwareNoFlashingSpec:
+        return FirmwareNoFlashingSpec(
+            board_variant=BoardVariant(board="NoFlashing", variant=""),
+            micropython_version_text=None,
+        )
 
 
 @dataclasses.dataclass(frozen=True, repr=True)

@@ -41,15 +41,17 @@ def do_install(url: str) -> None:
     try:
         d = directory_binaries.relative_to(pathlib.Path.home())
         dir_binaries_text = f"~/{d}"
+        dir_binaries_home = f"$HOME/{d}"
     except ValueError:
         dir_binaries_text = str(directory_binaries)
+        dir_binaries_home = str(directory_binaries)
     binaries_machine_text = f"{dir_binaries_text}/{os.uname().machine}/*"
-
+    binaries_machine_home = f"{dir_binaries_home}/{os.uname().machine}"
     lines = [
         f"Binaries extracted to: {dir_binaries_text}",
         "Please install the files as follows",
         f"sudo chown root:root {binaries_machine_text}",
         f"sudo chmod a+s {binaries_machine_text}",
-        f"sudo cp -p {binaries_machine_text} /usr/sbin",
+        f"""echo 'PATH="{binaries_machine_home}:$PATH"' >> ~/.profile""",
     ]
     logger.info("\n".join(lines))

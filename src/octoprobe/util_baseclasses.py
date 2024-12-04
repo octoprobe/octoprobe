@@ -87,6 +87,10 @@ class TentacleSpec[TMcuConfig, TTentacleType: enum.StrEnum, TEnumFut: enum.StrEn
     mcu_config: TMcuConfig | None = None
     mcu_usb_id: BootApplicationUsbID | None = None
     programmer_args: list[str] = dataclasses.field(default_factory=list)
+    micropython_perftest_args: list[str] | None = None
+    """
+    Special argumets...
+    """
 
     def __post_init__(self) -> None:
         assert isinstance(self.tentacle_type, enum.StrEnum)
@@ -99,6 +103,7 @@ class TentacleSpec[TMcuConfig, TTentacleType: enum.StrEnum, TEnumFut: enum.StrEn
         assert isinstance(self.relays_closed, dict)
         assert isinstance(self.mcu_usb_id, BootApplicationUsbID | None)
         assert isinstance(self.programmer_args, list)
+        assert isinstance(self.micropython_perftest_args, list | None)
 
     def get_tag(self, tag: str) -> str | None:
         """
