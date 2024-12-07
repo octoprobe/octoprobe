@@ -64,7 +64,6 @@ class TentacleSpec[TMcuConfig, TTentacleType: enum.StrEnum, TEnumFut: enum.StrEn
     >>> TentacleSpec(
         tentacle_type=TentacleType.TENTACLE_MCU,
         futs=[EnumFut.FUT_I2C, EnumFut.FUT_UART],
-        category="MicroPython Board",
         label="pico",
         tags="boards=RPI_PICO,mcu=rp2,programmer=picotool",
 
@@ -77,13 +76,11 @@ class TentacleSpec[TMcuConfig, TTentacleType: enum.StrEnum, TEnumFut: enum.StrEn
     """
 
     tentacle_type: TTentacleType
-    tentacle_tag: str
+    tentacle_tag: enum.StrEnum
     futs: list[TEnumFut]
-    category: str
-    label: str
     doc: str
     tags: str
-    relays_closed: dict[TEnumFut, list[int]]
+    relays_closed: dict[TEnumFut, list[int]] = dataclasses.field(default_factory=dict)
     mcu_config: TMcuConfig | None = None
     mcu_usb_id: BootApplicationUsbID | None = None
     programmer_args: list[str] = dataclasses.field(default_factory=list)
@@ -94,10 +91,8 @@ class TentacleSpec[TMcuConfig, TTentacleType: enum.StrEnum, TEnumFut: enum.StrEn
 
     def __post_init__(self) -> None:
         assert isinstance(self.tentacle_type, enum.StrEnum)
-        assert isinstance(self.tentacle_tag, str)
+        assert isinstance(self.tentacle_tag, enum.StrEnum)
         assert isinstance(self.futs, list)
-        assert isinstance(self.category, str)
-        assert isinstance(self.label, str)
         assert isinstance(self.doc, str)
         assert isinstance(self.tags, str)
         assert isinstance(self.relays_closed, dict)

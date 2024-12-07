@@ -118,7 +118,7 @@ class Tentacle[TTentacleSpec, TTentacleType: enum.StrEnum, TEnumFut: enum.StrEnu
     @property
     def description_short(self) -> str:
         f = io.StringIO()
-        f.write(f"Label {self.tentacle_spec.label}\n")
+        f.write(f"Label {self.tentacle_spec.tentacle_tag}\n")
         f.write(f"  tentacle_serial_number {self.tentacle_serial_number}\n")
 
         return f.getvalue()
@@ -140,7 +140,7 @@ class Tentacle[TTentacleSpec, TTentacleType: enum.StrEnum, TEnumFut: enum.StrEnu
         Example: 1831pico2
         Example: 1331daq
         """
-        return self.tentacle_serial_number[-4:] + self.tentacle_spec.label
+        return self.tentacle_serial_number[-4:] + self.tentacle_spec.tentacle_tag
 
     @property
     def pytest_id(self) -> str:
