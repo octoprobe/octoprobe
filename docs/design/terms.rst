@@ -6,9 +6,9 @@ Generic terms
 
 * `HIL`: Hardware in the loop tests
 * `Gadget`: Something that may be collected to a micropython board: A sensor, actor, display or even a Modbus dongle.
-* `MCU`: MicroController Unit. As listed on `Micropython Downloads`_.
+* `MCU`: MicroController Unit. As listed on `MicroPython Downloads`_.
 
-.. _`Micropython Downloads`:  https://micropython.org/download
+.. _`MicroPython Downloads`:  https://micropython.org/download
 
 
 Octoprobe specific terms

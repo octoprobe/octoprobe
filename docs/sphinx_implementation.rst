@@ -4,7 +4,7 @@ Documentatation generation
 Goal
 ----
 
-* The documentation should be very close to the Micropython documentation.
+* The documentation should be very close to the MicroPython documentation.
 
 Decisions
 ---------

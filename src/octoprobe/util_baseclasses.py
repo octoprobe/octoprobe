@@ -64,7 +64,7 @@ class TentacleSpec[TMcuConfig, TTentacleType: enum.StrEnum, TEnumFut: enum.StrEn
     >>> TentacleSpec(
         tentacle_type=TentacleType.TENTACLE_MCU,
         futs=[EnumFut.FUT_I2C, EnumFut.FUT_UART],
-        category="Micropython Board",
+        category="MicroPython Board",
         label="pico",
         tags="boards=RPI_PICO,mcu=rp2,programmer=picotool",
 
