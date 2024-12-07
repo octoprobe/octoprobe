@@ -28,6 +28,6 @@ Octoprobe specific terms
 
 * `Testbed`: A testbed defines how tentacles are used to run tests. A testbed design consists of schematics of the DUT-side of the tentacles.
 
- * A testbed is identified by its unique name, for example 'testbed_tutorial'.
+ * A testbed is identified by its unique name, for example 'testbed_showcase'.
  * A testbed may be instantiated multiple times. For example once in CH-Wetzikon and once in AU-Melbourne.
  * A test is ALWAYS written against a specific testbed!

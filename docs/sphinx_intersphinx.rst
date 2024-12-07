@@ -29,7 +29,7 @@ octoprobe.org
 
 * www.octoprobe.org: Entry page with links to Flask, Jinja, Click
 
- * https://docs.octoprobe.org/testbed_tutorial
+ * https://docs.octoprobe.org/testbed_showcase
  * https://docs.octoprobe.org/octoprobe
  * https://docs.octoprobe.org/tentacle
  * https://docs.octoprobe.org/usbhubctl
@@ -44,7 +44,7 @@ Consideration
 
   python -m sphinx.ext.intersphinx http://octoprobe.org/octoprobe/objects.inv
   python -m sphinx.ext.intersphinx http://octoprobe.org/tentacle/objects.inv
-  python -m sphinx.ext.intersphinx http://octoprobe.org/testbed_tutorial/objects.inv
+  python -m sphinx.ext.intersphinx http://octoprobe.org/testbed_showcase/objects.inv
   python -m sphinx.ext.intersphinx http://octoprobe.org/usbhubctl/objects.inv
 
 .. code-block:: rst

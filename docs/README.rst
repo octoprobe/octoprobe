@@ -46,7 +46,7 @@ octoprobe testenvironment
   * However the pytest code itselve is provided by the tester together with the firmware.
 
 
-Tentacles / testbed_tutorial
+Tentacles / testbed_showcase
 ----------------------------
 
 Kicad schmatics/pcb may be found `herex`_.
@@ -55,22 +55,22 @@ Kicad schmatics/pcb may be found `herex`_.
 
 A *testbed* describes how test using a set of tentacles.
 
-*testbed_tutorial* is described here `here`_ and allows to test i2c, uart, onewire and timers.
+*testbed_showcase* is described here `here`_ and allows to test i2c, uart, onewire and timers.
 
-.. _here: https://github.com/octoprobe/testbed_tutorial/blob/main/doc/README.md
+.. _here: https://github.com/octoprobe/testbed_showcase/blob/main/doc/README.md
 
 **4 tentacles - ribbon cable**
 
-.. image:: README_images/testbed_tutorial_4-ribbon.jpg
+.. image:: README_images/testbed_showcase_4-ribbon.jpg
 
 
 **4 tentacles - stacked**
 
-.. image:: README_images/testbed_tutorial_4-stacked.jpg
+.. image:: README_images/testbed_showcase_4-stacked.jpg
 
 **MCU tentacle**
 
-.. image:: README_images/testbed_tutorial_mcu_pico.jpg
+.. image:: README_images/testbed_showcase_mcu_pico.jpg
 
 Test flow
 ---------
