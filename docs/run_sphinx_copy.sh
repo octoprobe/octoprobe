@@ -3,7 +3,7 @@ set -euo pipefail
 
 proj_src=octoprobe
 
-for proj_target in tentacle testbed_tutorial usbhubctl
+for proj_target in tentacle testbed_showcase usbhubctl
 do
     for sub_dir in _static _templates
     do
