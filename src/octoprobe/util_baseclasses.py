@@ -1,6 +1,8 @@
 import dataclasses
 import enum  # pylint: disable=W0611:unused-import
 
+TENTACLE_TYPE_MCU = "tentacle_mcu"
+
 
 @dataclasses.dataclass
 class UsbID:
@@ -116,4 +118,4 @@ class TentacleSpec[TMcuConfig, TTentacleType: enum.StrEnum, TEnumFut: enum.StrEn
 
     @property
     def is_mcu(self) -> bool:
-        return self.mcu_config is not None
+        return self.tentacle_type.value == TENTACLE_TYPE_MCU

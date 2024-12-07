@@ -1,7 +1,7 @@
 import dataclasses
 import logging
 
-from testbed.constants import TentacleType
+from testbed.constants import EnumTentacleType
 
 from octoprobe.lib_tentacle import Tentacle
 
@@ -26,9 +26,9 @@ class Testbed:
         return Tentacle.tentacles_description_short(tentacles=self.tentacles)
 
     def get_tentacle(
-        self, tentacle_type: TentacleType | None = None, serial: str | None = None
+        self, tentacle_type: EnumTentacleType | None = None, serial: str | None = None
     ) -> Tentacle:
-        assert isinstance(tentacle_type, TentacleType | None)
+        assert isinstance(tentacle_type, EnumTentacleType | None)
         assert isinstance(serial, str | None)
 
         list_tentacles: list[Tentacle] = []
