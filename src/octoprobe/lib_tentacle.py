@@ -179,9 +179,13 @@ class Tentacle[TTentacleSpec, TTentacleType: enum.StrEnum, TEnumFut: enum.StrEnu
         try:
             list_relays = self.tentacle_spec.relays_closed[fut]
         except KeyError as e:
-            raise KeyError(
-                f"{self.description_short}: Does not specify: tentacle_spec.relays_closed[{fut.name}]"
-            ) from e
+            try:
+                # Fallback to the default value given by the key 'None'.
+                list_relays = self.tentacle_spec.relays_closed[None]
+            except KeyError:
+                raise KeyError(
+                    f"{self.description_short}: Does not specify: tentacle_spec.relays_closed[{fut.name}]"
+                ) from e
         self.infra.mcu_infra.relays(relays_close=list_relays, relays_open=relays_open)
 
     def dut_boot_and_init_mp_remote(self, udev: UdevPoller) -> None:

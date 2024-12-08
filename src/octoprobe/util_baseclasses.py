@@ -82,7 +82,12 @@ class TentacleSpec[TMcuConfig, TTentacleType: enum.StrEnum, TEnumFut: enum.StrEn
     futs: list[TEnumFut]
     doc: str
     tags: str
-    relays_closed: dict[TEnumFut, list[int]] = dataclasses.field(default_factory=dict)
+    relays_closed: dict[TEnumFut | None, list[int]] = dataclasses.field(
+        default_factory=lambda: {None: []}
+    )
+    """
+    If the key is None, the value defines the relays to be closed by default.
+    """
     mcu_config: TMcuConfig | None = None
     mcu_usb_id: BootApplicationUsbID | None = None
     programmer_args: list[str] = dataclasses.field(default_factory=list)
@@ -99,6 +104,9 @@ class TentacleSpec[TMcuConfig, TTentacleType: enum.StrEnum, TEnumFut: enum.StrEn
         assert isinstance(self.relays_closed, dict)
         assert isinstance(self.mcu_usb_id, BootApplicationUsbID | None)
         assert isinstance(self.programmer_args, list)
+
+    def __hash__(self) -> int:
+        return hash(f"{self.tentacle_type}-{self.tentacle_tag}")
 
     def get_tag(self, tag: str) -> str | None:
         """
