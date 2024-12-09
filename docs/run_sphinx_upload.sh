@@ -4,7 +4,7 @@ set -euo pipefail
 ./run_sphinx_copy.sh
 
 # for project in octoprobe tentacle testbed_showcase usbhubctl
-for project in octoprobe tentacle testbed_showcase
+for project in octoprobe tentacle testbed_showcase testbed_micropython
 do
     docs_dir=~/work_octoprobe_${project}/docs
     html_dir=${docs_dir}/_build/html

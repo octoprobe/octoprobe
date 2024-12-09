@@ -54,6 +54,7 @@ intersphinx_mapping = {
     "octoprobe": ("http://docs.octoprobe.org/octoprobe/", None),
     "tentacle": ("http://docs.octoprobe.org/tentacle/", None),
     "testbed_showcase": ("http://docs.octoprobe.org/testbed_showcase/", None),
+    "testbed_micropython": ("http://docs.octoprobe.org/testbed_micropython/", None),
     # "usbhubctl": ("http://docs.octoprobe.org/usbhubctl/", None),
 }
 sphinxmermaid_mermaid_init: dict[str, str | dict] = {
@@ -82,6 +83,9 @@ html_context = {
         ProjectLink("Octoprobe: Octoprobe", "https://www.octoprobe.org/octoprobe/"),
         ProjectLink(
             "Octoprobe: testbed_showcase", "https://www.octoprobe.org/testbed_showcase/"
+        ),
+        ProjectLink(
+            "Octoprobe: testbed_micropython", "https://www.octoprobe.org/testbed_micropython/"
         ),
         # ProjectLink("Octoprobe: usbhubctl", "https://www.octoprobe.org/usbhubctl/"),
         # ProjectLink("Donate", "https://palletsprojects.com/donate"),
