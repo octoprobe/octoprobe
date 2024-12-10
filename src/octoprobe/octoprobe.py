@@ -24,16 +24,11 @@ class NTestRun:
         pytest collects all classes starting w'TestRun' would be collected by pytest: So we name it 'NTestRun'
     """
 
-    def __init__(self, testbed: Testbed, firmware_git_url: str | None) -> None:
+    def __init__(self, testbed: Testbed) -> None:
         assert isinstance(testbed, Testbed)
 
         self.testbed = testbed
         self._udev_poller: UdevPoller | None = None
-        self.firmware_builder = (
-            None
-            if firmware_git_url is None
-            else FirmwareBuilder(firmware_git_url=firmware_git_url)
-        )
 
     @property
     def udev_poller(self) -> UdevPoller:
@@ -103,26 +98,6 @@ class NTestRun:
                     relays_close=[],
                     relays_open=[1, 2, 3, 4, 5, 6, 7],
                 )
-
-    def function_build_firmwares(
-        self,
-        active_tentacles: list[Tentacle],
-        testresults_mpbuild: pathlib.Path,
-    ) -> None:
-        """
-        Build the firmwares
-        """
-        if self.firmware_builder is None:
-            return
-
-        for tentacle in active_tentacles:
-            if tentacle.is_mcu:
-                spec = self.firmware_builder.build(
-                    firmware_spec=tentacle.firmware_spec,
-                    testresults_mpbuild=testresults_mpbuild,
-                )
-                # After building, the spec is more detailed: Reassign it!
-                tentacle.firmware_spec = spec
 
     def function_prepare_dut(self) -> None:
         for tentacle in self.testbed.tentacles:
