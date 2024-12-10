@@ -4,7 +4,7 @@ import logging
 import os
 import typing
 
-from octoprobe.util_constants import TAG_BOARDS, TAG_PROGRAMMER
+from octoprobe.util_constants import TAG_PROGRAMMER
 
 from .lib_mpremote import MpRemote
 from .util_baseclasses import TentacleSpec
@@ -35,7 +35,8 @@ class TentacleDut:
         assert isinstance(tentacle_spec, TentacleSpec)
 
         # Validate consistency
-        for tag in TAG_MCU, TAG_BOARDS, TAG_PROGRAMMER:
+        # for tag in TAG_MCU, TAG_BOARDS, TAG_PROGRAMMER:
+        for tag in TAG_MCU, TAG_PROGRAMMER:
             tentacle_spec.get_tag_mandatory(tag)
 
         self.label = label

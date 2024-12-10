@@ -100,10 +100,17 @@ class TentacleInfra:
 
         self.verify_micropython_version(self.get_firmware_spec())
 
-    def setup_infra(self, udev: UdevPoller) -> None:
+    def connect_mpremote_if_needed(self) -> None:
+        if self._mp_remote is not None:
+            # We are already connected
+            return
+
         assert self.hub is not None
         assert self.hub.rp2_serial_port is not None
         self._mp_remote = MpRemote(tty=self.hub.rp2_serial_port)
+
+    def setup_infra(self, udev: UdevPoller) -> None:
+        self.connect_mpremote_if_needed()
         self.rp2_test_mp_remote()
 
     def verify_micropython_version(self, firmware_spec: FirmwareSpecBase) -> None:

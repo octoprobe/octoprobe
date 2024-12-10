@@ -1,17 +1,13 @@
 from __future__ import annotations
 
 import enum
-import pathlib
 import time
-
-from testbed.util_firmware_mpbuild import FirmwareBuilder
 
 from octoprobe import util_usb_serial
 from octoprobe.util_power import UsbPlug, UsbPlugs
 from octoprobe.util_usb_serial import QueryResultTentacles
 
 from .lib_tentacle import Tentacle
-from .lib_testbed import Testbed
 from .util_pyudev import UdevPoller
 
 FULL_POWERCYCLE_ALL_TENTACLES = False
@@ -24,10 +20,10 @@ class NTestRun:
         pytest collects all classes starting w'TestRun' would be collected by pytest: So we name it 'NTestRun'
     """
 
-    def __init__(self, testbed: Testbed) -> None:
-        assert isinstance(testbed, Testbed)
+    def __init__(self, connected_tentacles: list[Tentacle]) -> None:
+        assert isinstance(connected_tentacles, list)
 
-        self.testbed = testbed
+        self.connected_tentacles = connected_tentacles
         self._udev_poller: UdevPoller | None = None
 
     @property
@@ -87,7 +83,7 @@ class NTestRun:
         """
 
         # Instantiate poller BEFORE switching on power to avoid a race condition
-        for tentacle in self.testbed.tentacles:
+        for tentacle in self.connected_tentacles:
             tentacle.infra.setup_infra(self.udev_poller)
             tentacle.infra.mcu_infra.active_led(on=False)
 
@@ -100,7 +96,7 @@ class NTestRun:
                 )
 
     def function_prepare_dut(self) -> None:
-        for tentacle in self.testbed.tentacles:
+        for tentacle in self.connected_tentacles:
             tentacle.power.dut = False
             tentacle.infra.mp_remote_close()
             if tentacle.is_mcu:
@@ -125,6 +121,7 @@ class NTestRun:
                 tentacle.power_dut_off_and_wait()
 
         for tentacle in active_tentacles:
+            tentacle.infra.connect_mpremote_if_needed()
             tentacle.infra.mcu_infra.relays(relays_open=tentacle.infra.LIST_ALL_RELAYS)
 
     def setup_relays(

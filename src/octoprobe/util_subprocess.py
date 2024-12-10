@@ -1,9 +1,15 @@
+from __future__ import annotations
+
 import logging
 import pathlib
 import subprocess
 import time
 
 logger = logging.getLogger(__file__)
+
+
+class SubprocessExitCodeException(Exception):
+    pass
 
 
 def subprocess_run(
@@ -78,4 +84,4 @@ def subprocess_run(
         msg = f"EXEC failed with returncode={proc.returncode}: {args_text}"
         if logfile is not None:
             msg += f"\nlogfile={logfile}"
-        raise ValueError(msg)
+        raise SubprocessExitCodeException(msg)
