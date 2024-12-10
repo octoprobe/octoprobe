@@ -7,6 +7,7 @@ This typically happens in VSCode: While one instance is testing another instance
 import fcntl
 import os
 import pathlib
+import time
 
 
 class TestbedLock:
@@ -27,10 +28,16 @@ class TestbedLock:
         """
         self._fd = os.open(filename, os.O_CREAT | os.O_RDWR | os.O_TRUNC)
         self._lockfile = filename
-        try:
-            fcntl.flock(self._fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except OSError as exc:
-            raise ValueError(f"Testbed is already used! See: {filename}") from exc
+        for retry in range(100):
+            try:
+                fcntl.flock(self._fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except OSError as exc:
+                max_retries = 5
+                if retry >= max_retries:
+                    raise ValueError(
+                        f"Testbed is already used! See: {filename}"
+                    ) from exc
+                time.sleep(1.0)
         os.write(self._fd, f"Testinfrastructure locked by pid {os.getpid()}\n".encode())
 
     def unlink(self):
