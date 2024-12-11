@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import datetime
 import logging
+import pathlib
 from typing import Any, Self
 
 from mpremote import mip  # type: ignore
+from mpremote.commands import do_filesystem_cp  # type: ignore
 from mpremote.main import State  # type: ignore
 from mpremote.transport_serial import SerialTransport, TransportError  # type: ignore
 
@@ -42,6 +45,29 @@ class MpRemote:
     def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         self.close()
 
+    def set_rtc(self, now: datetime.datetime | None = None) -> None:
+        assert isinstance(now, datetime.datetime | None)
+        if now is None:
+            now = datetime.datetime.now()
+        timetuple = (
+            now.year,
+            now.month,
+            now.day,
+            now.weekday(),
+            now.hour,
+            now.minute,
+            now.second,
+            now.microsecond,
+        )
+        cmd = f"import machine; machine.RTC().datetime({timetuple})"
+        self.exec_raw(cmd)
+
+    def cp(self, src: pathlib.Path, dest: str) -> None:
+        assert isinstance(src, pathlib.Path)
+        assert isinstance(dest, str)
+        # def do_filesystem_cp(state, src, dest, multiple, check_hash=False):
+        do_filesystem_cp(self.state, str(src), dest, multiple=True, check_hash=False)
+
     def mip_install_package(self, package: str) -> None:
         assert isinstance(package, str)
 
@@ -78,7 +104,12 @@ class MpRemote:
         mp_program = render(micropython_code=micropython_code, **kwargs)
         return self.exec_raw(cmd=mp_program, follow=follow)
 
-    def exec_raw(self, cmd: str, follow: bool = True) -> str:
+    def exec_raw(
+        self,
+        cmd: str,
+        follow: bool = True,
+        timeout: int | None = None,
+    ) -> str:
         """
         Derived from mpremote.commands.do_exec / do_execbuffer
         """
@@ -90,7 +121,7 @@ class MpRemote:
             self.state.transport.exec_raw_no_follow(cmd)
             if follow:
                 # ret, ret_err = state.transport.follow(timeout=None, data_consumer=stdout_write_bytes)
-                ret, ret_err = self.state.transport.follow(timeout=None)
+                ret, ret_err = self.state.transport.follow(timeout=timeout)
                 if ret_err:
                     lines = [
                         ret_err.decode("ascii"),

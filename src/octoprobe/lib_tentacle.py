@@ -137,24 +137,16 @@ class Tentacle[TTentacleSpec, TTentacleType: enum.StrEnum, TEnumFut: enum.StrEnu
     @property
     def label_short(self) -> str:
         """
-        Example: 1831pico2
-        Example: 1331daq
+        Example: 1831-RPI_PICO
+        Example: 1331-DAQ
         """
-        return self.tentacle_serial_number[-4:] + self.tentacle_spec.tentacle_tag
-
-    @property
-    def label_short2(self) -> str:
-        """
-        Example: 1831-pico2
-        Example: 1331-daq
-        """
-        return f"{self.tentacle_serial_number[-4:]}-{self.tentacle_spec.tentacle_tag}"
+        return self.tentacle_serial_number[-4:] + "-" + self.tentacle_spec.tentacle_tag.name
 
     @property
     def pytest_id(self) -> str:
         """
-        Example: 1831pico2(RPI_PICO2-RISCV)
-        Example: 1331daq
+        Example: 1831-pico2(RPI_PICO2-RISCV)
+        Example: 1331-daq
         """
         name = self.label_short
         if self.is_mcu:
