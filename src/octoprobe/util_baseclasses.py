@@ -78,7 +78,7 @@ class TentacleSpec[TMcuConfig, TTentacleType: enum.StrEnum, TEnumFut: enum.StrEn
     """
 
     tentacle_type: TTentacleType
-    tentacle_tag: enum.StrEnum
+    tentacle_tag: str
     futs: list[TEnumFut]
     doc: str
     tags: str
@@ -97,7 +97,7 @@ class TentacleSpec[TMcuConfig, TTentacleType: enum.StrEnum, TEnumFut: enum.StrEn
 
     def __post_init__(self) -> None:
         assert isinstance(self.tentacle_type, enum.StrEnum)
-        assert isinstance(self.tentacle_tag, enum.StrEnum)
+        assert isinstance(self.tentacle_tag, str)
         assert isinstance(self.futs, list)
         assert isinstance(self.doc, str)
         assert isinstance(self.tags, str)

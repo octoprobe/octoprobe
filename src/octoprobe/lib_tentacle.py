@@ -140,7 +140,7 @@ class Tentacle[TTentacleSpec, TTentacleType: enum.StrEnum, TEnumFut: enum.StrEnu
         Example: 1831-RPI_PICO
         Example: 1331-DAQ
         """
-        return self.tentacle_serial_number[-4:] + "-" + self.tentacle_spec.tentacle_tag.name
+        return self.tentacle_serial_number[-4:] + "-" + self.tentacle_spec.tentacle_tag
 
     @property
     def pytest_id(self) -> str:
