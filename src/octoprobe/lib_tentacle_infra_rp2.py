@@ -23,7 +23,6 @@ import ubinascii
 
 rp2_unique_id = ubinascii.hexlify(unique_id()).decode('ascii')
 files_on_flash = len(os.listdir())
-micropython_version = sys.version
 
 pin_led_active = Pin('GPIO24', Pin.OUT)
 
@@ -59,7 +58,9 @@ def set_relays(list_relays):
 
     def get_micropython_version(self) -> str:
         self._load_base_code()
-        return self._infra.mp_remote.read_str("micropython_version")
+        return self._infra.mp_remote.read_str(
+            "sys.version + ',' + sys.implementation[2]"
+        )
 
     def exception_if_files_on_flash(self) -> None:
         # "import os; print('main.py' in os.listdir())"

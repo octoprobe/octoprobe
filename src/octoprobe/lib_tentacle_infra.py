@@ -117,10 +117,12 @@ class TentacleInfra:
         assert isinstance(firmware_spec, FirmwareSpecBase)
 
         installed_version = self.mcu_infra.get_micropython_version()
-        versions_equal = firmware_spec.micropython_version_text == installed_version
+        versions_equal = (
+            firmware_spec.micropython_full_version_text == installed_version
+        )
         if not versions_equal:
             raise VersionMismatchException(
-                f"Tentacle '{self.label}': Version installed '{installed_version}', but expected '{firmware_spec.micropython_version_text}'!"
+                f"Tentacle '{self.label}': Version installed '{installed_version}', but expected '{firmware_spec.micropython_full_version_text}'!"
             )
 
     def flash(

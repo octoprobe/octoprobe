@@ -39,6 +39,8 @@ logger = logging.getLogger(__file__)
 
 IDX_RELAYS_DUT_BOOT = 1
 
+MICROPYTHON_FULL_VERSION_TEXT_FORCE = "requires_firmware_flashing"
+
 
 @dataclasses.dataclass(frozen=True, repr=True)
 class FirmwareSpecBase(abc.ABC):
@@ -50,19 +52,30 @@ class FirmwareSpecBase(abc.ABC):
     RPI_PICO
     """
 
-    micropython_version_text: str | None
+    micropython_full_version_text: str = MICROPYTHON_FULL_VERSION_TEXT_FORCE
     """
     Example:
     >>> import sys
     >>> sys.version
     '3.4.0; MicroPython v1.20.0 on 2023-04-26'
+    >>> sys.implementation
+    'Raspberry Pi Pico2 with RP2350-RISCV'
+
+    'full_version_text' will be:
+      3.4.0; MicroPython v1.20.0 on 2023-04-26, Raspberry Pi Pico2 with RP2350-RISCV
 
     None: If not known
     """
 
+    @property
+    def requires_flashing(self) -> bool:
+        return (
+            self.micropython_full_version_text == MICROPYTHON_FULL_VERSION_TEXT_FORCE
+        )
+
     def __post_init__(self) -> None:
         assert isinstance(self.board_variant, BoardVariant)
-        assert isinstance(self.micropython_version_text, str | None)
+        assert isinstance(self.micropython_full_version_text, str)
 
     @property
     def do_flash(self) -> bool:
@@ -105,8 +118,7 @@ class FirmwareNoFlashingSpec(FirmwareSpecBase):
     @staticmethod
     def factory() -> FirmwareNoFlashingSpec:
         return FirmwareNoFlashingSpec(
-            board_variant=BoardVariant(board="NoFlashing", variant=""),
-            micropython_version_text=None,
+            board_variant=BoardVariant(board="NoFlashing", variant="")
         )
 
 
@@ -143,7 +155,7 @@ class FirmwareDownloadSpec(FirmwareSpecBase):
     The firmware is specified by an url where it may be downloaded.
     """
 
-    url: str
+    url: str = "???"
     """
     Example: https://micropython.org/resources/firmware/PYBV11-20240222-v1.22.2.dfu
     """

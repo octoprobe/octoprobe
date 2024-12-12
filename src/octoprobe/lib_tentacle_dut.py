@@ -87,16 +87,23 @@ class TentacleDut:
         tty = self.dut_mcu.application_mode_power_up(tentacle=tentacle, udev=udev)
         self._mp_remote = MpRemote(tty=tty)
 
-    def dut_installed_firmware_version(self) -> str:
+    def dut_installed_firmware_full_version_text(self) -> str:
         """
         Example:
         >>> import sys
         >>> sys.version
         '3.4.0; MicroPython v1.20.0 on 2023-04-26'
+        >>> sys.implementation[2]
+        'Raspberry Pi Pico2 with RP2350-RISCV'
+
+        Will return both strings with a ',' inbetween.
         """
         assert self.mp_remote is not None
         version = self.mp_remote.exec_raw("import sys; print(sys.version)")
-        return version.strip()
+        implementation = self.mp_remote.exec_raw(
+            "import sys; print(sys.implementation[2])"
+        )
+        return version.strip() + "," + implementation.strip()
 
     def is_dut_required_firmware_already_installed(
         self,
@@ -105,16 +112,20 @@ class TentacleDut:
     ) -> bool:
         assert isinstance(firmware_spec, FirmwareSpecBase)
 
-        installed_version = self.dut_installed_firmware_version()
-        logger.info(f"{self.label}: MicroPython Version installed: {installed_version}")
-        if firmware_spec.micropython_version_text is None:
-            # There is not expected version give.
-            return True
-        versions_equal = firmware_spec.micropython_version_text == installed_version
+        if firmware_spec.requires_flashing:
+            return False
+
+        installed_full_version = self.dut_installed_firmware_full_version_text()
+        logger.info(
+            f"{self.label}: Version installed: {installed_full_version}"
+        )
+        versions_equal = (
+            firmware_spec.micropython_full_version_text == installed_full_version
+        )
         if exception_text is not None:
             if not versions_equal:
                 raise ValueError(
-                    f"{exception_text}: Version installed: {installed_version}\n  but expected: '{firmware_spec.micropython_version_text}'!"
+                    f"{exception_text}: Version installed: {installed_full_version}\n  but expected: '{firmware_spec.micropython_full_version_text}'!"
                 )
         return versions_equal
 
@@ -137,23 +148,12 @@ class TentacleDut:
             # TODO: Handle situation where DUT does not respond
             self.boot_and_init_mp_remote_dut(tentacle=tentacle, udev=udev)
 
-            if not firmware_spec.do_flash:
-                return
-
-            if firmware_spec.micropython_version_text is None:
+            if firmware_spec.requires_flashing:
                 logger.info(
-                    f"{self.label}: No 'micropython_version_text' provided for '{firmware_spec.board_variant.name_normalized}'! We can not verify if the firmware is correctly flashed!"
+                    f"{self.label}: Firmware spec requires flashing '{firmware_spec.board_variant.name_normalized}'!"
                 )
-                if (
-                    self.dut_flashed_variant_normalized
-                    == firmware_spec.board_variant.name_normalized
-                ):
-                    logger.info(
-                        f"{self.label}: Has already been flashed with '{firmware_spec.board_variant.name_normalized}'!"
-                    )
-                    return
-            else:
-                if self.is_dut_required_firmware_already_installed(
+                return
+            if self.is_dut_required_firmware_already_installed(
                     firmware_spec=firmware_spec
                 ):
                     logger.info(f"{self.label}: Firmware is already installed")
