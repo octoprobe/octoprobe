@@ -2,23 +2,24 @@ from __future__ import annotations
 
 import logging
 import os
+import pathlib
 import typing
 
-from octoprobe.util_constants import TAG_PROGRAMMER
+from mpremote.transport_serial import TransportError  # type: ignore
 
 from .lib_mpremote import MpRemote
-from .util_baseclasses import TentacleSpec
-from .util_dut_mcu import TAG_MCU, dut_mcu_factory
-from .util_dut_programmers import (
-    FirmwareSpecBase,
-    dut_programmer_factory,
-)
-from .util_pyudev import UdevPoller
+from .util_baseclasses import OctoprobeTestException, VersionMismatchException
+from .util_constants import TAG_PROGRAMMER
+from .util_dut_programmers import dut_programmer_factory
+from .util_firmware_spec import FirmwareSpecBase
+from .util_pyudev import UdevPoller, UdevTimoutException
 
 logger = logging.getLogger(__file__)
 
 if typing.TYPE_CHECKING:
-    from .lib_tentacle import Tentacle
+    from .lib_tentacle import TentacleBase
+
+VERSION_IMPLEMENTATION_SEPARATOR = ";"
 
 
 class TentacleDut:
@@ -30,25 +31,28 @@ class TentacleDut:
     * Allows to run micropython code on the MCU.
     """
 
-    def __init__(self, label: str, tentacle_spec: TentacleSpec) -> None:
+    def __init__(self, label: str, tentacle: TentacleBase) -> None:
+        # pylint: disable=import-outside-toplevel
+        from .lib_tentacle import TentacleBase
+        from .util_dut_mcu import TAG_MCU, dut_mcu_factory
+
         assert isinstance(label, str)
-        assert isinstance(tentacle_spec, TentacleSpec)
+        assert isinstance(tentacle, TentacleBase)
+
+        self._tentacle = tentacle
+
+        self.label = label
+        self._mp_remote: MpRemote | None = None
+        self.dut_mcu = dut_mcu_factory(tags=tentacle.tentacle_spec_base.tags)
+        self.dut_programmer = dut_programmer_factory(
+            tags=tentacle.tentacle_spec_base.tags
+        )
+        self.dut_flashed_variant_normalized: str = "not flashed yet"
 
         # Validate consistency
         # for tag in TAG_MCU, TAG_BOARDS, TAG_PROGRAMMER:
         for tag in TAG_MCU, TAG_PROGRAMMER:
-            tentacle_spec.get_tag_mandatory(tag)
-
-        self.label = label
-        self._tentacle_spec = tentacle_spec
-        self._mp_remote: MpRemote | None = None
-        self.dut_mcu = dut_mcu_factory(tags=tentacle_spec.tags)
-        self.dut_programmer = dut_programmer_factory(tags=tentacle_spec.tags)
-        self.dut_flashed_variant_normalized: str = "not flashed yet"
-
-    @property
-    def tentacle_spec(self) -> TentacleSpec:
-        return self._tentacle_spec
+            tentacle.tentacle_spec_base.get_tag_mandatory(tag)
 
     @property
     def mp_remote(self) -> MpRemote:
@@ -78,11 +82,16 @@ class TentacleDut:
         self._mp_remote = None
         return serial_port
 
-    def boot_and_init_mp_remote_dut(self, tentacle: Tentacle, udev: UdevPoller) -> None:
+    def boot_and_init_mp_remote_dut(
+        self, tentacle: TentacleBase, udev: UdevPoller
+    ) -> None:
         """
         Eventually, self._mp_remote will be initialized
         """
-        assert tentacle.__class__.__qualname__ == "Tentacle"
+        # pylint: disable=import-outside-toplevel
+        from .lib_tentacle import TentacleBase
+
+        assert isinstance(tentacle, TentacleBase)
         assert self._mp_remote is None
         tty = self.dut_mcu.application_mode_power_up(tentacle=tentacle, udev=udev)
         self._mp_remote = MpRemote(tty=tty)
@@ -99,11 +108,11 @@ class TentacleDut:
         Will return both strings with a ',' inbetween.
         """
         assert self.mp_remote is not None
-        version = self.mp_remote.exec_raw("import sys; print(sys.version)")
-        implementation = self.mp_remote.exec_raw(
-            "import sys; print(sys.implementation[2])"
+        version_implementation = self.mp_remote.exec_raw(
+            f"import sys; print(sys.version + '{VERSION_IMPLEMENTATION_SEPARATOR}' + sys.implementation[2])",
+            timeout=2,
         )
-        return version.strip() + "," + implementation.strip()
+        return version_implementation.strip()
 
     def is_dut_required_firmware_already_installed(
         self,
@@ -111,28 +120,30 @@ class TentacleDut:
         exception_text: str | None = None,
     ) -> bool:
         assert isinstance(firmware_spec, FirmwareSpecBase)
+        assert isinstance(exception_text, str | None)
 
         if firmware_spec.requires_flashing:
             return False
 
         installed_full_version = self.dut_installed_firmware_full_version_text()
-        logger.info(
-            f"{self.label}: Version installed: {installed_full_version}"
-        )
+        logger.info(f"{self.label}: Version installed: {installed_full_version}")
         versions_equal = (
             firmware_spec.micropython_full_version_text == installed_full_version
         )
         if exception_text is not None:
             if not versions_equal:
-                raise ValueError(
-                    f"{exception_text}: Version installed: {installed_full_version}\n  but expected: '{firmware_spec.micropython_full_version_text}'!"
+                raise VersionMismatchException(
+                    msg=exception_text,
+                    version_expected=firmware_spec.micropython_full_version_text,
+                    version_installed=installed_full_version,
                 )
         return versions_equal
 
     def flash_dut(
         self,
-        tentacle: Tentacle,
+        tentacle: TentacleBase,
         udev: UdevPoller,
+        directory_logs: pathlib.Path,
         firmware_spec: FirmwareSpecBase,
     ) -> None:
         """
@@ -140,49 +151,62 @@ class TentacleDut:
 
         Eventually self._mp_remote will be initialized
         """
-        assert tentacle.__class__.__qualname__ == "Tentacle"
+        # pylint: disable=import-outside-toplevel
+        from .lib_tentacle import TentacleBase
+
+        assert isinstance(tentacle, TentacleBase)
         assert isinstance(udev, UdevPoller)
+        assert isinstance(directory_logs, pathlib.Path)
         assert isinstance(firmware_spec, FirmwareSpecBase)
 
         try:
-            # TODO: Handle situation where DUT does not respond
             self.boot_and_init_mp_remote_dut(tentacle=tentacle, udev=udev)
+            if not firmware_spec.do_flash:
+                return
 
             if firmware_spec.requires_flashing:
                 logger.info(
                     f"{self.label}: Firmware spec requires flashing '{firmware_spec.board_variant.name_normalized}'!"
                 )
-                return
-            if self.is_dut_required_firmware_already_installed(
+            else:
+
+                if self.is_dut_required_firmware_already_installed(
                     firmware_spec=firmware_spec
                 ):
                     logger.info(f"{self.label}: Firmware is already installed")
                     return
 
-        except TimeoutError as e:
-            logger.debug(f"{self.label}: Seems not to have firmware installed: {e!r}")
+        except (UdevTimoutException, TransportError) as e:
+            logger.warning(f"{self.label}: Seems not to have firmware installed: {e!r}")
 
-        logger.info(
-            f"{self.label}: About to flash '{firmware_spec.board_variant.name_normalized}'!"
-        )
-        self.dut_programmer.flash(
-            tentacle=tentacle,
-            udev=udev,
-            firmware_spec=firmware_spec,
-        )
+        with tentacle.active_led_on:  # type: ignore[attr-defined]
+            logger.info(
+                f"{self.label}: About to flash '{firmware_spec.board_variant.name_normalized}'!"
+            )
+            try:
+                self.dut_programmer.flash(
+                    tentacle=tentacle,
+                    udev=udev,
+                    directory_logs=directory_logs,
+                    firmware_spec=firmware_spec,
+                )
+            except UdevTimoutException as e:
+                msg = f"Failed to flash the firmware. Is USB connected? {e!r}"
+                logger.warning(f"{self.label}: {msg}")
+                raise OctoprobeTestException(msg) from e
 
-        tty = self.dut_mcu.application_mode_power_up(
-            tentacle=tentacle,
-            udev=udev,
-        )
-        self._mp_remote = MpRemote(tty=tty)
-        self.is_dut_required_firmware_already_installed(
-            firmware_spec=firmware_spec,
-            exception_text=f"{self.label}: After installing {firmware_spec.filename}",
-        )
-        self.dut_flashed_variant_normalized = (
-            firmware_spec.board_variant.name_normalized
-        )
+            tty = self.dut_mcu.application_mode_power_up(
+                tentacle=tentacle,
+                udev=udev,
+            )
+            self._mp_remote = MpRemote(tty=tty)
+            self.is_dut_required_firmware_already_installed(
+                firmware_spec=firmware_spec,
+                exception_text=f"{self.label}: After installing {firmware_spec.filename}",
+            )
+            self.dut_flashed_variant_normalized = (
+                firmware_spec.board_variant.name_normalized
+            )
 
     def inspection_exit(self) -> typing.NoReturn:
         msg = "Exiting without cleanup. "

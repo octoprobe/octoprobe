@@ -4,26 +4,16 @@ import logging
 import pathlib
 import time
 
-from octoprobe.util_dut_programmers import FirmwareDownloadSpec, FirmwareSpecBase
-
 from . import util_power, util_usb_serial
 from .lib_mpremote import MpRemote
-from .lib_tentacle_infra_rp2 import InfraRP2
+from .util_baseclasses import VersionMismatchException
+from .util_firmware_spec import FirmwareDownloadSpec, FirmwareSpecBase
 from .util_mcu import UdevApplicationModeEvent, udev_filter_application_mode
-from .util_mcu_rp2 import (
-    RPI_PICO_USB_ID,
-    picotool_flash_micropython,
-    rp2_udev_filter_boot_mode,
-)
 from .util_pyudev import UdevPoller
 
 DIRECTORY_OF_THIS_FILE = pathlib.Path(__file__).parent
 
 logger = logging.getLogger(__file__)
-
-
-class VersionMismatchException(Exception):
-    pass
 
 
 class TentacleInfra:
@@ -46,20 +36,25 @@ class TentacleInfra:
         json_filename = DIRECTORY_OF_THIS_FILE / "util_tentacle_infra_firmware.json"
         return FirmwareDownloadSpec.factory2(filename=json_filename)
 
-    def __init__(self, label: str) -> None:
+    def __init__(self, label: str, hub: util_usb_serial.QueryResultTentacle) -> None:
         assert isinstance(label, str)
+
+        # pylint: disable=import-outside-toplevel
+        from .lib_tentacle_infra_rp2 import InfraRP2
+
         self.label = label
-        self.hub: util_usb_serial.QueryResultTentacle | None = None
+        self.hub = hub
         self._mp_remote: MpRemote | None = None
         self._power: util_power.TentaclePlugsPower | None = None
         self.mcu_infra: InfraRP2 = InfraRP2(self)
 
-    def assign_connected_hub(
-        self,
-        query_result_tentacle: util_usb_serial.QueryResultTentacle,
-    ) -> None:
-        assert isinstance(query_result_tentacle, util_usb_serial.QueryResultTentacle)
-        self.hub = query_result_tentacle
+    @property
+    def usb_location_infra(self) -> str:
+        return f"{self.hub.hub_location.short}.{util_power.UsbPlug.INFRA.number}"
+
+    @property
+    def usb_location_dut(self) -> str:
+        return f"{self.hub.hub_location.short}.{util_power.UsbPlug.DUT.number}"
 
     def mp_remote_close(self) -> str | None:
         """
@@ -122,19 +117,29 @@ class TentacleInfra:
         )
         if not versions_equal:
             raise VersionMismatchException(
-                f"Tentacle '{self.label}': Version installed '{installed_version}', but expected '{firmware_spec.micropython_full_version_text}'!"
+                msg=f"Tentacle '{self.label}'",
+                version_installed=installed_version,
+                version_expected=firmware_spec.micropython_full_version_text,
             )
 
     def flash(
         self,
         udev: UdevPoller,
         filename_firmware: pathlib.Path,
+        usb_location: str,
+        directory_test: pathlib.Path,
     ) -> None:
         """
         Flashed the RP2.
 
         Attach self._mp_remote to the serial port of this RP2
         """
+        # pylint: disable=import-outside-toplevel
+        from .util_mcu_rp2 import (
+            RPI_PICO_USB_ID,
+            picotool_flash_micropython,
+            rp2_udev_filter_boot_mode,
+        )
 
         # Power off everything and release boot button
         # print("Power off everything and release boot button")
@@ -150,7 +155,10 @@ class TentacleInfra:
             # print("Power on RP2")
             self.power.infra = True
 
-            udev_filter = rp2_udev_filter_boot_mode(RPI_PICO_USB_ID.boot)
+            udev_filter = rp2_udev_filter_boot_mode(
+                RPI_PICO_USB_ID.boot,
+                usb_location=usb_location,
+            )
             event = guard.expect_event(
                 udev_filter=udev_filter,
                 text_where=self.label,
@@ -165,11 +173,18 @@ class TentacleInfra:
         with udev.guard as guard:
             # This will flash the RP2
             # print("Flash")
-            picotool_flash_micropython(event, filename_firmware)
+            picotool_flash_micropython(
+                event=event,
+                directory_logs=directory_test,
+                filename_firmware=filename_firmware,
+            )
 
             # The RP2 will reboot in application mode
             # and we wait for this event here
-            udev_filter = udev_filter_application_mode(RPI_PICO_USB_ID.application)
+            udev_filter = udev_filter_application_mode(
+                usb_id=RPI_PICO_USB_ID.application,
+                usb_location=usb_location,
+            )
             event = udev.expect_event(
                 udev_filter=udev_filter,
                 text_where=self.label,

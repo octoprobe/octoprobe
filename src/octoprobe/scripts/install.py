@@ -7,7 +7,7 @@ import shutil
 import tarfile
 from urllib.request import urlretrieve
 
-from octoprobe.util_constants import DIRECTORY_OCTOPROBE_DOWNLOADS
+from ..util_constants import DIRECTORY_OCTOPROBE_DOWNLOADS
 
 logger = logging.getLogger(__file__)
 
@@ -55,3 +55,30 @@ def do_install(url: str) -> None:
         f"""echo 'PATH="{binaries_machine_home}:$PATH"' >> ~/.profile""",
     ]
     logger.info("\n".join(lines))
+
+    _do_install_bossac()
+
+
+def _do_install_bossac() -> None:
+    """
+    See links here: https://github.com/arduino/BOSSA/releases/tag/1.9.1-arduino2
+    """
+    for url_sub, directory_sub in (
+        ("linux64", "x86_64"),
+        ("linuxaarch64", "aarch64"),
+    ):
+        url = (
+            f"http://downloads.arduino.cc/tools/bossac-1.9.1-arduino2-{url_sub}.tar.gz"
+        )
+
+        # logger.info(f"Binaries download from: {url}")
+
+        tmp_filename, _headers = urlretrieve(url=url)
+        with tarfile.open(tmp_filename, mode="r") as f:
+            fin = f.extractfile(member="bin/bossac")
+            filename = (
+                DIRECTORY_OCTOPROBE_DOWNLOADS / "binaries" / directory_sub / "bossac"
+            )
+            assert fin is not None
+            filename.write_bytes(fin.read())
+            filename.chmod(0o755)

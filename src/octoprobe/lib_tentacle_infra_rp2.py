@@ -1,9 +1,6 @@
 from __future__ import annotations
 
-import typing
-
-if typing.TYPE_CHECKING:
-    from octoprobe.lib_tentacle import TentacleInfra
+from .lib_tentacle import TentacleInfra
 
 
 class InfraRP2:
@@ -18,6 +15,7 @@ class InfraRP2:
     BASE_CODE = """
 import os
 import sys
+import time
 from machine import Pin, unique_id
 import ubinascii
 
@@ -39,6 +37,13 @@ pin_relays = {
 def set_relays(list_relays):
     for i, close  in list_relays:
         pin_relays[i].value(close)
+
+def set_relays_pulse(relays, initial_closed, durations_ms):
+    pin = pin_relays[relays]
+    pin.value(initial_closed)
+    for duration_ms in durations_ms:
+       time.sleep_ms(duration_ms)
+       pin.toggle()
 """
 
     def __init__(self, tentacle_infra: TentacleInfra) -> None:
@@ -102,6 +107,30 @@ def set_relays(list_relays):
         list_relays = list(dict_relays.items())
 
         self._infra.mp_remote.exec_raw(cmd=f"set_relays({list_relays})")
+
+    def relays_pulse(
+        self,
+        relays: int,
+        initial_closed: bool,
+        durations_ms: list[int],
+    ) -> None:
+        """
+        Makes relays number 'relays' sending pulses. 'relays' corresponds to the number printed on the PCB.
+        If 'initial_closed' is True: The relays will initially closed..
+        For all 'durations_ms': Sleep for 'duration_ms', then toggle the relays.
+        """
+        assert 1 <= relays < 7  # lib_tentacle_infra.py TentacleInfra.RELAY_COUNT
+        assert isinstance(initial_closed, bool)
+        assert isinstance(durations_ms, list)
+        for duration_ms in durations_ms:
+            assert isinstance(duration_ms, int)
+
+        self._load_base_code()
+
+        self._infra.mp_remote.exec_raw(
+            cmd=f"set_relays_pulse(relays={relays}, initial_closed={initial_closed}, durations_ms={durations_ms})",
+            timeout=int(1.5 * 1000 * sum(durations_ms)),
+        )
 
     def active_led(self, on: bool) -> None:
         assert isinstance(on, bool)

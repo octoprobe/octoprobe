@@ -29,12 +29,13 @@ classifiers = [
 ]
 
 dependencies = [
-    "usbhubctl@git+https://github.com/octoprobe/usbhubctl#egg=main",
+    "usbhubctl@git+https://github.com/octoprobe/usbhubctl@main",
     "pyudev",
-    "mpremote",
+    "mpremote@git+https://github.com/hmaerki/fork_micropython@hmaerki/mpremote_fix_endless_loop#egg=mpremote&subdirectory=tools/mpremote",
     "esptool",
     "typer-slim",
     "Jinja2",
+    "reportlab",
 ]
 
 [project.urls]
@@ -50,11 +51,6 @@ rst_sections_level_updown = "octoprobe.util_rst.rst_sections_level_updown:app"
 [project.optional-dependencies]
 
 standard = [
-    "usbhubctl@git+https://github.com/octoprobe/usbhubctl#egg=main",
-    "pyudev",
-    "mpremote",
-    "typer-slim",
-    "Jinja2",
 ]
 
 all = [
@@ -93,7 +89,7 @@ source-includes = [
 
 [tool.mypy]
 # strict = true
-enable_incomplete_feature = ["NewGenericSyntax"]
+# enable_incomplete_feature = ["NewGenericSyntax"]
 
 [[tool.mypy.overrides]]
 module = "octoprobe.tests.*"
@@ -106,6 +102,14 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = "usb.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "pyudev.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "reportlab.*"
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
@@ -220,6 +224,7 @@ disable = '''
     too-many-positional-arguments,
     too-many-return-statements,
     unreachable,
+    unspecified-encoding,
     unused-argument,
     using-constant-test,
 '''

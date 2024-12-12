@@ -20,3 +20,14 @@ assert DIRECTORY_OCTOPROBE_DOWNLOADS.is_dir()
 
 DIRECTORY_OCTOPROBE_CACHE_FIRMWARE = DIRECTORY_OCTOPROBE_DOWNLOADS / "cache_firmware"
 DIRECTORY_OCTOPROBE_CACHE_FIRMWARE.mkdir(parents=True, exist_ok=True)
+
+
+def relative_cwd(filename: pathlib.Path) -> pathlib.Path:
+    """
+    Return the path to the filename relative to the current working directory.
+    Return the full path If filename is outside of the current directory.
+    """
+    try:
+        return filename.relative_to(pathlib.Path.cwd())
+    except ValueError:
+        return filename

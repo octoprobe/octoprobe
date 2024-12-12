@@ -67,17 +67,15 @@ def subprocess_run(
 
     def log(f) -> None:
         f(f"EXEC {args_text}")
-        f(f"  returncode={proc.returncode}")
-        f(f"  duration={time.monotonic()-begin_s:0.3f}s")
+        f(f"  returncode: {proc.returncode}")
+        f(f"  duration: {time.monotonic()-begin_s:0.3f}s")
         if logfile is not None:
-            f(f"  logfile={logfile}")
+            f(f"  logfile: {logfile}")
         else:
             stdout = proc.stdout.strip()
             stderr = proc.stderr.strip()
             f(f"  stdout: {stdout}")
             f(f"  stderr: {stderr}")
-
-    log(logger.debug)
 
     if proc.returncode != 0:
         log(logger.warning)
@@ -85,3 +83,5 @@ def subprocess_run(
         if logfile is not None:
             msg += f"\nlogfile={logfile}"
         raise SubprocessExitCodeException(msg)
+
+    log(logger.debug)

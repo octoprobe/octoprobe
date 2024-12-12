@@ -34,7 +34,7 @@
         {
             "label": "mypy",
             "type": "shell",
-            "command": "python -m mypy --config-file pyproject.toml src/octoprobe || true",
+            "command": "python -m mypy --config-file pyproject.toml src || true",
             "options": {
                 "cwd": "${workspaceFolder}"
             },

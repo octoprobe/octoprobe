@@ -35,9 +35,25 @@ class MpRemote:
     Are there other ways to access micropython on a remote MCU?
     """
 
-    def __init__(self, tty: str, baudrate: int = 115200, wait_s: int = 5) -> None:
+    def __init__(
+        self,
+        tty: str,
+        baudrate: int = 115200,
+        wait_s: int = 5,
+        timeout_s: float | None = 2.0,
+    ) -> None:
         self.state = State()
-        self.state.transport = SerialTransport(tty, baudrate=baudrate, wait=wait_s)
+        self.state.transport = SerialTransport(
+            tty,
+            baudrate=baudrate,
+            wait=wait_s,
+            timeout=timeout_s,
+        )
+        # TODO: It would be beneficial to add a timeout parameter to mpremote
+        # Rationale. The timeout is required as 'mp_remote.exec_raw()' may block forever as
+        # it will not return from 'serial.read()'. This happens when a rp2 is flashed with
+        # this firmware: https://github.com/gusmanb/logicanalyzer
+        # self.state.transport.serial.timeout = timeout_s
 
     def __enter__(self) -> Self:
         return self
@@ -108,11 +124,15 @@ class MpRemote:
         self,
         cmd: str,
         follow: bool = True,
-        timeout: int | None = None,
+        timeout: int | None = 2,
     ) -> str:
         """
         Derived from mpremote.commands.do_exec / do_execbuffer
         """
+        assert isinstance(cmd, str)
+        assert isinstance(follow, bool)
+        assert isinstance(timeout, int | None)
+
         self.state.ensure_raw_repl()
         self.state.did_action()
 

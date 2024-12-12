@@ -3,7 +3,7 @@ import logging
 
 from testbed.constants import EnumTentacleType
 
-from octoprobe.lib_tentacle import Tentacle
+from .lib_tentacle import TentacleBase
 
 logger = logging.getLogger(__file__)
 
@@ -16,25 +16,25 @@ class Testbed:
     """
 
     workspace: str
-    tentacles: list[Tentacle]
+    tentacles: list[TentacleBase]
 
     def __post_init__(self) -> None:
         assert isinstance(self.tentacles, list)
 
     @property
     def description_short(self) -> str:
-        return Tentacle.tentacles_description_short(tentacles=self.tentacles)
+        return TentacleBase.tentacles_description_short(tentacles=self.tentacles)
 
     def get_tentacle(
         self, tentacle_type: EnumTentacleType | None = None, serial: str | None = None
-    ) -> Tentacle:
+    ) -> TentacleBase:
         assert isinstance(tentacle_type, EnumTentacleType | None)
         assert isinstance(serial, str | None)
 
-        list_tentacles: list[Tentacle] = []
+        list_tentacles: list[TentacleBase] = []
         for tentacle in self.tentacles:
             if tentacle_type is not None:
-                if tentacle_type != tentacle.tentacle_spec.tentacle_type:
+                if tentacle_type != tentacle.tentacle_spec_base.tentacle_type:
                     continue
             if serial is not None:
                 if serial != tentacle.tentacle_serial_number:
@@ -57,7 +57,7 @@ class Testbed:
                 f"{len(list_tentacles)} tentacles match. Please specify serial.",
                 line_criterial,
                 "These tenacles are configured and already selected:",
-                Tentacle.tentacles_description_short(tentacles=list_tentacles),
+                TentacleBase.tentacles_description_short(tentacles=list_tentacles),
             ]
             raise ValueError("\n".join(lines2))
 

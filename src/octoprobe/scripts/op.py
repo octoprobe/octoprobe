@@ -7,6 +7,7 @@ import typing_extensions
 
 from .. import util_usb_serial
 from ..util_power import PowerCycle, UsbPlug, UsbPlugs
+from ..util_pyudev_monitor import do_udev_monitor
 from . import typer_query
 from .commissioning import do_commissioning
 from .install import URL_RELEASE_DEFAULT, do_install
@@ -23,33 +24,35 @@ TyperAnnotated = typing_extensions.Annotated
 app = typer.Typer()
 
 
-@app.command()
+@app.command(help="Installs some binaries which require root rights.")
 def install(url: str = URL_RELEASE_DEFAULT) -> None:
-    """
-    Installs some binaries which require root rights
-    """
+    """ """
     do_install(url=url)
 
 
-@app.command()
+@app.command(help="Monitors udev events. This is helpful for debugging.")
+def udev() -> None:
+    """ """
+    do_udev_monitor()
+
+
+@app.command(help="Use this command to test new tentacles")
 def commissioning() -> None:
-    """
-    Use this command to test new tentacles
-    """
+    """ """
     do_commissioning()
 
 
-@app.command()
-def cycle(
+@app.command(help="Power cycle usb ports.")
+def powercycle(
     power_cycle: PowerCycle,
     serial: TyperAnnotated[Optional[list[str]], typer.Option()] = None,  # noqa: UP007
 ) -> None:
     hubs = util_usb_serial.QueryResultTentacle.query(verbose=serial is not None)
     hubs = hubs.select(serials=serial)
-    hubs.cycle(power_cycle=power_cycle)
+    hubs.powercycle(power_cycle=power_cycle)
 
 
-@app.command()
+@app.command(help="Power on/off usb ports.")
 def power(
     on: TyperAnnotated[Optional[list[UsbPlug]], typer.Option()] = None,  # noqa: UP007
     off: TyperAnnotated[Optional[list[UsbPlug]], typer.Option()] = None,  # noqa: UP007
@@ -73,7 +76,7 @@ def power(
     print(plugs.text)
 
 
-@app.command()
+@app.command(help="Query connected tentacles.")
 def query(
     verbose: TyperAnnotated[bool, typer.Option()] = True,
 ) -> None:

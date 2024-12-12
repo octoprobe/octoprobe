@@ -5,6 +5,7 @@ import pathlib
 import time
 
 from ..lib_tentacle_infra import TentacleInfra
+from ..util_firmware_spec import FirmwareDownloadSpec
 from ..util_pyudev import UdevPoller
 from ..util_usb_serial import QueryResultTentacle
 
@@ -35,11 +36,14 @@ def do_commissioning() -> None:
     """
     init_logging()
 
+    firmware_spec = TentacleInfra.get_firmware_spec()
+    firmware_spec.download()
+
     while True:
         c = Commissioning()
         try:
             with UdevPoller() as udev:
-                c.do_program_rp2(udev=udev)
+                c.do_program_rp2(udev=udev, firmware_spec=firmware_spec)
                 while True:
                     c.do_commissioning()
         except Exception as e:
@@ -63,8 +67,10 @@ class MsgPeriod:
 class Commissioning:
     def __init__(self) -> None:
         connected_tentacle = self._wait_for_connected_tentacle()
-        self.tentacle_infra = TentacleInfra("tentacle_to_commission")
-        self.tentacle_infra.assign_connected_hub(connected_tentacle)
+        self.tentacle_infra = TentacleInfra(
+            "tentacle_to_commission",
+            hub=connected_tentacle,
+        )
         logger.info(
             f"Tentacle detected at usb location: {connected_tentacle.hub_location.short}"
         )
@@ -95,13 +101,18 @@ class Commissioning:
                 continue
             return hubs[0]
 
-    def do_program_rp2(self, udev: UdevPoller) -> None:
+    def do_program_rp2(
+        self, udev: UdevPoller, firmware_spec: FirmwareDownloadSpec
+    ) -> None:
         assert isinstance(udev, UdevPoller)
+        assert isinstance(firmware_spec, FirmwareDownloadSpec)
 
-        firmware_spec = self.tentacle_infra.get_firmware_spec()
-        firmware_spec.download()
-
-        self.tentacle_infra.flash(udev=udev, filename_firmware=firmware_spec.filename)
+        self.tentacle_infra.flash(
+            udev=udev,
+            filename_firmware=firmware_spec.filename,
+            directory_test=pathlib.Path("/tmp"),
+            usb_location=self.tentacle_infra.usb_location_infra,
+        )
         self.tentacle_infra.verify_micropython_version(firmware_spec=firmware_spec)
 
         mcu_infra = self.tentacle_infra.mcu_infra

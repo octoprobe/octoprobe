@@ -1,75 +1,138 @@
 from __future__ import annotations
 
+import abc
+import contextlib
 import dataclasses
 import enum  # pylint: disable=unused-import
 import io
 import logging
+import pathlib
 import textwrap
-from collections.abc import Iterator
-from contextlib import contextmanager
+import typing
 
 from usbhubctl import DualConnectedHub, Hub
 
 from . import util_power, util_usb_serial
 from .lib_tentacle_dut import TentacleDut
 from .lib_tentacle_infra import TentacleInfra
-from .util_baseclasses import TentacleSpec
-from .util_dut_programmers import FirmwareSpecBase
+from .util_baseclasses import TentacleSpecBase
+from .util_firmware_spec import FirmwareSpecBase
 from .util_pyudev import UdevPoller
 
 logger = logging.getLogger(__file__)
 
 
-class Tentacle[TTentacleSpec, TTentacleType: enum.StrEnum, TEnumFut: enum.StrEnum]:
+class TentacleState:
+    """
+    The USB hub connected.
+    The firmware to be flashed.
+    If the firmware was already flashed or not.
+    The last firmware which was flashed.
+    ...
+    """
+
+    def __init__(self) -> None:
+        self.flash_skip = False
+        """
+        Never flash
+        """
+
+        self.flash_force = False
+        """
+        First time: force flash even if the correct firmware is installed.
+        """
+
+        self.last_firmware_flashed: FirmwareSpecBase | None = None
+        """
+        Will be update everytime after flashing.
+        This may be used to calculate the priority of a testrun.
+        """
+
+        self._firmware_spec: FirmwareSpecBase | None = None
+        """
+        Specifies the firmware to be flashed for the next test.
+        If None: Use firmware already on the DUT.
+        """
+
+    @property
+    def firmware_spec(self) -> FirmwareSpecBase:
+        """
+        This is only valid for tentacles.is_mcu!
+        """
+        # assert self.is_mcu, "firmware_spec only makes sense for 'is_mcu' tentacles."
+        assert self._firmware_spec is not None
+        return self._firmware_spec
+
+    @firmware_spec.setter
+    def firmware_spec(self, spec: FirmwareSpecBase) -> None:
+        # assert self.is_mcu, "firmware_spec only makes sense for 'is_mcu' tentacles."
+        assert isinstance(spec, FirmwareSpecBase)
+        self._firmware_spec = spec
+
+    def do_not_flash_firmware(self) -> None:
+        self._firmware_spec = None
+
+    @property
+    def has_firmware_spec(self) -> bool:
+        return self._firmware_spec is not None
+
+
+class TentacleBase(abc.ABC):
     """
     The interface to a Tentacle:
     Both 'Infrastructure' and 'DUT'.
+
+    The livetime of the tentacles starts after the USB query and
+    ends when the testrunner terminates.
+
+    All tentacle information is read only.
+    However, the 'dut' will have stateinformation that will change.
     """
 
     def __init__(
         self,
         tentacle_serial_number: str,
-        tentacle_spec: TentacleSpec[TTentacleSpec, TTentacleType, TEnumFut],
+        tentacle_spec_base: TentacleSpecBase,
         hw_version: str,
+        hub: util_usb_serial.QueryResultTentacle,
     ) -> None:
         assert isinstance(tentacle_serial_number, str)
-        assert isinstance(tentacle_spec, TentacleSpec)
+        assert isinstance(tentacle_spec_base, TentacleSpecBase)
         assert isinstance(hw_version, str)
         assert (
             tentacle_serial_number == tentacle_serial_number.lower()
         ), f"Must not contain upper case letters: {tentacle_serial_number}"
+        assert isinstance(hub, util_usb_serial.QueryResultTentacle)
 
+        self.tentacle_state = TentacleState()
         self.tentacle_serial_number = tentacle_serial_number
-        self.tentacle_spec = tentacle_spec
+        self.tentacle_spec_base = tentacle_spec_base
 
         def _label(dut_or_infra: str) -> str:
             # return f"Tentacle {dut_or_infra}{tentacle_serial_number}({tentacle_spec.label})"
             return f"Tentacle {dut_or_infra}{self.label_short}"
 
         self.label = _label(dut_or_infra="")
-        self.infra = TentacleInfra(label=_label(dut_or_infra="INFRA "))
+        self.infra = TentacleInfra(label=_label(dut_or_infra="INFRA "), hub=hub)
 
         def get_dut() -> TentacleDut | None:
-            if tentacle_spec.mcu_config is None:
-                return None
-            return TentacleDut(
-                label=_label(dut_or_infra="DUT "),
-                tentacle_spec=tentacle_spec,
-            )
+            if self.is_mcu:
+                return TentacleDut(
+                    label=_label(dut_or_infra="DUT "),
+                    tentacle=self,
+                )
+            return None
 
         self._dut = get_dut()
-        self._firmware_spec: FirmwareSpecBase | None = None
-        """
-        Specifies the firmware.
-        This will be updated for EVERY testfunction!
-        If None: Use firmware already on the DUT.
-        """
 
     def __repr__(self) -> str:
         return self.label
 
     def flash_dut(
-        self, udev_poller: UdevPoller, firmware_spec: FirmwareSpecBase
+        self,
+        udev_poller: UdevPoller,
+        firmware_spec: FirmwareSpecBase,
+        directory_logs: pathlib.Path,
     ) -> None:
         if self.dut is None:
             return
@@ -77,6 +140,7 @@ class Tentacle[TTentacleSpec, TTentacleType: enum.StrEnum, TEnumFut: enum.StrEnu
         self.dut.flash_dut(
             tentacle=self,
             udev=udev_poller,
+            directory_logs=directory_logs,
             firmware_spec=firmware_spec,
         )
 
@@ -87,29 +151,7 @@ class Tentacle[TTentacleSpec, TTentacleType: enum.StrEnum, TEnumFut: enum.StrEnu
 
     @property
     def is_mcu(self) -> bool:
-        return self.tentacle_spec.is_mcu
-
-    def do_not_flash_firmware(self) -> None:
-        self._firmware_spec = None
-
-    @property
-    def has_firmware_spec(self) -> bool:
-        return self._firmware_spec is not None
-
-    @property
-    def firmware_spec(self) -> FirmwareSpecBase:
-        """
-        This is only valid for tentacles.is_mcu!
-        """
-        assert self.is_mcu, "firmware_spec only makes sense for 'is_mcu' tentacles."
-        assert self._firmware_spec is not None
-        return self._firmware_spec
-
-    @firmware_spec.setter
-    def firmware_spec(self, spec: FirmwareSpecBase) -> None:
-        assert self.is_mcu, "firmware_spec only makes sense for 'is_mcu' tentacles."
-        assert isinstance(spec, FirmwareSpecBase)
-        self._firmware_spec = spec
+        return self.tentacle_spec_base.is_mcu
 
     @property
     def power(self) -> util_power.TentaclePlugsPower:
@@ -118,7 +160,7 @@ class Tentacle[TTentacleSpec, TTentacleType: enum.StrEnum, TEnumFut: enum.StrEnu
     @property
     def description_short(self) -> str:
         f = io.StringIO()
-        f.write(f"Label {self.tentacle_spec.tentacle_tag}\n")
+        f.write(f"Label {self.tentacle_spec_base.tentacle_tag}\n")
         f.write(f"  tentacle_serial_number {self.tentacle_serial_number}\n")
 
         return f.getvalue()
@@ -129,59 +171,52 @@ class Tentacle[TTentacleSpec, TTentacleType: enum.StrEnum, TEnumFut: enum.StrEnu
         self.infra.power_dut_off_and_wait()
         self.dut.mp_remote_close()
 
-    def assign_connected_hub(
-        self, query_result_tentacle: util_usb_serial.QueryResultTentacle
-    ) -> None:
-        self.infra.assign_connected_hub(query_result_tentacle=query_result_tentacle)
-
     @property
     def label_short(self) -> str:
         """
         Example: 1831-RPI_PICO
         Example: 1331-DAQ
         """
-        return self.tentacle_serial_number[-4:] + "-" + self.tentacle_spec.tentacle_tag.name
+        return (
+            self.tentacle_serial_number[-4:]
+            + "-"
+            + self.tentacle_spec_base.tentacle_tag
+        )
 
     @property
+    @abc.abstractmethod
     def pytest_id(self) -> str:
         """
         Example: 1831-pico2(RPI_PICO2-RISCV)
         Example: 1331-daq
         """
-        name = self.label_short
-        if self.is_mcu:
-            if self.firmware_spec is None:
-                name += "(no-flashing)"
-            else:
-                name += f"({self.firmware_spec.board_variant.name_normalized})"
-        return name
 
     def get_tag(self, tag: str) -> str | None:
-        return self.tentacle_spec.get_tag(tag=tag)
+        return self.tentacle_spec_base.get_tag(tag=tag)
 
     def get_tag_mandatory(self, tag: str) -> str:
-        return self.tentacle_spec.get_tag_mandatory(tag=tag)
+        return self.tentacle_spec_base.get_tag_mandatory(tag=tag)
 
     @property
-    @contextmanager
-    def active_led(self) -> Iterator[None]:
+    @contextlib.contextmanager
+    def active_led_on(self) -> typing.Generator[typing.Any, None, None]:
         try:
             self.infra.mcu_infra.active_led(on=True)
             yield
         finally:
             self.infra.mcu_infra.active_led(on=False)
 
-    def set_relays_by_FUT(self, fut: TEnumFut, open_others: bool = False) -> None:
+    def set_relays_by_FUT(self, fut: enum.StrEnum, open_others: bool = False) -> None:
         assert isinstance(fut, enum.StrEnum)
         assert isinstance(open_others, bool)
 
         relays_open = self.infra.LIST_ALL_RELAYS if open_others else []
         try:
-            list_relays = self.tentacle_spec.relays_closed[fut]
+            list_relays = self.tentacle_spec_base.relays_closed[fut]
         except KeyError as e:
             try:
                 # Fallback to the default value given by the key 'None'.
-                list_relays = self.tentacle_spec.relays_closed[None]
+                list_relays = self.tentacle_spec_base.relays_closed[None]
             except KeyError:
                 raise KeyError(
                     f"{self.description_short}: Does not specify: tentacle_spec.relays_closed[{fut.name}]"
@@ -195,7 +230,7 @@ class Tentacle[TTentacleSpec, TTentacleType: enum.StrEnum, TEnumFut: enum.StrEnu
         self.dut.boot_and_init_mp_remote_dut(tentacle=self, udev=udev)
 
     @staticmethod
-    def tentacles_description_short(tentacles: list[Tentacle]) -> str:
+    def tentacles_description_short(tentacles: list[TentacleBase]) -> str:
         f = io.StringIO()
         f.write("TENTACLES\n")
         for tentacle in tentacles:

@@ -16,5 +16,5 @@ Application Object
    :members:
    :inherited-members:
 
-.. autoclass:: octoprobe.util_baseclasses.TentacleSpec
+.. autoclass:: octoprobe.util_baseclasses.TentacleSpecBase
    :members:

@@ -161,6 +161,21 @@
             },
             "console": "integratedTerminal",
             "justMyCode": false,
+        },
+        {
+            "name": "Python: op udev",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "octoprobe.scripts.op",
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "udev",
+            ],
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            },
+            "console": "integratedTerminal",
+            "justMyCode": false,
         }
     ]
 }

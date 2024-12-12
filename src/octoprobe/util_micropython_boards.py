@@ -55,9 +55,13 @@ class BoardVariant:
 
     @property
     def name_normalized(self) -> str:
-        if self.variant == "":
-            return self.board
-        return f"{self.board}{VARIANT_SEPARATOR}{self.variant}"
+        return self.build_name_normalized(board=self.board, variant=self.variant)
+
+    @staticmethod
+    def build_name_normalized(board: str, variant: str) -> str:
+        if variant == "":
+            return board
+        return f"{board}{VARIANT_SEPARATOR}{variant}"
 
 
 def board_variants(boards: str) -> list[BoardVariant]:

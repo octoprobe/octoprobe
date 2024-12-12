@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import logging
 import logging.config
@@ -27,8 +29,9 @@ class Log:
         Create a logfile.
         Add a logging handler and eventually remove it again.
         """
+        self.filename = directory / f"logger_{level}_{name}.log"
         self._handler: logging.FileHandler | None = logging.FileHandler(
-            directory / f"logger_{level}_{name}.log", mode="w"
+            self.filename, mode="w"
         )
         self._handler.level = level
         self._handler.formatter = FORMATTER
@@ -61,8 +64,12 @@ class Logs:
             Log(directory, "debug", logging.DEBUG),
         ]
 
-    def __enter__(self) -> None:
-        pass
+    @property
+    def filename(self) -> pathlib.Path:
+        return self._handlers[1].filename
+
+    def __enter__(self) -> Logs:
+        return self
 
     def __exit__(self, exc_type, exc_value, traceback) -> None:
         for handler in self._handlers:
