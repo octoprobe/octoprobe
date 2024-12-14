@@ -69,9 +69,7 @@ class FirmwareSpecBase(abc.ABC):
 
     @property
     def requires_flashing(self) -> bool:
-        return (
-            self.micropython_full_version_text == MICROPYTHON_FULL_VERSION_TEXT_FORCE
-        )
+        return self.micropython_full_version_text == MICROPYTHON_FULL_VERSION_TEXT_FORCE
 
     def __post_init__(self) -> None:
         assert isinstance(self.board_variant, BoardVariant)
@@ -147,6 +145,16 @@ class FirmwareBuildSpec(FirmwareSpecBase):
             )
 
         return self._filename
+
+    @property
+    def text(self) -> str:
+        lines = (
+            f"board_variant={self.board_variant.name_normalized}",
+            f"micropython_full_version_text={self.micropython_full_version_text}",
+            f"requires_flashing={self.requires_flashing}",
+            f"filename={self._filename}",
+        )
+        return "\n".join(lines)
 
 
 @dataclasses.dataclass(frozen=True, repr=True)

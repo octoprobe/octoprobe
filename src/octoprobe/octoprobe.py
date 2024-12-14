@@ -102,7 +102,11 @@ class NTestRun:
             if tentacle.is_mcu:
                 tentacle.dut.mp_remote_close()
 
-    def function_setup_dut(self, active_tentacles: list[Tentacle]) -> None:
+    def function_setup_dut(
+        self,
+        active_tentacles: list[Tentacle],
+        flash_skip: bool,
+    ) -> None:
         # Flash the MCU(s)
         for tentacle in active_tentacles:
             if tentacle.is_mcu:
@@ -110,6 +114,7 @@ class NTestRun:
                 tentacle.flash_dut(
                     udev_poller=self.udev_poller,
                     firmware_spec=tentacle.firmware_spec,
+                    flash_skip=flash_skip,
                 )
 
         for tentacle in active_tentacles:

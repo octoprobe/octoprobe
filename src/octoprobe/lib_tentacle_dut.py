@@ -40,15 +40,10 @@ class TentacleDut:
             tentacle_spec.get_tag_mandatory(tag)
 
         self.label = label
-        self._tentacle_spec = tentacle_spec
         self._mp_remote: MpRemote | None = None
         self.dut_mcu = dut_mcu_factory(tags=tentacle_spec.tags)
         self.dut_programmer = dut_programmer_factory(tags=tentacle_spec.tags)
         self.dut_flashed_variant_normalized: str = "not flashed yet"
-
-    @property
-    def tentacle_spec(self) -> TentacleSpec:
-        return self._tentacle_spec
 
     @property
     def mp_remote(self) -> MpRemote:
@@ -116,9 +111,7 @@ class TentacleDut:
             return False
 
         installed_full_version = self.dut_installed_firmware_full_version_text()
-        logger.info(
-            f"{self.label}: Version installed: {installed_full_version}"
-        )
+        logger.info(f"{self.label}: Version installed: {installed_full_version}")
         versions_equal = (
             firmware_spec.micropython_full_version_text == installed_full_version
         )
@@ -134,6 +127,7 @@ class TentacleDut:
         tentacle: Tentacle,
         udev: UdevPoller,
         firmware_spec: FirmwareSpecBase,
+        flash_skip: bool,
     ) -> None:
         """
         Will flash the firmware if it is not already flashed.
@@ -147,13 +141,16 @@ class TentacleDut:
         try:
             # TODO: Handle situation where DUT does not respond
             self.boot_and_init_mp_remote_dut(tentacle=tentacle, udev=udev)
+            if flash_skip:
+                return
 
             if firmware_spec.requires_flashing:
                 logger.info(
                     f"{self.label}: Firmware spec requires flashing '{firmware_spec.board_variant.name_normalized}'!"
                 )
-                return
-            if self.is_dut_required_firmware_already_installed(
+            else:
+
+                if self.is_dut_required_firmware_already_installed(
                     firmware_spec=firmware_spec
                 ):
                     logger.info(f"{self.label}: Firmware is already installed")

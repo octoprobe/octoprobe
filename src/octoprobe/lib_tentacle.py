@@ -69,7 +69,10 @@ class Tentacle[TTentacleSpec, TTentacleType: enum.StrEnum, TEnumFut: enum.StrEnu
         return self.label
 
     def flash_dut(
-        self, udev_poller: UdevPoller, firmware_spec: FirmwareSpecBase
+        self,
+        udev_poller: UdevPoller,
+        firmware_spec: FirmwareSpecBase,
+        flash_skip: bool,
     ) -> None:
         if self.dut is None:
             return
@@ -78,6 +81,7 @@ class Tentacle[TTentacleSpec, TTentacleType: enum.StrEnum, TEnumFut: enum.StrEnu
             tentacle=self,
             udev=udev_poller,
             firmware_spec=firmware_spec,
+            flash_skip=flash_skip,
         )
 
     @property
