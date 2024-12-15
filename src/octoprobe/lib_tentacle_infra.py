@@ -46,20 +46,13 @@ class TentacleInfra:
         json_filename = DIRECTORY_OF_THIS_FILE / "util_tentacle_infra_firmware.json"
         return FirmwareDownloadSpec.factory2(filename=json_filename)
 
-    def __init__(self, label: str) -> None:
+    def __init__(self, label: str, hub: util_usb_serial.QueryResultTentacle) -> None:
         assert isinstance(label, str)
         self.label = label
-        self.hub: util_usb_serial.QueryResultTentacle | None = None
+        self.hub = hub
         self._mp_remote: MpRemote | None = None
         self._power: util_power.TentaclePlugsPower | None = None
         self.mcu_infra: InfraRP2 = InfraRP2(self)
-
-    def assign_connected_hub(
-        self,
-        query_result_tentacle: util_usb_serial.QueryResultTentacle,
-    ) -> None:
-        assert isinstance(query_result_tentacle, util_usb_serial.QueryResultTentacle)
-        self.hub = query_result_tentacle
 
     def mp_remote_close(self) -> str | None:
         """

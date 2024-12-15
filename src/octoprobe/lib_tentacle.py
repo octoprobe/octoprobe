@@ -75,7 +75,11 @@ class TentacleState:
         return self._firmware_spec is not None
 
 
-class Tentacle[TTentacleSpec, TTentacleType: enum.StrEnum, TEnumFut: enum.StrEnum]:
+class Tentacle[
+    TTentacleSpec,
+    TTentacleType: enum.StrEnum,
+    TEnumFut: enum.StrEnum,
+]:
     """
     The interface to a Tentacle:
     Both 'Infrastructure' and 'DUT'.
@@ -92,6 +96,7 @@ class Tentacle[TTentacleSpec, TTentacleType: enum.StrEnum, TEnumFut: enum.StrEnu
         tentacle_serial_number: str,
         tentacle_spec: TentacleSpec[TTentacleSpec, TTentacleType, TEnumFut],
         hw_version: str,
+        hub: util_usb_serial.QueryResultTentacle,
     ) -> None:
         assert isinstance(tentacle_serial_number, str)
         assert isinstance(tentacle_spec, TentacleSpec)
@@ -109,7 +114,7 @@ class Tentacle[TTentacleSpec, TTentacleType: enum.StrEnum, TEnumFut: enum.StrEnu
             return f"Tentacle {dut_or_infra}{self.label_short}"
 
         self.label = _label(dut_or_infra="")
-        self.infra = TentacleInfra(label=_label(dut_or_infra="INFRA "))
+        self.infra = TentacleInfra(label=_label(dut_or_infra="INFRA "), hub=hub)
 
         def get_dut() -> TentacleDut | None:
             if tentacle_spec.mcu_config is None:
@@ -166,11 +171,6 @@ class Tentacle[TTentacleSpec, TTentacleType: enum.StrEnum, TEnumFut: enum.StrEnu
             return
         self.infra.power_dut_off_and_wait()
         self.dut.mp_remote_close()
-
-    def assign_connected_hub(
-        self, query_result_tentacle: util_usb_serial.QueryResultTentacle
-    ) -> None:
-        self.infra.assign_connected_hub(query_result_tentacle=query_result_tentacle)
 
     @property
     def label_short(self) -> str:
