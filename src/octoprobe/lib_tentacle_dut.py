@@ -30,19 +30,21 @@ class TentacleDut:
     * Allows to run micropython code on the MCU.
     """
 
-    def __init__(self, label: str, tentacle_spec: TentacleSpec) -> None:
+    def __init__(self, label: str, tentacle: Tentacle) -> None:
         assert isinstance(label, str)
-        assert isinstance(tentacle_spec, TentacleSpec)
+        assert tentacle.__class__.__name__ == "Tentacle"
+
+        self._tentacle = tentacle
 
         # Validate consistency
         # for tag in TAG_MCU, TAG_BOARDS, TAG_PROGRAMMER:
         for tag in TAG_MCU, TAG_PROGRAMMER:
-            tentacle_spec.get_tag_mandatory(tag)
+            tentacle.tentacle_spec.get_tag_mandatory(tag)
 
         self.label = label
         self._mp_remote: MpRemote | None = None
-        self.dut_mcu = dut_mcu_factory(tags=tentacle_spec.tags)
-        self.dut_programmer = dut_programmer_factory(tags=tentacle_spec.tags)
+        self.dut_mcu = dut_mcu_factory(tags=tentacle.tentacle_spec.tags)
+        self.dut_programmer = dut_programmer_factory(tags=tentacle.tentacle_spec.tags)
         self.dut_flashed_variant_normalized: str = "not flashed yet"
 
     @property

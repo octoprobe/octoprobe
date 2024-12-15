@@ -54,7 +54,7 @@ class Tentacle[TTentacleSpec, TTentacleType: enum.StrEnum, TEnumFut: enum.StrEnu
                 return None
             return TentacleDut(
                 label=_label(dut_or_infra="DUT "),
-                tentacle_spec=tentacle_spec,
+                tentacle=self,
             )
 
         self._dut = get_dut()
