@@ -20,10 +20,71 @@ from .util_pyudev import UdevPoller
 logger = logging.getLogger(__file__)
 
 
+class TentacleState:
+    """
+    The USB hub connected.
+    The firmware to be flashed.
+    If the firmware was already flashed or not.
+    The last firmware which was flashed.
+    ...
+    """
+
+    def __init__(self) -> None:
+        self.flash_skip = False
+        """
+        Never flash
+        """
+
+        self.flash_force = False
+        """
+        First time: force flash even if the correct firmware is installed.
+        """
+
+        self.last_firmware_flashed: FirmwareSpecBase | None = None
+        """
+        Will be update everytime after flashing.
+        This may be used to calculate the priority of a testrun.
+        """
+
+        self._firmware_spec: FirmwareSpecBase | None = None
+        """
+        Specifies the firmware to be flashed for the next test.
+        If None: Use firmware already on the DUT.
+        """
+
+    @property
+    def firmware_spec(self) -> FirmwareSpecBase:
+        """
+        This is only valid for tentacles.is_mcu!
+        """
+        # assert self.is_mcu, "firmware_spec only makes sense for 'is_mcu' tentacles."
+        assert self._firmware_spec is not None
+        return self._firmware_spec
+
+    @firmware_spec.setter
+    def firmware_spec(self, spec: FirmwareSpecBase) -> None:
+        # assert self.is_mcu, "firmware_spec only makes sense for 'is_mcu' tentacles."
+        assert isinstance(spec, FirmwareSpecBase)
+        self._firmware_spec = spec
+
+    def do_not_flash_firmware(self) -> None:
+        self._firmware_spec = None
+
+    @property
+    def has_firmware_spec(self) -> bool:
+        return self._firmware_spec is not None
+
+
 class Tentacle[TTentacleSpec, TTentacleType: enum.StrEnum, TEnumFut: enum.StrEnum]:
     """
     The interface to a Tentacle:
     Both 'Infrastructure' and 'DUT'.
+
+    The livetime of the tentacles starts after the USB query and
+    ends when the testrunner terminates.
+
+    All tentacle information is read only.
+    However, the 'dut' will have stateinformation that will change.
     """
 
     def __init__(
@@ -39,6 +100,7 @@ class Tentacle[TTentacleSpec, TTentacleType: enum.StrEnum, TEnumFut: enum.StrEnu
             tentacle_serial_number == tentacle_serial_number.lower()
         ), f"Must not contain upper case letters: {tentacle_serial_number}"
 
+        self.tentacle_state = TentacleState()
         self.tentacle_serial_number = tentacle_serial_number
         self.tentacle_spec = tentacle_spec
 
@@ -58,12 +120,6 @@ class Tentacle[TTentacleSpec, TTentacleType: enum.StrEnum, TEnumFut: enum.StrEnu
             )
 
         self._dut = get_dut()
-        self._firmware_spec: FirmwareSpecBase | None = None
-        """
-        Specifies the firmware.
-        This will be updated for EVERY testfunction!
-        If None: Use firmware already on the DUT.
-        """
 
     def __repr__(self) -> str:
         return self.label
@@ -92,28 +148,6 @@ class Tentacle[TTentacleSpec, TTentacleType: enum.StrEnum, TEnumFut: enum.StrEnu
     @property
     def is_mcu(self) -> bool:
         return self.tentacle_spec.is_mcu
-
-    def do_not_flash_firmware(self) -> None:
-        self._firmware_spec = None
-
-    @property
-    def has_firmware_spec(self) -> bool:
-        return self._firmware_spec is not None
-
-    @property
-    def firmware_spec(self) -> FirmwareSpecBase:
-        """
-        This is only valid for tentacles.is_mcu!
-        """
-        assert self.is_mcu, "firmware_spec only makes sense for 'is_mcu' tentacles."
-        assert self._firmware_spec is not None
-        return self._firmware_spec
-
-    @firmware_spec.setter
-    def firmware_spec(self, spec: FirmwareSpecBase) -> None:
-        assert self.is_mcu, "firmware_spec only makes sense for 'is_mcu' tentacles."
-        assert isinstance(spec, FirmwareSpecBase)
-        self._firmware_spec = spec
 
     @property
     def power(self) -> util_power.TentaclePlugsPower:

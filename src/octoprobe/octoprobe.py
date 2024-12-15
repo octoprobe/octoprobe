@@ -113,7 +113,7 @@ class NTestRun:
                 tentacle.infra.mcu_infra.active_led(on=True)
                 tentacle.flash_dut(
                     udev_poller=self.udev_poller,
-                    firmware_spec=tentacle.firmware_spec,
+                    firmware_spec=tentacle.tentacle_state.firmware_spec,
                     flash_skip=flash_skip,
                 )
 
