@@ -70,7 +70,13 @@ class NTestRun:
             self._udev_poller.close()
             self._udev_poller = None
 
-    def function_setup_infra(self) -> None:
+    def function_setup_all(self, tentacle: Tentacle) -> None:
+        self.function_prepare_dut(tentacle=tentacle)
+        self.function_setup_infra(tentacle=tentacle)
+        self.function_setup_dut_flash(tentacle=tentacle, flash_skip=False)
+        self.function_activate_dut(tentacle=tentacle)
+
+    def function_setup_infra(self, tentacle: Tentacle) -> None:
         """
         Power off all other known usb power plugs.
 
@@ -83,42 +89,38 @@ class NTestRun:
         """
 
         # Instantiate poller BEFORE switching on power to avoid a race condition
-        for tentacle in self.connected_tentacles:
-            tentacle.infra.setup_infra(self.udev_poller)
-            tentacle.infra.mcu_infra.active_led(on=False)
+        tentacle.infra.setup_infra(self.udev_poller)
+        tentacle.infra.mcu_infra.active_led(on=False)
 
-            if not FULL_POWERCYCLE_ALL_TENTACLES:
-                # As the tentacle infra has NOT been powercycled, we
-                # have to reset the relays
-                tentacle.infra.mcu_infra.relays(
-                    relays_close=[],
-                    relays_open=[1, 2, 3, 4, 5, 6, 7],
-                )
+        if not FULL_POWERCYCLE_ALL_TENTACLES:
+            # As the tentacle infra has NOT been powercycled, we
+            # have to reset the relays
+            tentacle.infra.mcu_infra.relays(
+                relays_close=[],
+                relays_open=[1, 2, 3, 4, 5, 6, 7],
+            )
 
-    def function_prepare_dut(self) -> None:
-        for tentacle in self.connected_tentacles:
-            tentacle.power.dut = False
-            tentacle.infra.mp_remote_close()
-            if tentacle.is_mcu:
-                tentacle.dut.mp_remote_close()
+    def function_prepare_dut(self, tentacle: Tentacle) -> None:
+        tentacle.power.dut = False
+        tentacle.infra.mp_remote_close()
+        if tentacle.is_mcu:
+            tentacle.dut.mp_remote_close()
 
-    def function_setup_dut(
+    def function_setup_dut_flash(
         self,
-        active_tentacles: list[Tentacle],
+        tentacle: Tentacle,
         flash_skip: bool,
     ) -> None:
-        # Flash the MCU(s)
-        for tentacle in active_tentacles:
-            if tentacle.is_mcu:
-                tentacle.infra.mcu_infra.active_led(on=True)
-                tentacle.flash_dut(
-                    udev_poller=self.udev_poller,
-                    firmware_spec=tentacle.tentacle_state.firmware_spec,
-                    flash_skip=flash_skip,
-                )
+        # Flash the MCU
+        tentacle.infra.mcu_infra.active_led(on=True)
+        tentacle.flash_dut(
+            udev_poller=self.udev_poller,
+            firmware_spec=tentacle.tentacle_state.firmware_spec,
+            flash_skip=flash_skip,
+        )
 
-        for tentacle in active_tentacles:
-            tentacle.infra.mcu_infra.active_led(on=True)
+    def function_activate_dut(self, tentacle: Tentacle) -> None:
+        tentacle.infra.mcu_infra.active_led(on=True)
 
     def function_teardown(self, active_tentacles: list[Tentacle]) -> None:
         if False:
