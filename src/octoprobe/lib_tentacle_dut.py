@@ -7,7 +7,6 @@ import typing
 from octoprobe.util_constants import TAG_PROGRAMMER
 
 from .lib_mpremote import MpRemote
-from .util_baseclasses import TentacleSpec
 from .util_dut_mcu import TAG_MCU, dut_mcu_factory
 from .util_dut_programmers import (
     FirmwareSpecBase,
@@ -161,27 +160,28 @@ class TentacleDut:
         except TimeoutError as e:
             logger.debug(f"{self.label}: Seems not to have firmware installed: {e!r}")
 
-        logger.info(
-            f"{self.label}: About to flash '{firmware_spec.board_variant.name_normalized}'!"
-        )
-        self.dut_programmer.flash(
-            tentacle=tentacle,
-            udev=udev,
-            firmware_spec=firmware_spec,
-        )
+        with tentacle.active_led:
+            logger.info(
+                f"{self.label}: About to flash '{firmware_spec.board_variant.name_normalized}'!"
+            )
+            self.dut_programmer.flash(
+                tentacle=tentacle,
+                udev=udev,
+                firmware_spec=firmware_spec,
+            )
 
-        tty = self.dut_mcu.application_mode_power_up(
-            tentacle=tentacle,
-            udev=udev,
-        )
-        self._mp_remote = MpRemote(tty=tty)
-        self.is_dut_required_firmware_already_installed(
-            firmware_spec=firmware_spec,
-            exception_text=f"{self.label}: After installing {firmware_spec.filename}",
-        )
-        self.dut_flashed_variant_normalized = (
-            firmware_spec.board_variant.name_normalized
-        )
+            tty = self.dut_mcu.application_mode_power_up(
+                tentacle=tentacle,
+                udev=udev,
+            )
+            self._mp_remote = MpRemote(tty=tty)
+            self.is_dut_required_firmware_already_installed(
+                firmware_spec=firmware_spec,
+                exception_text=f"{self.label}: After installing {firmware_spec.filename}",
+            )
+            self.dut_flashed_variant_normalized = (
+                firmware_spec.board_variant.name_normalized
+            )
 
     def inspection_exit(self) -> typing.NoReturn:
         msg = "Exiting without cleanup. "

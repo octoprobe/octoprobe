@@ -12,10 +12,11 @@ PYBOARD_USB_ID = BootApplicationUsbID(
 )
 
 
-def pyboard_udev_filter_boot_mode(usb_id: UsbID) -> UdevFilter:
+def pyboard_udev_filter_boot_mode(usb_id: UsbID, usb_location: str) -> UdevFilter:
     assert isinstance(usb_id, UsbID)
     return UdevFilter(
         label="Pyboard Boot Mode",
+        usb_location=usb_location,
         udev_event_class=Rp2UdevBootModeEvent,
         id_vendor=usb_id.vendor_id,
         id_product=usb_id.product_id,

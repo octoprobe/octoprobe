@@ -70,11 +70,10 @@ class NTestRun:
             self._udev_poller.close()
             self._udev_poller = None
 
-    def function_setup_all(self, tentacle: Tentacle) -> None:
+    def function_setup_infa_and_dut(self, tentacle: Tentacle) -> None:
         self.function_prepare_dut(tentacle=tentacle)
         self.function_setup_infra(tentacle=tentacle)
         self.function_setup_dut_flash(tentacle=tentacle, flash_skip=False)
-        self.function_activate_dut(tentacle=tentacle)
 
     def function_setup_infra(self, tentacle: Tentacle) -> None:
         """
@@ -112,15 +111,11 @@ class NTestRun:
         flash_skip: bool,
     ) -> None:
         # Flash the MCU
-        tentacle.infra.mcu_infra.active_led(on=True)
         tentacle.flash_dut(
             udev_poller=self.udev_poller,
             firmware_spec=tentacle.tentacle_state.firmware_spec,
             flash_skip=flash_skip,
         )
-
-    def function_activate_dut(self, tentacle: Tentacle) -> None:
-        tentacle.infra.mcu_infra.active_led(on=True)
 
     def function_teardown(self, active_tentacles: list[Tentacle]) -> None:
         if False:

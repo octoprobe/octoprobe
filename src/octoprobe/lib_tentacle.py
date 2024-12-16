@@ -96,7 +96,7 @@ class Tentacle[
         tentacle_serial_number: str,
         tentacle_spec: TentacleSpec[TTentacleSpec, TTentacleType, TEnumFut],
         hw_version: str,
-        hub: util_usb_serial.QueryResultTentacle,
+        hub: util_usb_serial.QueryResultTentacle | None = None,
     ) -> None:
         assert isinstance(tentacle_serial_number, str)
         assert isinstance(tentacle_spec, TentacleSpec)
@@ -104,10 +104,12 @@ class Tentacle[
         assert (
             tentacle_serial_number == tentacle_serial_number.lower()
         ), f"Must not contain upper case letters: {tentacle_serial_number}"
+        assert isinstance(hub, util_usb_serial.QueryResultTentacle)
 
         self.tentacle_state = TentacleState()
         self.tentacle_serial_number = tentacle_serial_number
         self.tentacle_spec = tentacle_spec
+        self.hub = hub
 
         def _label(dut_or_infra: str) -> str:
             # return f"Tentacle {dut_or_infra}{tentacle_serial_number}({tentacle_spec.label})"
@@ -128,6 +130,14 @@ class Tentacle[
 
     def __repr__(self) -> str:
         return self.label
+
+    @property
+    def usb_location_dut(self) -> str:
+        return f"{self.hub.hub_location.short}.{util_power.UsbPlug.DUT.number}"
+
+    @property
+    def usb_location_infra(self) -> str:
+        return f"{self.hub.hub_location.short}.{util_power.UsbPlug.INFRA.number}"
 
     def flash_dut(
         self,
@@ -188,10 +198,10 @@ class Tentacle[
         """
         name = self.label_short
         if self.is_mcu:
-            if self.firmware_spec is None:
+            if self.tentacle_state.firmware_spec is None:
                 name += "(no-flashing)"
             else:
-                name += f"({self.firmware_spec.board_variant.name_normalized})"
+                name += f"({self.tentacle_state.firmware_spec.board_variant.name_normalized})"
         return name
 
     def get_tag(self, tag: str) -> str | None:

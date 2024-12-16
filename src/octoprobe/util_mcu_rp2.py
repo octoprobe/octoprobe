@@ -33,10 +33,12 @@ class Rp2UdevBootModeEvent(UdevEventBase):
         return f"{self.__class__.__name__}(serial={self.serial}, bus_num={self.bus_num}, dev_num={self.dev_num})"
 
 
-def rp2_udev_filter_boot_mode(usb_id: UsbID) -> UdevFilter:
+def rp2_udev_filter_boot_mode(usb_id: UsbID, usb_location: str) -> UdevFilter:
     assert isinstance(usb_id, UsbID)
+    assert isinstance(usb_location, str)
     return UdevFilter(
         label="Raspberry Pi Pico Boot Mode",
+        usb_location=usb_location,
         udev_event_class=Rp2UdevBootModeEvent,
         id_vendor=usb_id.vendor_id,
         id_product=usb_id.product_id,

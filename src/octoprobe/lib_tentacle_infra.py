@@ -122,6 +122,7 @@ class TentacleInfra:
         self,
         udev: UdevPoller,
         filename_firmware: pathlib.Path,
+        usb_location: str,
     ) -> None:
         """
         Flashed the RP2.
@@ -143,7 +144,7 @@ class TentacleInfra:
             # print("Power on RP2")
             self.power.infra = True
 
-            udev_filter = rp2_udev_filter_boot_mode(RPI_PICO_USB_ID.boot)
+            udev_filter = rp2_udev_filter_boot_mode(RPI_PICO_USB_ID.boot, usb_location=usb_location)
             event = guard.expect_event(
                 udev_filter=udev_filter,
                 text_where=self.label,
@@ -162,7 +163,8 @@ class TentacleInfra:
 
             # The RP2 will reboot in application mode
             # and we wait for this event here
-            udev_filter = udev_filter_application_mode(RPI_PICO_USB_ID.application)
+            udev_filter = udev_filter_application_mode(
+                usb_id= RPI_PICO_USB_ID.application, usb_location=TODO)
             event = udev.expect_event(
                 udev_filter=udev_filter,
                 text_where=self.label,

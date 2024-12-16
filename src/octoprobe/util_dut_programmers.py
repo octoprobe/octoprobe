@@ -259,7 +259,8 @@ class DutProgrammerDfuUtil(DutProgrammer):
 
             assert tentacle.tentacle_spec.mcu_usb_id is not None
             udev_filter = pyboard_udev_filter_boot_mode(
-                tentacle.tentacle_spec.mcu_usb_id.boot
+                usb_id=tentacle.tentacle_spec.mcu_usb_id.boot,
+                usb_location=tentacle.usb_location_dut,
             )
 
             event = guard.expect_event(
@@ -307,7 +308,8 @@ class DutProgrammerPicotool(DutProgrammer):
 
             assert tentacle.tentacle_spec.mcu_usb_id is not None
             udev_filter = rp2_udev_filter_boot_mode(
-                tentacle.tentacle_spec.mcu_usb_id.boot
+                tentacle.tentacle_spec.mcu_usb_id.boot,
+                usb_location=tentacle.usb_location_dut,
             )
 
             event = guard.expect_event(

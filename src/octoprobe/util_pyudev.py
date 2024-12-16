@@ -3,15 +3,27 @@ from __future__ import annotations
 import abc
 import dataclasses
 import logging
+import re
 import select
 import syslog
 import time
 from collections.abc import Iterator
 from typing import Any, Self
 
-import pyudev  # type: ignore
+import pyudev
 
 logger = logging.getLogger(__file__)
+
+
+_RE_USB_LOCATION = re.compile(r".*/(?P<location>\d+-\d+(\.\d+)+)")
+"""
+Input:
+    /sys/devices/pci0000:00/0000:00:14.0/usb3/3-5/3-5.2/3-5.2.3/3-5.2.3:1.0/ttyACM1
+    /sys/devices/pci0000:00/0000:00:14.0/usb3/3-5/3-5.2/3-5.2.3/3-5.2.3:1.1
+    /sys/devices/pci0000:00/0000:00:14.0/usb3/3-5/3-5.2/3-5.2.3/3-5.2.3:1.0/tty/ttyACM
+    /sys/devices/pci0000:00/0000:00:14.0/usb3/3-5/3-5.2/3-5.2.3
+match:3-5.2.3
+"""
 
 
 class UdevFailEvent(Exception):
@@ -26,6 +38,7 @@ class UdevEventBase(abc.ABC):
 @dataclasses.dataclass
 class UdevFilter:
     label: str
+    usb_location: str
     udev_event_class: type[UdevEventBase]
     """
     Use Generics to propagate the return type of UdevPoller.expect_event()
@@ -49,6 +62,14 @@ class UdevFilter:
             return False
         if device.subsystem != self.subsystem:
             return False
+        match = _RE_USB_LOCATION.match(device.sys_path)
+        assert match is not None
+        # Example 'match': '3-5.2.3'
+        usb_location = match.group("location")
+        assert usb_location != "0000"
+        if usb_location != self.usb_location:
+            return False
+
         try:
             id_vendor = device.properties["ID_USB_VENDOR_ID"]
             id_product = device.properties["ID_USB_MODEL_ID"]
@@ -151,7 +172,7 @@ class UdevPoller:
                 )
             events = self.epoll.poll(timeout=0.5)
             if len(events) == 0:
-                logger.debug("Timeout")
+                logger.debug(f"Timeout {duration_s:0.2f}s of {timeout_s:0.2f}s")
                 continue
 
             for fileno, _ in events:
@@ -160,6 +181,8 @@ class UdevPoller:
                 device = self.monitor.poll()
                 for udev_filter in filters:
                     if udev_filter.matches(device=device):
+                        if udev_filter.matches(device=device):
+                            pass
                         yield udev_filter.udev_event_class(device=device)
                         continue
 

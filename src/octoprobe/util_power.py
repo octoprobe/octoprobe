@@ -20,7 +20,7 @@ class UsbPlug(str, enum.Enum):
     ERROR = "error"
 
     @property
-    def nummer(self) -> int:
+    def number(self) -> int:
         """
         Return the plug/port number from 1 to 4
         """
@@ -74,7 +74,7 @@ class UsbPlugs:
         assert isinstance(hub_location, Location)
         connected_hub = util_octohub4.location_2_connected_hub(location=hub_location)
         for plug, on in self.plugs.items():
-            p = connected_hub.get_plug(plug.nummer)
+            p = connected_hub.get_plug(plug.number)
             p.power(on=on)
 
     @staticmethod

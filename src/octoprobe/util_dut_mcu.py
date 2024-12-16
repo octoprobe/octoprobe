@@ -43,7 +43,8 @@ class DutMicropythonSTM32(DutMcu):
 
             assert tentacle.tentacle_spec.mcu_usb_id is not None
             udev_filter = udev_filter_application_mode(
-                tentacle.tentacle_spec.mcu_usb_id.application
+                tentacle.tentacle_spec.mcu_usb_id.application,
+                usb_location=tentacle.usb_location_dut,
             )
             event = guard.expect_event(
                 udev_filter=udev_filter,
@@ -78,7 +79,8 @@ class DutMicropythonRP2(DutMcu):
 
             assert tentacle.tentacle_spec.mcu_usb_id is not None
             udev_filter = udev_filter_application_mode(
-                tentacle.tentacle_spec.mcu_usb_id.application
+                tentacle.tentacle_spec.mcu_usb_id.application,
+                usb_location=tentacle.usb_location_dut,
             )
 
             event = guard.expect_event(
@@ -114,7 +116,8 @@ class DutMicropythonEsp8266(DutMcu):
 
             assert tentacle.tentacle_spec.mcu_usb_id is not None
             udev_filter = udev_filter_application_mode(
-                tentacle.tentacle_spec.mcu_usb_id.application
+                tentacle.tentacle_spec.mcu_usb_id.application,
+                usb_location=tentacle.usb_location_dut,
             )
 
             event = guard.expect_event(
@@ -150,7 +153,8 @@ class DutMicropythonEsp32C3(DutMcu):
 
             assert tentacle.tentacle_spec.mcu_usb_id is not None
             udev_filter = udev_filter_application_mode(
-                tentacle.tentacle_spec.mcu_usb_id.application
+                tentacle.tentacle_spec.mcu_usb_id.application,
+                usb_location=tentacle.usb_location_dut,
             )
 
             event = guard.expect_event(
