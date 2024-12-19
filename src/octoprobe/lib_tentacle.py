@@ -109,7 +109,6 @@ class Tentacle[
         self.tentacle_state = TentacleState()
         self.tentacle_serial_number = tentacle_serial_number
         self.tentacle_spec = tentacle_spec
-        self.hub = hub
 
         def _label(dut_or_infra: str) -> str:
             # return f"Tentacle {dut_or_infra}{tentacle_serial_number}({tentacle_spec.label})"
@@ -133,11 +132,11 @@ class Tentacle[
 
     @property
     def usb_location_dut(self) -> str:
-        return f"{self.hub.hub_location.short}.{util_power.UsbPlug.DUT.number}"
+        return self.infra.usb_hub_location_dut
 
     @property
     def usb_location_infra(self) -> str:
-        return f"{self.hub.hub_location.short}.{util_power.UsbPlug.INFRA.number}"
+        return self.infra.usb_hub_location_infra
 
     def flash_dut(
         self,
