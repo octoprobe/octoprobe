@@ -35,16 +35,16 @@ class TentacleDut:
 
         self._tentacle = tentacle
 
-        # Validate consistency
-        # for tag in TAG_MCU, TAG_BOARDS, TAG_PROGRAMMER:
-        for tag in TAG_MCU, TAG_PROGRAMMER:
-            tentacle.tentacle_spec.get_tag_mandatory(tag)
-
         self.label = label
         self._mp_remote: MpRemote | None = None
         self.dut_mcu = dut_mcu_factory(tags=tentacle.tentacle_spec.tags)
         self.dut_programmer = dut_programmer_factory(tags=tentacle.tentacle_spec.tags)
         self.dut_flashed_variant_normalized: str = "not flashed yet"
+
+        # Validate consistency
+        # for tag in TAG_MCU, TAG_BOARDS, TAG_PROGRAMMER:
+        for tag in TAG_MCU, TAG_PROGRAMMER:
+            tentacle.tentacle_spec.get_tag_mandatory(tag)
 
     @property
     def mp_remote(self) -> MpRemote:

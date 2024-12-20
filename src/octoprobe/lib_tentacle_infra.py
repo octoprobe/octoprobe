@@ -153,7 +153,8 @@ class TentacleInfra:
             self.power.infra = True
 
             udev_filter = rp2_udev_filter_boot_mode(
-                RPI_PICO_USB_ID.boot, usb_location=usb_location
+                RPI_PICO_USB_ID.boot,
+                usb_location=usb_location,
             )
             event = guard.expect_event(
                 udev_filter=udev_filter,

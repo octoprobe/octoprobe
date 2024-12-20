@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import abc
 import typing
 
@@ -6,16 +8,16 @@ from octoprobe.util_constants import TAG_MCU
 from octoprobe.util_mcu import UdevApplicationModeEvent, udev_filter_application_mode
 
 if typing.TYPE_CHECKING:
-    from .lib_tentacle import Tentacle
-    from .util_pyudev import UdevPoller
+    from octoprobe.lib_tentacle import Tentacle
+    from octoprobe.util_pyudev import UdevPoller
 
 
 class DutMcu(abc.ABC):
     @abc.abstractmethod
     def application_mode_power_up(
         self,
-        tentacle: "Tentacle",
-        udev: "UdevPoller",
+        tentacle: Tentacle,
+        udev: UdevPoller,
     ) -> str:
         """
         Power up and wait for udev-event.
@@ -26,8 +28,8 @@ class DutMcu(abc.ABC):
 class DutMicropythonSTM32(DutMcu):
     def application_mode_power_up(
         self,
-        tentacle: "Tentacle",
-        udev: "UdevPoller",
+        tentacle: Tentacle,
+        udev: UdevPoller,
     ) -> str:
         """
         Power up and wait for udev-event.
@@ -44,7 +46,7 @@ class DutMicropythonSTM32(DutMcu):
             assert tentacle.tentacle_spec.mcu_usb_id is not None
             udev_filter = udev_filter_application_mode(
                 tentacle.tentacle_spec.mcu_usb_id.application,
-                usb_location=tentacle.usb_location_dut,
+                usb_location=tentacle.infra.usb_location_dut,
             )
             event = guard.expect_event(
                 udev_filter=udev_filter,
@@ -62,8 +64,8 @@ class DutMicropythonSTM32(DutMcu):
 class DutMicropythonRP2(DutMcu):
     def application_mode_power_up(
         self,
-        tentacle: "Tentacle",
-        udev: "UdevPoller",
+        tentacle: Tentacle,
+        udev: UdevPoller,
     ) -> str:
         """
         Power up and wait for udev-event.
@@ -80,7 +82,7 @@ class DutMicropythonRP2(DutMcu):
             assert tentacle.tentacle_spec.mcu_usb_id is not None
             udev_filter = udev_filter_application_mode(
                 tentacle.tentacle_spec.mcu_usb_id.application,
-                usb_location=tentacle.usb_location_dut,
+                usb_location=tentacle.infra.usb_location_dut,
             )
 
             event = guard.expect_event(
@@ -99,8 +101,8 @@ class DutMicropythonRP2(DutMcu):
 class DutMicropythonEsp8266(DutMcu):
     def application_mode_power_up(
         self,
-        tentacle: "Tentacle",
-        udev: "UdevPoller",
+        tentacle: Tentacle,
+        udev: UdevPoller,
     ) -> str:
         """
         Power up and wait for udev-event.
@@ -117,7 +119,7 @@ class DutMicropythonEsp8266(DutMcu):
             assert tentacle.tentacle_spec.mcu_usb_id is not None
             udev_filter = udev_filter_application_mode(
                 tentacle.tentacle_spec.mcu_usb_id.application,
-                usb_location=tentacle.usb_location_dut,
+                usb_location=tentacle.infra.usb_location_dut,
             )
 
             event = guard.expect_event(
@@ -136,8 +138,8 @@ class DutMicropythonEsp8266(DutMcu):
 class DutMicropythonEsp32C3(DutMcu):
     def application_mode_power_up(
         self,
-        tentacle: "Tentacle",
-        udev: "UdevPoller",
+        tentacle: Tentacle,
+        udev: UdevPoller,
     ) -> str:
         """
         Power up and wait for udev-event.
@@ -154,7 +156,7 @@ class DutMicropythonEsp32C3(DutMcu):
             assert tentacle.tentacle_spec.mcu_usb_id is not None
             udev_filter = udev_filter_application_mode(
                 tentacle.tentacle_spec.mcu_usb_id.application,
-                usb_location=tentacle.usb_location_dut,
+                usb_location=tentacle.infra.usb_location_dut,
             )
 
             event = guard.expect_event(

@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 import dataclasses
-import enum  # pylint: disable=unused-import
 import io
 import logging
 import textwrap
-from collections.abc import Iterator
+import typing
 from contextlib import contextmanager
 
 from usbhubctl import DualConnectedHub, Hub
@@ -130,14 +129,6 @@ class Tentacle[
     def __repr__(self) -> str:
         return self.label
 
-    @property
-    def usb_location_dut(self) -> str:
-        return self.infra.usb_hub_location_dut
-
-    @property
-    def usb_location_infra(self) -> str:
-        return self.infra.usb_hub_location_infra
-
     def flash_dut(
         self,
         udev_poller: UdevPoller,
@@ -211,7 +202,7 @@ class Tentacle[
 
     @property
     @contextmanager
-    def active_led(self) -> Iterator[None]:
+    def active_led(self) -> typing.Generator:
         try:
             self.infra.mcu_infra.active_led(on=True)
             yield

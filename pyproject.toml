@@ -29,7 +29,7 @@ classifiers = [
 ]
 
 dependencies = [
-    "usbhubctl@git+https://github.com/octoprobe/usbhubctl#egg=main",
+    "usbhubctl@git+https://github.com/octoprobe/usbhubctl@main",
     "pyudev",
     "mpremote",
     "esptool",
@@ -50,11 +50,6 @@ rst_sections_level_updown = "octoprobe.util_rst.rst_sections_level_updown:app"
 [project.optional-dependencies]
 
 standard = [
-    "usbhubctl@git+https://github.com/octoprobe/usbhubctl#egg=main",
-    "pyudev",
-    "mpremote",
-    "typer-slim",
-    "Jinja2",
 ]
 
 all = [
@@ -106,6 +101,10 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = "usb.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "pyudev.*"
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

@@ -43,8 +43,8 @@ class UdevFilter:
     """
     Use Generics to propagate the return type of UdevPoller.expect_event()
     """
-    id_vendor: int
-    id_product: int
+    id_vendor: int | None
+    id_product: int | None
     subsystem: str
     device_type: None | str
     actions: list[str]
@@ -75,10 +75,12 @@ class UdevFilter:
             id_product = device.properties["ID_USB_MODEL_ID"]
         except KeyError:
             return False
-        if id_vendor != self.id_vendor_str:
-            return False
-        if id_product != self.id_product_str:
-            return False
+        if self.id_vendor is not None:
+            if id_vendor != self.id_vendor_str:
+                return False
+        if self.id_product is not None:
+            if id_product != self.id_product_str:
+                return False
         if device.device_type != self.device_type:
             return False
         return True

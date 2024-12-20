@@ -31,8 +31,7 @@ from .util_micropython_boards import BoardVariant, board_variants
 
 if typing.TYPE_CHECKING:
     from octoprobe.lib_tentacle import Tentacle
-
-    from .util_pyudev import UdevPoller
+    from octoprobe.util_pyudev import UdevPoller
 
 
 logger = logging.getLogger(__file__)
@@ -260,7 +259,7 @@ class DutProgrammerDfuUtil(DutProgrammer):
             assert tentacle.tentacle_spec.mcu_usb_id is not None
             udev_filter = pyboard_udev_filter_boot_mode(
                 usb_id=tentacle.tentacle_spec.mcu_usb_id.boot,
-                usb_location=tentacle.usb_location_dut,
+                usb_location=tentacle.infra.usb_location_dut,
             )
 
             event = guard.expect_event(
@@ -309,7 +308,7 @@ class DutProgrammerPicotool(DutProgrammer):
             assert tentacle.tentacle_spec.mcu_usb_id is not None
             udev_filter = rp2_udev_filter_boot_mode(
                 tentacle.tentacle_spec.mcu_usb_id.boot,
-                usb_location=tentacle.usb_location_dut,
+                usb_location=tentacle.infra.usb_location_dut,
             )
 
             event = guard.expect_event(
