@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import dataclasses
+import enum  # pylint: disable=unused-import
 import io
 import logging
 import textwrap

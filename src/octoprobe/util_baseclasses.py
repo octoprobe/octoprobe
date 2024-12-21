@@ -4,6 +4,22 @@ import enum  # pylint: disable=W0611:unused-import
 TENTACLE_TYPE_MCU = "tentacle_mcu"
 
 
+class OctoprobeException(Exception):
+    pass
+
+
+class VersionMismatchException(OctoprobeException):
+    def __init__(self, msg: str, version_installed: str, version_expected: str):
+        assert isinstance(msg, str)
+        assert isinstance(version_installed, str)
+        assert isinstance(version_expected, str)
+        self.msg = msg
+        self.version_installed = version_installed
+        self.version_expected = version_expected
+        full_msg = f"{self.msg}: Version installed: {self.version_installed} but expected: '{self.version_expected}'!"
+        super().__init__(full_msg)
+
+
 @dataclasses.dataclass
 class UsbID:
     """

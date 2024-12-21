@@ -4,9 +4,9 @@ import logging
 import os
 import typing
 
-from octoprobe.util_constants import TAG_PROGRAMMER
-
 from .lib_mpremote import MpRemote
+from .util_baseclasses import VersionMismatchException
+from .util_constants import TAG_PROGRAMMER
 from .util_dut_mcu import TAG_MCU, dut_mcu_factory
 from .util_dut_programmers import (
     FirmwareSpecBase,
@@ -107,6 +107,7 @@ class TentacleDut:
         exception_text: str | None = None,
     ) -> bool:
         assert isinstance(firmware_spec, FirmwareSpecBase)
+        assert isinstance(exception_text, str | None)
 
         if firmware_spec.requires_flashing:
             return False
@@ -118,8 +119,10 @@ class TentacleDut:
         )
         if exception_text is not None:
             if not versions_equal:
-                raise ValueError(
-                    f"{exception_text}: Version installed: {installed_full_version}\n  but expected: '{firmware_spec.micropython_full_version_text}'!"
+                raise VersionMismatchException(
+                    msg=exception_text,
+                    version_expected=firmware_spec.micropython_full_version_text,
+                    version_installed=installed_full_version,
                 )
         return versions_equal
 

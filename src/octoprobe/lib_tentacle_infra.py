@@ -4,6 +4,7 @@ import logging
 import pathlib
 import time
 
+from octoprobe.util_baseclasses import VersionMismatchException
 from octoprobe.util_dut_programmers import FirmwareDownloadSpec, FirmwareSpecBase
 
 from . import util_power, util_usb_serial
@@ -20,10 +21,6 @@ from .util_pyudev import UdevPoller
 DIRECTORY_OF_THIS_FILE = pathlib.Path(__file__).parent
 
 logger = logging.getLogger(__file__)
-
-
-class VersionMismatchException(Exception):
-    pass
 
 
 class TentacleInfra:
@@ -123,7 +120,9 @@ class TentacleInfra:
         )
         if not versions_equal:
             raise VersionMismatchException(
-                f"Tentacle '{self.label}': Version installed '{installed_version}', but expected '{firmware_spec.micropython_full_version_text}'!"
+                msg=f"Tentacle '{self.label}'",
+                version_installed=installed_version,
+                version_expected=firmware_spec.micropython_full_version_text,
             )
 
     def flash(
