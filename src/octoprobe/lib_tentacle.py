@@ -1,12 +1,12 @@
 from __future__ import annotations
 
+import contextlib
 import dataclasses
 import enum  # pylint: disable=unused-import
 import io
 import logging
 import textwrap
 import typing
-from contextlib import contextmanager
 
 from usbhubctl import DualConnectedHub, Hub
 
@@ -202,8 +202,8 @@ class Tentacle[
         return self.tentacle_spec.get_tag_mandatory(tag=tag)
 
     @property
-    @contextmanager
-    def active_led(self) -> typing.Generator:
+    @contextlib.contextmanager
+    def active_led_on(self) -> typing.Generator[typing.Any, None, None]:
         try:
             self.infra.mcu_infra.active_led(on=True)
             yield

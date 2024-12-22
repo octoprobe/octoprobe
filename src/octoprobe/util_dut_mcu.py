@@ -43,9 +43,10 @@ class DutMicropythonSTM32(DutMcu):
         with udev.guard as guard:
             tentacle.power.dut = True
 
-            assert tentacle.tentacle_spec.mcu_usb_id is None
+            assert tentacle.tentacle_spec.mcu_usb_id is not None
             udev_filter = udev_filter_application_mode(
-                usb_location=tentacle.infra.usb_location_dut
+                usb_location=tentacle.infra.usb_location_dut,
+                usb_id=tentacle.tentacle_spec.mcu_usb_id.application,
             )
             event = guard.expect_event(
                 udev_filter=udev_filter,

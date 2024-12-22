@@ -35,6 +35,7 @@ dependencies = [
     "esptool",
     "typer-slim",
     "Jinja2",
+    "reportlab",
 ]
 
 [project.urls]
@@ -88,7 +89,7 @@ source-includes = [
 
 [tool.mypy]
 # strict = true
-enable_incomplete_feature = ["NewGenericSyntax"]
+# enable_incomplete_feature = ["NewGenericSyntax"]
 
 [[tool.mypy.overrides]]
 module = "octoprobe.tests.*"
@@ -105,6 +106,10 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = "pyudev.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "reportlab.*"
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

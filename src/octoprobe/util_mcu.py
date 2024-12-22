@@ -16,14 +16,19 @@ class UdevApplicationModeEvent(UdevEventBase):
         return f"{self.__class__.__name__}(tty={self.tty})"
 
 
-def udev_filter_application_mode(usb_location: str) -> UdevFilter:
+def udev_filter_application_mode(
+    usb_location: str,
+    usb_id: UsbID | None = None,
+) -> UdevFilter:
     assert isinstance(usb_location, str)
+    assert isinstance(usb_id, UsbID | None)
+
     return UdevFilter(
         label="Application Mone",
         usb_location=usb_location,
         udev_event_class=UdevApplicationModeEvent,
-        id_vendor=None,
-        id_product=None,
+        id_vendor=None if usb_id is None else usb_id.vendor_id,
+        id_product=None if usb_id is None else usb_id.product_id,
         subsystem="tty",
         device_type=None,
         actions=[

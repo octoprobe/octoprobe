@@ -1,5 +1,10 @@
+from __future__ import annotations
+
+import abc
 import dataclasses
 import enum  # pylint: disable=W0611:unused-import
+
+from octoprobe.util_tentacle_label.label_data import LabelData, LabelsData
 
 TENTACLE_TYPE_MCU = "tentacle_mcu"
 
@@ -141,3 +146,68 @@ class TentacleSpec[TMcuConfig, TTentacleType: enum.StrEnum, TEnumFut: enum.StrEn
     @property
     def is_mcu(self) -> bool:
         return self.tentacle_type.value == TENTACLE_TYPE_MCU
+
+    @property
+    @abc.abstractmethod
+    def description(self) -> str: ...
+
+
+@dataclasses.dataclass(frozen=True, repr=True, eq=True)
+class TentacleInstance:
+    serial: str
+    tentacle_spec: TentacleSpec
+    hw_version: str
+    testbed_name: str
+    testbed_instance: str
+
+    @property
+    def label_data(self) -> LabelData:
+        return LabelData(
+            serial=self.serial[-4:],
+            description=self.tentacle_spec.description,
+            tentacle_tag=self.tentacle_spec.tentacle_tag,
+            tentacle_type=self.tentacle_spec.tentacle_type,
+            testbed_name=self.testbed_name,
+            testbed_instance=self.testbed_instance,
+        )
+
+
+class TentaclesInventory(dict[str, TentacleInstance]):
+    @property
+    def labels_data(self) -> LabelsData:
+        return LabelsData([instance.label_data for instance in self.values()])
+
+
+class TentaclesCollector:
+    """
+    Allows to create inventory lists in a compact form.
+    """
+
+    def __init__(self, testbed_name: str) -> None:
+        assert isinstance(testbed_name, str)
+        self.testbed_name = testbed_name
+        self.inventory = TentaclesInventory()
+
+    def add_testbed_instance(
+        self, testbed_instance: str, tentacles: list[tuple[str, str, TentacleSpec]]
+    ) -> TentaclesCollector:
+        assert isinstance(testbed_instance, str)
+        assert isinstance(tentacles, list)
+
+        for serial, hw_version, tentacle_spec in tentacles:
+            assert isinstance(serial, str)
+            assert isinstance(hw_version, str)
+            assert isinstance(tentacle_spec, TentacleSpec)
+            tentacle_instance = TentacleInstance(
+                serial=serial,
+                hw_version=hw_version,
+                tentacle_spec=tentacle_spec,
+                testbed_name=self.testbed_name,
+                testbed_instance=testbed_instance,
+            )
+            assert (
+                tentacle_instance.serial not in self.inventory
+            ), f"Duplicated tentacle serial {tentacle_instance.serial}!"
+            self.inventory[tentacle_instance.serial] = tentacle_instance
+
+        return self

@@ -163,7 +163,7 @@ class TentacleDut:
         except TimeoutError as e:
             logger.debug(f"{self.label}: Seems not to have firmware installed: {e!r}")
 
-        with tentacle.active_led:
+        with tentacle.active_led_on:  # type: ignore[attr-defined]
             logger.info(
                 f"{self.label}: About to flash '{firmware_spec.board_variant.name_normalized}'!"
             )
