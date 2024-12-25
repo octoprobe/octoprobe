@@ -125,6 +125,7 @@ class NTestRun:
         for tentacle in active_tentacles:
             tentacle.infra.connect_mpremote_if_needed()
             tentacle.infra.mcu_infra.relays(relays_open=tentacle.infra.LIST_ALL_RELAYS)
+            tentacle.infra.power.dut = False
 
     def setup_relays(
         self, tentacles: list[Tentacle], futs: tuple[enum.StrEnum]
