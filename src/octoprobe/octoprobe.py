@@ -39,7 +39,7 @@ class NTestRun:
         Finds all tentacle by finding rp2_unique_id of the RP2 infra.
         """
         # We have to reset the power for all rp2-infra to become visible
-        hubs = util_usb_serial.QueryResultTentacle.query(verbose=False)
+        hubs = util_usb_serial.QueryResultTentacle.query_fast()
         hubs = hubs.select(serials=None)
         if FULL_POWERCYCLE_ALL_TENTACLES:
             # Powercycling ALL hubs
@@ -63,7 +63,7 @@ class NTestRun:
             )
             time.sleep(2.0)
 
-        return util_usb_serial.QueryResultTentacle.query(verbose=True)
+        return util_usb_serial.QueryResultTentacle.query_fast()
 
     def session_teardown(self) -> None:
         if self._udev_poller is not None:

@@ -13,7 +13,7 @@ import usb.core
 import usb.util
 import usbhubctl
 from serial.tools import list_ports
-from usbhubctl.known_hubs import octohub4
+from usbhubctl import known_hubs, util_octohub4
 
 from .util_mcu_rp2 import RPI_PICO_USB_ID
 from .util_power import PowerCycle, UsbPlug, UsbPlugs
@@ -27,7 +27,7 @@ class QueryPySerial:
     """
     Do a query using the 'pyserial' package.
 
-    Find all rp3 in application mode (serial)
+    Find all rp2 in application mode (serial)
     Find all rp2 in programming mode (pyusb)
     """
 
@@ -80,6 +80,12 @@ class QueryResultTentacle:
     If set to true, the RP2 is in bootmode and the serial number may not be retrieved.
     """
 
+    def __post_init__(self) -> None:
+        assert isinstance(self.hub_location, usbhubctl.Location)
+        assert isinstance(self.rp2_serial_port, str | None)
+        assert isinstance(self.rp2_serial_number, str | None)
+        assert isinstance(self.rp2_boot_mode, bool)
+
     @property
     def rp2_application_mode(self) -> bool:
         return self.rp2_serial_number is not None
@@ -101,6 +107,9 @@ class QueryResultTentacle:
 
     @staticmethod
     def query(verbose: bool, use_topology_cache: bool = False) -> QueryResultTentacles:
+        """
+        Probably obsolete. Replaced by 'query_fast()".
+        """
         result: QueryResultTentacles = QueryResultTentacles()
         if verbose:
             qs = QueryPySerial()
@@ -131,13 +140,44 @@ class QueryResultTentacle:
             from usbhubctl import backend_query_lsusb  # pylint: disable=C0415
 
             actual_usb_topology = backend_query_lsusb.lsusb()
-        dualhubs = octohub4.find_connected_dualhubs(
+        dualhubs = known_hubs.octohub4.find_connected_dualhubs(
             actual_usb_topology=actual_usb_topology
         )
         for hub in dualhubs.hubs_usb2.hubs:
             result.append(handle_all(hub=hub))
 
         return result
+
+    @staticmethod
+    def query_fast() -> QueryResultTentacles:
+        hubs_port1: dict[str, usbhubctl.Location] = {}
+        devices_octohub4 = util_octohub4.Octohubs.find_devices()
+        for device in devices_octohub4:
+            ports = ".".join([str(p) for p in device.port_numbers])
+            location_port1 = f"{device.bus}-{ports}.1"
+            hubs_port1[location_port1] = usbhubctl.Location.factory(device=device)
+
+        tentacles = QueryResultTentacles()
+        for port in list_ports.comports():
+            if port.vid != RPI_PICO_USB_ID.application.vendor_id:
+                continue
+            if port.pid != RPI_PICO_USB_ID.application.product_id:
+                continue
+            location_full = port.location
+            location, _, _ = location_full.partition(":")
+            hub_location = hubs_port1.get(location, None)
+            if hub_location is None:
+                continue
+
+            tentacles.append(
+                QueryResultTentacle(
+                    hub_location=hub_location,
+                    rp2_serial_number=port.serial_number,
+                    rp2_serial_port=port.device,
+                )
+            )
+
+        return tentacles
 
 
 class QueryResultTentacles(list[QueryResultTentacle]):
