@@ -5,7 +5,7 @@ import pathlib
 import time
 
 from octoprobe.util_baseclasses import VersionMismatchException
-from octoprobe.util_dut_programmers import FirmwareDownloadSpec, FirmwareSpecBase
+from octoprobe.util_firmware_spec import FirmwareDownloadSpec, FirmwareSpecBase
 
 from . import util_power, util_usb_serial
 from .lib_mpremote import MpRemote

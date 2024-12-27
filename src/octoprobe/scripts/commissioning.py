@@ -4,7 +4,7 @@ import logging.config
 import pathlib
 import time
 
-from octoprobe.util_dut_programmers import FirmwareDownloadSpec
+from octoprobe.util_firmware_spec import FirmwareDownloadSpec
 
 from ..lib_tentacle_infra import TentacleInfra
 from ..util_pyudev import UdevPoller
