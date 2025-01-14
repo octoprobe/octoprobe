@@ -1,3 +1,4 @@
+import os
 import pathlib
 
 TAG_PROGRAMMER = "programmer"
@@ -17,6 +18,11 @@ eg. a subdirectory of https://github.com/micropython/micropython/tree/master/por
 DIRECTORY_OCTOPROBE_DOWNLOADS = pathlib.Path.home() / "octoprobe_downloads"
 DIRECTORY_OCTOPROBE_DOWNLOADS.mkdir(parents=True, exist_ok=True)
 assert DIRECTORY_OCTOPROBE_DOWNLOADS.is_dir()
+
+DIRECTORY_OCTOPROBE_DOWNLOADS_BINARIES = DIRECTORY_OCTOPROBE_DOWNLOADS / "binaries"
+DIRECTORY_OCTOPROBE_DOWNLOADS_MACHINE_BIN = (
+    DIRECTORY_OCTOPROBE_DOWNLOADS_BINARIES / os.uname().machine
+)
 
 DIRECTORY_OCTOPROBE_CACHE_FIRMWARE = DIRECTORY_OCTOPROBE_DOWNLOADS / "cache_firmware"
 DIRECTORY_OCTOPROBE_CACHE_FIRMWARE.mkdir(parents=True, exist_ok=True)

@@ -1,0 +1,27 @@
+# See: https://github.com/raspberrypi/picotool/blob/master/udev/99-picotool.rules
+# See: https://gist.github.com/tjvr/3c406bddfe9ae0a3860a3a5e6b381a93
+
+SUBSYSTEM=="usb", \
+    ATTRS{idVendor}=="2e8a", \
+    ATTRS{idProduct}=="0003", \
+    TAG+="uaccess" \
+    MODE="660", \
+    GROUP="plugdev"
+SUBSYSTEM=="usb", \
+    ATTRS{idVendor}=="2e8a", \
+    ATTRS{idProduct}=="0009", \
+    TAG+="uaccess" \
+    MODE="660", \
+    GROUP="plugdev"
+SUBSYSTEM=="usb", \
+    ATTRS{idVendor}=="2e8a", \
+    ATTRS{idProduct}=="000a", \
+    TAG+="uaccess" \
+    MODE="660", \
+    GROUP="plugdev"
+SUBSYSTEM=="usb", \
+    ATTRS{idVendor}=="2e8a", \
+    ATTRS{idProduct}=="000f", \
+    TAG+="uaccess" \
+    MODE="660", \
+    GROUP="plugdev"

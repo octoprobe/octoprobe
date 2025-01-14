@@ -41,8 +41,8 @@ def mimxrt_udev_filter_boot_mode(usb_location: str) -> UdevFilter:
         udev_event_class=MimxrtUdevBootModeEvent,
         id_vendor=None,
         id_product=None,
-        subsystem="block",
-        device_type="partition",
+        subsystem="usb",
+        device_type="usb_device",
         actions=["bind"],
     )
 
@@ -98,7 +98,7 @@ class DutProgrammerTeensyLoaderCli(DutProgrammerABC):
             "teensy_loader_cli",
             *tentacle.tentacle_spec_base.programmer_args,
             "-v",
-            # "-w",
+            "-w",
             str(filename_dfu),
         ]
         subprocess_run(

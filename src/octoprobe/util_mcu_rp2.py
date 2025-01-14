@@ -6,10 +6,10 @@ import logging
 import pathlib
 
 import pyudev  # type: ignore
-from usbhubctl.util_subprocess import assert_root_and_s_bit
 
 from .lib_tentacle import TentacleBase
 from .util_baseclasses import BootApplicationUsbID, UsbID
+from .util_constants import DIRECTORY_OCTOPROBE_DOWNLOADS_MACHINE_BIN
 from .util_dut_programmer_abc import DutProgrammerABC, IDX1_RELAYS_DUT_BOOT
 from .util_firmware_spec import FirmwareSpecBase
 from .util_mcu import FILENAME_FLASHING
@@ -19,7 +19,7 @@ from .util_subprocess import subprocess_run
 logger = logging.getLogger(__name__)
 
 _RPI_PICO_VENDOR = 0x2E8A
-FILENAME_PICOTOOL = "picotool"
+FILENAME_PICOTOOL = DIRECTORY_OCTOPROBE_DOWNLOADS_MACHINE_BIN / "picotool"
 
 RPI_PICO_USB_ID = BootApplicationUsbID(
     boot=UsbID(_RPI_PICO_VENDOR, 0x0003),
@@ -62,9 +62,8 @@ def picotool_flash_micropython(
     assert isinstance(event, Rp2UdevBootModeEvent)
     assert filename_firmware.is_file(), str(filename_firmware)
 
-    filename_binary = assert_root_and_s_bit(FILENAME_PICOTOOL)
     args = [
-        str(filename_binary),
+        str(FILENAME_PICOTOOL),
         "load",
         "--update",
         # "--verify",

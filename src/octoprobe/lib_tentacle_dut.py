@@ -164,17 +164,22 @@ class TentacleDut:
             if not firmware_spec.do_flash:
                 return
 
-            if firmware_spec.requires_flashing:
+            if tentacle.tentacle_state.flash_force:
                 logger.info(
-                    f"{self.label}: Firmware spec requires flashing '{firmware_spec.board_variant.name_normalized}'!"
+                    f"{self.label}: '--flash-force' was choosen so we require flashing!"
                 )
             else:
+                if firmware_spec.requires_flashing:
+                    logger.info(
+                        f"{self.label}: Firmware spec requires flashing '{firmware_spec.board_variant.name_normalized}'!"
+                    )
+                else:
 
-                if self.is_dut_required_firmware_already_installed(
-                    firmware_spec=firmware_spec
-                ):
-                    logger.info(f"{self.label}: Firmware is already installed")
-                    return
+                    if self.is_dut_required_firmware_already_installed(
+                        firmware_spec=firmware_spec
+                    ):
+                        logger.info(f"{self.label}: Firmware is already installed")
+                        return
 
         except (UdevTimoutException, TransportError) as e:
             logger.warning(f"{self.label}: Seems not to have firmware installed: {e!r}")

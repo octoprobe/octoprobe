@@ -1,0 +1,23 @@
+#
+# octoprobe usbhubctl
+#
+# See: https://github.com/mvp/uhubctl/blob/master/udev/rules.d/52-usb.rules
+
+# uhubctl udev rules for rootless operation on Linux for users in group `dialout`.
+#
+# Copy this file to /etc/udev/rules.d, then reboot or run:
+#
+#   sudo udevadm trigger --attr-match=subsystem=usb
+#
+# To add yourself to this permission group, run:
+#
+#   sudo usermod -a -G plugdev $USER
+
+# Debug:
+# udevadm info /sys/bus/usb/devices/3-5.3.4.4:1.0
+# https://opensource.com/article/18/11/udev
+# https://linux.die.net/man/7/udev
+
+SUBSYSTEM=="usb", DRIVER=="usb", ACTION=="change", ATTRS{bDeviceClass}=="09", ATTR{idVendor}=="0424", ATTR{idProduct}=="2514", \
+  RUN+="/bin/sh -c \"chown -f root:plugdev $sys$devpath/*:1.0/*-port*/disable || true\"" \
+  RUN+="/bin/sh -c \"chmod -f 660 $sys$devpath/*:1.0/*-port*/disable || true\""

@@ -11,7 +11,7 @@ from .util_pyudev import get_device_debug
 
 def do_udev_monitor() -> None:
     def callback(device: pyudev.Device):
-        print(get_device_debug(device=device))
+        print(get_device_debug(device=device, subsystem_filtered="block"))
 
     print("Monitoring tty, usb and block events...")
     context = pyudev.Context()

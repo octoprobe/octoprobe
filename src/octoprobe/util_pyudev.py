@@ -43,7 +43,7 @@ class UdevEventBase(abc.ABC):
 _TIMEOUT_MOUNT_S = 5.0
 
 
-def get_device_debug(device: pyudev.Device) -> str:
+def get_device_debug(device: pyudev.Device, subsystem_filtered: str) -> str:
     assert isinstance(device, pyudev.Device)
     lines: list[str] = []
     lines.append(f"subsystem={device.subsystem} {device.action=} {device.sys_path=}")
@@ -54,8 +54,11 @@ def get_device_debug(device: pyudev.Device) -> str:
     lines.append(f"  {device.device_node=}")
     lines.append(f"  {device.device_type=}")
     if device.action == "add" and device.device_type == "disk":
-        mount_point = UdevFilter.get_mount_point(device.device_node)
-        lines.append(f"  mount_point={mount_point}")
+        if subsystem_filtered == "block":
+            # We only log the mount point if we also filtered for "block".
+            # For example the pico would not get here, as we filter for "tty"
+            mount_point = UdevFilter.get_mount_point(device.device_node)
+            lines.append(f"  mount_point={mount_point}")
 
     def get_value(tag: str) -> str:
         value = device.properties.get(tag, None)
@@ -106,9 +109,7 @@ class UdevFilter:
     def get_mount_point(device_node: str) -> str:
         begin_s = time.monotonic()
         while time.monotonic() < begin_s + +_TIMEOUT_MOUNT_S:
-            for line in (
-                pathlib.Path("/proc/mounts").read_text().splitlines()
-            ):
+            for line in pathlib.Path("/proc/mounts").read_text().splitlines():
                 partition, mount_point, _ = line.split(" ", maxsplit=2)
                 if partition == device_node:
                     return mount_point
@@ -241,7 +242,9 @@ class UdevPoller:
                     if udev_filter.matches(device=device):
                         yield udev_filter.udev_event_class(device=device)
                         continue
-                    logger.debug(f"not matched:\n{get_device_debug(device)}")
+                    logger.debug(
+                        f"not matched:\n{get_device_debug(device=device, subsystem_filtered=udev_filter.subsystem)}"
+                    )
 
                 if fail_filters is None:
                     continue

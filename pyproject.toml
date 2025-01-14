@@ -1,3 +1,5 @@
+# https://backend.pdm-project.org/metadata/
+
 [build-system]
 requires = ["pdm-backend"]
 build-backend = "pdm.backend"
@@ -81,10 +83,11 @@ distribution = true
 
 [tool.pdm.build]
 package-dir = "src"
-includes = ["src/octoprobe"]
 source-includes = [
-     "LICENSE",
-     "README.rst"
+    "src/octoprobe",
+    "src/octoprobe/udev/*.rules",
+    "LICENSE",
+    "README.rst"
 ]
 
 [tool.mypy]
