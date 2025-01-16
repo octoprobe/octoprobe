@@ -165,6 +165,7 @@ class TentacleDut:
                 return
 
             if tentacle.tentacle_state.flash_force:
+                tentacle.tentacle_state.flash_force = False
                 logger.info(
                     f"{self.label}: '--flash-force' was choosen so we require flashing!"
                 )
@@ -195,6 +196,7 @@ class TentacleDut:
                     directory_logs=directory_logs,
                     firmware_spec=firmware_spec,
                 )
+                tentacle.tentacle_state.last_firmware_flashed = firmware_spec
             except UdevTimoutException as e:
                 msg = f"Failed to flash the firmware. Is USB connected? {e!r}"
                 logger.warning(f"{self.label}: {msg}")
