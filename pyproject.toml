@@ -33,7 +33,7 @@ classifiers = [
 dependencies = [
     "usbhubctl@git+https://github.com/octoprobe/usbhubctl@main",
     "pyudev",
-    "mpremote@git+https://github.com/hmaerki/fork_micropython@hmaerki/mpremote_fix_endless_loop#egg=mpremote&subdirectory=tools/mpremote",
+    "mpremote@git+https://github.com/hmaerki/fork_micropython@hmaerki/mpremote_add_timeoutoverall#egg=mpremote&subdirectory=tools/mpremote",
     "esptool",
     "typer-slim",
     "Jinja2",
@@ -83,9 +83,11 @@ distribution = true
 
 [tool.pdm.build]
 package-dir = "src"
-source-includes = [
+includes = [
     "src/octoprobe",
     "src/octoprobe/udev/*.rules",
+]
+source-includes = [
     "LICENSE",
     "README.rst"
 ]

@@ -18,6 +18,6 @@
 # https://opensource.com/article/18/11/udev
 # https://linux.die.net/man/7/udev
 
-SUBSYSTEM=="usb", DRIVER=="usb", ACTION=="change", ATTRS{bDeviceClass}=="09", ATTR{idVendor}=="0424", ATTR{idProduct}=="2514", \
+SUBSYSTEM=="usb", DRIVER=="usb", ATTRS{bDeviceClass}=="09", ATTR{idVendor}=="0424", ATTR{idProduct}=="2514", \
   RUN+="/bin/sh -c \"chown -f root:plugdev $sys$devpath/*:1.0/*-port*/disable || true\"" \
   RUN+="/bin/sh -c \"chmod -f 660 $sys$devpath/*:1.0/*-port*/disable || true\""
