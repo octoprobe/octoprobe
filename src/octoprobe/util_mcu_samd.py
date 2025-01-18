@@ -127,7 +127,7 @@ class DutProgrammerSamdMountPoint(DutProgrammerABC):
 
         assert isinstance(event, SamdUdevBootModeEvent)
         filename_dfu = firmware_spec.filename
-        logger.debug(f"Copy firmware from {event.mount_point}")
+        logger.debug(f"Copy firmware from {filename_dfu} to {event.mount_point}")
         with udev.guard as guard:
             shutil.copy(filename_dfu, event.mount_point)
 

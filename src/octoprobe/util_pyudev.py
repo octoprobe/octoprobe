@@ -240,6 +240,9 @@ class UdevPoller:
                 device = self.monitor.poll()
                 for udev_filter in filters:
                     if udev_filter.matches(device=device):
+                        logger.debug(
+                            f"matched:\n{get_device_debug(device=device, subsystem_filtered=udev_filter.subsystem)}"
+                        )
                         yield udev_filter.udev_event_class(device=device)
                         continue
                     logger.debug(
