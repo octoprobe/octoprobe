@@ -74,3 +74,17 @@ class Logs:
     def __exit__(self, exc_type, exc_value, traceback) -> None:
         for handler in self._handlers:
             handler.remove()
+
+
+def main() -> None:
+    init_logging()
+
+    logger.info("Color Test")
+    logger.info("[COLOR_INFO]COLOR_INFO")
+    logger.info("[COLOR_SUCCESS]COLOR_SUCCESS")
+    logger.info("[COLOR_FAIL]COLOR_FAIL")
+    logger.info("[COLOR_ERROR]COLOR_ERROR")
+
+
+if __name__ == "__main__":
+    main()

@@ -1,3 +1,4 @@
+import os
 import sys
 
 import pytest
@@ -28,7 +29,10 @@ def pytest_break_into_debugger(dict_module: dict) -> None:
 
 def is_debugger_connected() -> bool:
     # https://www.pythoninsight.com/2020/06/underhanded-python-detecting-the-debugger/
-    return sys.gettrace() is not None
+    # return sys.gettrace() is not None
+    # pylint: disable=no-member
+    debugger = sys.monitoring.get_tool(sys.monitoring.DEBUGGER_ID)
+    return debugger is not None
 
 
 def break_into_debugger_on_exception(dict_module: dict) -> None:
