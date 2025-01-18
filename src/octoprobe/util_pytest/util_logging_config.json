@@ -8,22 +8,15 @@
     },
     "handlers": {
         "stdout": {
-            "class": "logging.StreamHandler",
+            "class": "octoprobe.util_pytest.util_logging_handler_color.ColorHandler",
             "level": "INFO",
             "formatter": "simple",
             "stream": "ext://sys.stdout"
-        },
-        "stderr": {
-            "class": "logging.StreamHandler",
-            "level": "ERROR",
-            "formatter": "simple",
-            "stream": "ext://sys.stderr"
         }
     },
     "root": {
         "level": "DEBUG",
         "handlers": [
-            "stderr",
             "stdout"
         ]
     }

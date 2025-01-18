@@ -118,15 +118,23 @@ module = "reportlab.*"
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
-pythonpath = "."
+pythonpath = "src"
 addopts = [
   # "-m", "not live",
   "--strict-config",
   "--strict-markers",
-  "--ignore=docs",
+  "--ignore=docs"
 ]
 markers = [
     "live: Test on real usb hubs",
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "required_futs: ..."
+]
+norecursedirs = [
+    "downloads",
+    "results",
+    "git_cache",
+    "mpbuild"
 ]
 testpaths = "tests"
 xfail_strict = true
