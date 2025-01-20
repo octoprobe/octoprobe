@@ -283,4 +283,4 @@ class UsbPlug:
     def power(self, on: bool) -> None:
         c = self.usb_hub.connected_hub
         assert c is not None
-        c.get_plug(plug_number=self.plug_number).power(on=on)
+        c.get_plug(plug_number=self.plug_number).set_power(on=on)

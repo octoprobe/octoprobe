@@ -222,34 +222,34 @@ class QueryResultTentacles(list[QueryResultTentacle]):
 
         return QueryResultTentacles(filter(matches, self))
 
-    def power(self, plugs: UsbPlugs) -> None:
+    def set_power(self, plugs: UsbPlugs) -> None:
         for hub in self:
-            plugs.power(hub_location=hub.hub_location)
+            plugs.set_power(hub_location=hub.hub_location)
 
     def powercycle(self, power_cycle: PowerCycle) -> None:
         if power_cycle is PowerCycle.INFRA:
-            self.power(plugs=UsbPlugs.default_off())
+            self.set_power(plugs=UsbPlugs.default_off())
             time.sleep(1.0)
-            self.power(plugs=UsbPlugs({UsbPlug.INFRA: True}))
+            self.set_power(plugs=UsbPlugs({UsbPlug.INFRA: True}))
             return
 
         if power_cycle is PowerCycle.INFRBOOT:
-            self.power(plugs=UsbPlugs.default_off())
-            self.power(plugs=UsbPlugs(plugs={UsbPlug.INFRABOOT: False}))
+            self.set_power(plugs=UsbPlugs.default_off())
+            self.set_power(plugs=UsbPlugs(plugs={UsbPlug.INFRABOOT: False}))
             time.sleep(1.0)
-            self.power(plugs=UsbPlugs({UsbPlug.INFRA: True}))
+            self.set_power(plugs=UsbPlugs({UsbPlug.INFRA: True}))
             time.sleep(0.5)
-            self.power(plugs=UsbPlugs({UsbPlug.INFRABOOT: True}))
+            self.set_power(plugs=UsbPlugs({UsbPlug.INFRABOOT: True}))
             return
 
         if power_cycle is PowerCycle.DUT:
-            self.power(plugs=UsbPlugs.default_off())
+            self.set_power(plugs=UsbPlugs.default_off())
             time.sleep(1.0)
-            self.power(plugs=UsbPlugs({UsbPlug.INFRA: True, UsbPlug.DUT: True}))
+            self.set_power(plugs=UsbPlugs({UsbPlug.INFRA: True, UsbPlug.DUT: True}))
             return
 
         if power_cycle is PowerCycle.OFF:
-            self.power(plugs=UsbPlugs.default_off())
+            self.set_power(plugs=UsbPlugs.default_off())
             return
 
         raise NotImplementedError("Internal programming error")

@@ -70,12 +70,12 @@ class UsbPlugs:
         sign = "+" if v else "-"
         return sign + up.value
 
-    def power(self, hub_location: Location) -> None:
+    def set_power(self, hub_location: Location) -> None:
         assert isinstance(hub_location, Location)
         connected_hub = util_octohub4.location_2_connected_hub(location=hub_location)
         for plug, on in self.plugs.items():
             p = connected_hub.get_plug(plug.number)
-            p.power(on=on)
+            p.set_power(on=on)
 
     @staticmethod
     def all_on() -> UsbPlugs:
@@ -106,7 +106,7 @@ class TentaclePlugsPower:
 
     def set_default_off(self) -> None:
         plugs = UsbPlugs.default_off()
-        plugs.power(self._hub_location)
+        plugs.set_power(self._hub_location)
         self._plugs.copy_from(plugs)
 
     @property
@@ -146,5 +146,5 @@ class TentaclePlugsPower:
 
     def _power(self, plug: UsbPlug, on: bool) -> None:
         plugs = UsbPlugs(plugs={plug: on})
-        plugs.power(self._hub_location)
+        plugs.set_power(self._hub_location)
         self._plugs.plugs[plug] = on

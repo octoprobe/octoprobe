@@ -39,15 +39,15 @@ class NTestRun:
         hubs = hubs.select(serials=None)
         if FULL_POWERCYCLE_ALL_TENTACLES:
             # Powercycling ALL hubs
-            hubs.power(plugs=UsbPlugs.default_off())
+            hubs.set_power(plugs=UsbPlugs.default_off())
             time.sleep(0.2)  # success: 0.0
-            hubs.power(plugs=UsbPlugs({UsbPlug.INFRA: True}))
+            hubs.set_power(plugs=UsbPlugs({UsbPlug.INFRA: True}))
             # Without hub inbetween: failed: 0.4, success: 0.5
             # With hub inbetween: failed: 0.7, success: 0.8
             # RSHTECH 7 port hub produced errors using 1.2s
             time.sleep(2.0)
         else:
-            hubs.power(
+            hubs.set_power(
                 plugs=UsbPlugs(
                     {
                         UsbPlug.INFRA: True,

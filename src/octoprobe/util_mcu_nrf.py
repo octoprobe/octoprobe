@@ -38,7 +38,6 @@ class DutProgrammerBossac(DutProgrammerABC):
         """
         tentacle.dut.mp_remote_close()
 
-        tentacle.power.dut = False
         time.sleep(0.5)  # Ok: 5.0, 1.0, 0.5, 0.2 Wrong: 0.1
         tentacle.infra.mcu_infra.relays(relays_close=[IDX1_RELAYS_DUT_BOOT])
         tentacle.power.dut = True

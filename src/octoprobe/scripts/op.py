@@ -71,7 +71,7 @@ def power(
     if off is not None:
         for _off in off:
             plugs.plugs[_off] = False
-    hubs.power(plugs)
+    hubs.set_power(plugs)
 
     print(plugs.text)
 
