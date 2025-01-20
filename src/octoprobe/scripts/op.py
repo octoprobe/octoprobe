@@ -64,13 +64,13 @@ def power(
 
     plugs = UsbPlugs()
     if set_off:
-        plugs.set_default_off()
+        plugs = UsbPlugs.default_off()
     if on is not None:
         for _on in on:
-            plugs.plugs[_on] = True
+            plugs[_on] = True
     if off is not None:
         for _off in off:
-            plugs.plugs[_off] = False
+            plugs[_off] = False
     hubs.set_power(plugs)
 
     print(plugs.text)

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import dataclasses
 import enum
 
 from usbhubctl import Location, util_octohub4
@@ -32,25 +31,13 @@ class UsbPlug(str, enum.Enum):
         }[self]
 
 
-@dataclasses.dataclass
-class UsbPlugs:
-    plugs: dict[UsbPlug, bool] = dataclasses.field(default_factory=dict)
-
+class UsbPlugs(dict[UsbPlug, bool]):
     _DICT_DEFAULT_OFF = {
         UsbPlug.INFRA: False,
         UsbPlug.INFRABOOT: True,
         UsbPlug.DUT: False,
         UsbPlug.ERROR: False,
     }
-
-    def __post_init__(self) -> None:
-        assert isinstance(self.plugs, dict)
-
-    def set_default_off(self) -> None:
-        self.plugs = self._DICT_DEFAULT_OFF
-
-    def copy_from(self, plugs: UsbPlugs) -> None:
-        self.plugs = plugs.plugs.copy()
 
     @property
     def text(self) -> str:
@@ -66,85 +53,82 @@ class UsbPlugs:
         """
         Raise KeyError if UsbPower not found
         """
-        v = self.plugs[up]
+        v = self[up]
         sign = "+" if v else "-"
         return sign + up.value
 
-    def set_power(self, hub_location: Location) -> None:
-        assert isinstance(hub_location, Location)
-        connected_hub = util_octohub4.location_2_connected_hub(location=hub_location)
-        for plug, on in self.plugs.items():
-            p = connected_hub.get_plug(plug.number)
-            p.set_power(on=on)
-
     @staticmethod
     def all_on() -> UsbPlugs:
-        return UsbPlugs(plugs={p: True for p in UsbPlug})
+        return UsbPlugs({p: True for p in UsbPlug})
 
     @staticmethod
     def all_off() -> UsbPlugs:
-        return UsbPlugs(plugs={p: False for p in UsbPlug})
+        return UsbPlugs({p: False for p in UsbPlug})
 
     @classmethod
     def default_off(cls) -> UsbPlugs:
-        return UsbPlugs(plugs=cls._DICT_DEFAULT_OFF)
+        return UsbPlugs(cls._DICT_DEFAULT_OFF)
 
 
 class TentaclePlugsPower:
-    """
-    We do not know the power state for each usb plug from the usb subsystem.
-    But this class caches the state written in 'self._plugs'.
-    So we can create proberties to retrieve the power state.
-
-    TODO: Make sure that this class cant be used without beeing correctly initialized!
-    TODO: The getters should throw an exception!
-    """
-
     def __init__(self, hub_location: Location) -> None:
+        assert isinstance(hub_location, Location)
         self._hub_location = hub_location
-        self._plugs = UsbPlugs()
+
+    def set_power_plugs(self, plugs: UsbPlugs) -> None:
+        connected_hub = util_octohub4.location_2_connected_hub(
+            location=self._hub_location
+        )
+        for plug, on in plugs.items():
+            p = connected_hub.get_plug(plug.number)
+            p.set_power(on=on)
+
+    def _get_power_plug(self, plug: UsbPlug) -> bool:
+        connected_hub = util_octohub4.location_2_connected_hub(
+            location=self._hub_location
+        )
+        return connected_hub.get_plug(plug.number).get_power()
+
+    def set_power_plug(self, plug: UsbPlug, on: bool) -> None:
+        connected_hub = util_octohub4.location_2_connected_hub(
+            location=self._hub_location
+        )
+        connected_hub.get_plug(plug.number).set_power(on=on)
 
     def set_default_off(self) -> None:
-        plugs = UsbPlugs.default_off()
-        plugs.set_power(self._hub_location)
-        self._plugs.copy_from(plugs)
+        self.set_power_plugs(UsbPlugs.default_off())
 
     @property
     def infra(self) -> bool:
-        return self._plugs.plugs[UsbPlug.INFRA]
+        return self._get_power_plug(UsbPlug.INFRA)
 
     @infra.setter
     def infra(self, on: bool) -> None:
-        self._power(UsbPlug.INFRA, on)
+        self.set_power_plug(UsbPlug.INFRA, on)
 
     @property
     def infraboot(self) -> bool:
-        return self._plugs.plugs[UsbPlug.INFRABOOT]
+        return self._get_power_plug(UsbPlug.INFRABOOT)
 
     @infraboot.setter
     def infraboot(self, on: bool) -> None:
-        self._power(UsbPlug.INFRABOOT, on)
+        self.set_power_plug(UsbPlug.INFRABOOT, on)
 
     @property
     def dut(self) -> bool:
         """
         USB-Power for the DUT-MCU
         """
-        return self._plugs.plugs[UsbPlug.DUT]
+        return self._get_power_plug(UsbPlug.DUT)
 
     @dut.setter
     def dut(self, on: bool) -> None:
-        self._power(UsbPlug.DUT, on)
+        self.set_power_plug(UsbPlug.DUT, on)
 
     @property
     def error(self) -> bool:
-        return self._plugs.plugs[UsbPlug.ERROR]
+        return self._get_power_plug(UsbPlug.ERROR)
 
     @error.setter
     def error(self, on: bool) -> None:
-        self._power(UsbPlug.ERROR, on)
-
-    def _power(self, plug: UsbPlug, on: bool) -> None:
-        plugs = UsbPlugs(plugs={plug: on})
-        plugs.set_power(self._hub_location)
-        self._plugs.plugs[plug] = on
+        self.set_power_plug(UsbPlug.ERROR, on)

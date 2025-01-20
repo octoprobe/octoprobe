@@ -15,7 +15,7 @@ import usbhubctl
 from serial.tools import list_ports
 from usbhubctl import known_hubs, util_octohub4
 
-from .util_power import PowerCycle, UsbPlug, UsbPlugs
+from .util_power import PowerCycle, TentaclePlugsPower, UsbPlug, UsbPlugs
 
 
 class SerialNumberNotFoundException(Exception):
@@ -224,7 +224,8 @@ class QueryResultTentacles(list[QueryResultTentacle]):
 
     def set_power(self, plugs: UsbPlugs) -> None:
         for hub in self:
-            plugs.set_power(hub_location=hub.hub_location)
+            tpp = TentaclePlugsPower(hub_location=hub.hub_location)
+            tpp.set_power_plugs(plugs=plugs)
 
     def powercycle(self, power_cycle: PowerCycle) -> None:
         if power_cycle is PowerCycle.INFRA:
@@ -235,7 +236,7 @@ class QueryResultTentacles(list[QueryResultTentacle]):
 
         if power_cycle is PowerCycle.INFRBOOT:
             self.set_power(plugs=UsbPlugs.default_off())
-            self.set_power(plugs=UsbPlugs(plugs={UsbPlug.INFRABOOT: False}))
+            self.set_power(plugs=UsbPlugs({UsbPlug.INFRABOOT: False}))
             time.sleep(1.0)
             self.set_power(plugs=UsbPlugs({UsbPlug.INFRA: True}))
             time.sleep(0.5)
