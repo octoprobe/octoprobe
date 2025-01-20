@@ -7,7 +7,7 @@
 	"settings": {
 		"[python]": {
 			"editor.formatOnSave": true,
-			"editor.defaultFormatter": "ms-python.black-formatter"
+			"editor.defaultFormatter": "charliermarsh.ruff"
 		},
 		"ruff.enable": true,
 		"ruff.fixAll": true,
