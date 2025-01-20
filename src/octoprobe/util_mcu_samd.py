@@ -8,6 +8,17 @@ Device in application mode:
 Device in boot mode:
   * Mount volume 'ITSYBOOT'
   * usb, add, 0x239A(9114)/0x000F(15)
+
+
+USB Disk automount - links
+==========================
+https://wiki.ubuntuusers.de/UDisks2/
+https://www.cyberciti.biz/faq/systemd-systemctl-view-status-of-a-service-on-linux/
+
+systemctl status udisks2.service
+sudo journalctl UNIT=udisks2.service --follow
+
+udisksctl status
 """
 
 import logging
