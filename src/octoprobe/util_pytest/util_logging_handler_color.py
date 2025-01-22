@@ -37,13 +37,13 @@ class ColorHandler(logging.StreamHandler):
         match = self.RE_TAG.match(record.msg)
         if match is None:
             return super().format(record)
+        if not self.stream.isatty():
+            return super().format(record)
+
         tag = match.group("tag")
         msg = match.group("msg")
         record.msg = msg
         color = _DICT_STYLES.get(tag, _STYLE_FALLBACK)
 
-        if self.stream.isatty():
-            message = self.FORMATTER.format(record)
-            return color.render(message)
-
-        return super().format(record)
+        message = self.FORMATTER.format(record)
+        return color.render(message)
