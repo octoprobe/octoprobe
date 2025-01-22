@@ -31,9 +31,9 @@ classifiers = [
 ]
 
 dependencies = [
-    "usbhubctl@git+https://github.com/octoprobe/usbhubctl@main",
+    "usbhubctl@git+https://github.com/octoprobe/usbhubctl@v0.1-release",
     "pyudev",
-    "mpremote@git+https://github.com/hmaerki/fork_micropython@hmaerki/mpremote_add_timeoutoverall#egg=mpremote&subdirectory=tools/mpremote",
+    "mpremote@git+https://github.com/hmaerki/fork_micropython@master#egg=mpremote&subdirectory=tools/mpremote",
     "esptool",
     "typer-slim",
     "Jinja2",

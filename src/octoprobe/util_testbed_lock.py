@@ -27,6 +27,8 @@ class TestbedLock:
         Will throw an exception if the testbed is already locked.
         """
         self._fd = os.open(filename, os.O_CREAT | os.O_RDWR | os.O_TRUNC)
+        os.fchmod(self._fd, 0o666)
+
         self._lockfile = filename
         for retry in range(100):
             try:
