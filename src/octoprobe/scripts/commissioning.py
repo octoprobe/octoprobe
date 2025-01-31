@@ -5,9 +5,9 @@ import pathlib
 import time
 
 from ..lib_tentacle_infra import TentacleInfra
+from ..usb_tentacle.usb_tentacle import UsbTentacle, UsbTentacles
 from ..util_firmware_spec import FirmwareDownloadSpec
 from ..util_pyudev import UdevPoller
-from ..util_usb_serial import QueryResultTentacle
 
 logger = logging.getLogger(__file__)
 
@@ -69,37 +69,35 @@ class Commissioning:
         connected_tentacle = self._wait_for_connected_tentacle()
         self.tentacle_infra = TentacleInfra(
             "tentacle_to_commission",
-            hub=connected_tentacle,
+            usb_tentacle=connected_tentacle,
         )
         logger.info(
-            f"Tentacle detected at usb location: {connected_tentacle.hub_location.short}"
+            f"Tentacle detected at usb location: {connected_tentacle.hub4_location.short}"
         )
         time.sleep(1.0)
 
-    def _wait_for_connected_tentacle(self) -> QueryResultTentacle:
+    def _wait_for_connected_tentacle(self) -> UsbTentacle:
         msg_period = MsgPeriod()
 
         while True:
             # actual_usb_topology = backend_query_lsusb.lsusb()
-            hubs = QueryResultTentacle.query(
-                verbose=False,
-                use_topology_cache=False,
-            )
-            if len(hubs) > 1:
+            usb_tentacles = UsbTentacles.query(require_serial=False)
+
+            if len(usb_tentacles) > 1:
                 if msg_period.do_print:
                     logger.warning(
-                        f"{len(hubs)} tentacles connected: Please connect exactly one tentacle!"
+                        f"{len(usb_tentacles)} tentacles connected: Please connect exactly one tentacle!"
                     )
                 time.sleep(0.5)
                 continue
-            if len(hubs) == 0:
+            if len(usb_tentacles) == 0:
                 if msg_period.do_print:
                     logger.info(
-                        f"{len(hubs)} tentacles connected: Please connect a tentacle!"
+                        f"{len(usb_tentacles)} tentacles connected: Please connect a tentacle!"
                     )
                 time.sleep(0.5)
                 continue
-            return hubs[0]
+            return usb_tentacles[0]
 
     def do_program_rp2(
         self, udev: UdevPoller, firmware_spec: FirmwareDownloadSpec

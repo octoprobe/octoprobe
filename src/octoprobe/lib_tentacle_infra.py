@@ -4,8 +4,9 @@ import logging
 import pathlib
 import time
 
-from . import util_power, util_usb_serial
 from .lib_mpremote import MpRemote
+from .usb_tentacle.usb_constants import UsbPlug
+from .usb_tentacle.usb_tentacle import TentaclePlugsPower, UsbTentacle
 from .util_baseclasses import VersionMismatchException
 from .util_firmware_spec import FirmwareDownloadSpec, FirmwareSpecBase
 from .util_mcu import UdevApplicationModeEvent, udev_filter_application_mode
@@ -36,25 +37,27 @@ class TentacleInfra:
         json_filename = DIRECTORY_OF_THIS_FILE / "util_tentacle_infra_firmware.json"
         return FirmwareDownloadSpec.factory2(filename=json_filename)
 
-    def __init__(self, label: str, hub: util_usb_serial.QueryResultTentacle) -> None:
+    def __init__(self, label: str, usb_tentacle: UsbTentacle) -> None:
         assert isinstance(label, str)
+        assert isinstance(usb_tentacle, UsbTentacle)
 
         # pylint: disable=import-outside-toplevel
         from .lib_tentacle_infra_rp2 import InfraRP2
 
         self.label = label
-        self.hub = hub
+        self.usb_tentacle = usb_tentacle
+        self.power = TentaclePlugsPower(hub_location=self.usb_tentacle.hub4_location)
         self._mp_remote: MpRemote | None = None
-        self._power: util_power.TentaclePlugsPower | None = None
+        self._power: TentaclePlugsPower | None = None
         self.mcu_infra: InfraRP2 = InfraRP2(self)
 
     @property
     def usb_location_infra(self) -> str:
-        return f"{self.hub.hub_location.short}.{util_power.UsbPlug.INFRA.number}"
+        return f"{self.usb_tentacle.hub4_location.short}.{UsbPlug.INFRA.number}"
 
     @property
     def usb_location_dut(self) -> str:
-        return f"{self.hub.hub_location.short}.{util_power.UsbPlug.DUT.number}"
+        return f"{self.usb_tentacle.hub4_location.short}.{UsbPlug.DUT.number}"
 
     def mp_remote_close(self) -> str | None:
         """
@@ -71,15 +74,6 @@ class TentacleInfra:
         assert self._mp_remote is not None
         return self._mp_remote
 
-    @property
-    def power(self) -> util_power.TentaclePlugsPower:
-        assert self.hub is not None
-        if self._power is None:
-            self._power = util_power.TentaclePlugsPower(
-                hub_location=self.hub.hub_location
-            )
-        return self._power
-
     def power_dut_off_and_wait(self) -> None:
         """
         Use this instead of 'self.power.dut = False'
@@ -89,9 +83,9 @@ class TentacleInfra:
             time.sleep(0.5)
 
     def rp2_test_mp_remote(self) -> None:
-        assert self.hub is not None
+        assert self.usb_tentacle is not None
         unique_id = self.mcu_infra.get_unique_id()
-        assert self.hub.rp2_serial_number == unique_id
+        assert self.usb_tentacle.serial == unique_id
 
         self.verify_micropython_version(self.get_firmware_spec())
 
@@ -100,9 +94,7 @@ class TentacleInfra:
             # We are already connected
             return
 
-        assert self.hub is not None
-        assert self.hub.rp2_serial_port is not None
-        self._mp_remote = MpRemote(tty=self.hub.rp2_serial_port)
+        self._mp_remote = MpRemote(tty=self.usb_tentacle.serial_port)
 
     def setup_infra(self, udev: UdevPoller) -> None:
         self.connect_mpremote_if_needed()

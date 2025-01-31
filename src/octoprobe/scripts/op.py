@@ -5,8 +5,9 @@ from typing import Optional
 import typer
 import typing_extensions
 
-from .. import util_usb_serial
-from ..util_power import PowerCycle, UsbPlug, UsbPlugs
+from octoprobe.usb_tentacle.usb_tentacle import UsbTentacles
+
+from ..usb_tentacle.usb_constants import TyperPowerCycle, TyperUsbPlug, UsbPlugs
 from ..util_pyudev_monitor import do_udev_monitor
 from . import typer_query
 from .commissioning import do_commissioning
@@ -44,34 +45,37 @@ def commissioning() -> None:
 
 @app.command(help="Power cycle usb ports.")
 def powercycle(
-    power_cycle: PowerCycle,
+    power_cycle: TyperPowerCycle,
     serial: TyperAnnotated[Optional[list[str]], typer.Option()] = None,  # noqa: UP007
 ) -> None:
-    hubs = util_usb_serial.QueryResultTentacle.query(verbose=serial is not None)
-    hubs = hubs.select(serials=serial)
-    hubs.powercycle(power_cycle=power_cycle)
+    usb_tentacles = UsbTentacles.query(require_serial=serial is not None)
+    usb_tentacles = usb_tentacles.select(serials=serial)
+    usb_tentacles.powercycle(power_cycle=power_cycle)
 
 
 @app.command(help="Power on/off usb ports.")
 def power(
-    on: TyperAnnotated[Optional[list[UsbPlug]], typer.Option()] = None,  # noqa: UP007
-    off: TyperAnnotated[Optional[list[UsbPlug]], typer.Option()] = None,  # noqa: UP007
+    on: TyperAnnotated[Optional[list[TyperUsbPlug]], typer.Option()] = None,  # noqa: UP007
+    off: TyperAnnotated[Optional[list[TyperUsbPlug]], typer.Option()] = None,  # noqa: UP007
     serial: TyperAnnotated[Optional[list[str]], typer.Option()] = None,  # noqa: UP007
     set_off: TyperAnnotated[bool, typer.Option()] = False,
 ) -> None:
-    hubs = util_usb_serial.QueryResultTentacle.query(verbose=serial is not None)
-    hubs = hubs.select(serials=serial)
+    usb_tentacles = UsbTentacles.query(require_serial=serial is not None)
+    usb_tentacles = usb_tentacles.select(serials=serial)
+
+    _on = TyperUsbPlug.convert(on)
+    _off = TyperUsbPlug.convert(off)
 
     plugs = UsbPlugs()
     if set_off:
         plugs = UsbPlugs.default_off()
-    if on is not None:
-        for _on in on:
-            plugs[_on] = True
-    if off is not None:
-        for _off in off:
-            plugs[_off] = False
-    hubs.set_power(plugs)
+    if _on is not None:
+        for __on in _on:
+            plugs[__on] = True
+    if _off is not None:
+        for __off in _off:
+            plugs[__off] = False
+    usb_tentacles.set_plugs(plugs)
 
     print(plugs.text)
 

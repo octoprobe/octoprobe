@@ -29,36 +29,64 @@ class JournalctlObserver:
         for r in [
             r"MESSAGE=usb .*?: Not enough bandwidth for new device state",
             # Mon 2025-01-20 15:05:58.411543 CET [s=3c16c64ddc5e47d3860baf61bd03cdcb;i=f293a2;b=5431e12877f64e10b32eae46c739923e;m=2321b29f4;t=62c23c2786517;x=fbb7f5b297371ab4]
-            #     _TRANSPORT=kernel
-            #     SYSLOG_FACILITY=0
-            #     SYSLOG_IDENTIFIER=kernel
-            #     _MACHINE_ID=77fcb404e8b74dec85b578d4ad7ddb25
+            #     _BOOT_ID=5431e12877f64e10b32eae46c739923e
             #     _HOSTNAME=hans-Yoga-260
-            #     _RUNTIME_SCOPE=system
-            #     PRIORITY=4
+            #     _KERNEL_DEVICE=c189:122
             #     _KERNEL_SUBSYSTEM=usb
+            #     _MACHINE_ID=77fcb404e8b74dec85b578d4ad7ddb25
+            #     _RUNTIME_SCOPE=system
+            #     _SOURCE_MONOTONIC_TIMESTAMP=9430621282
+            #     _TRANSPORT=kernel
+            #     _UDEV_DEVNODE=/dev/bus/usb/001/123
             #     _UDEV_SYSNAME=1-1.4.4.3
             #     MESSAGE=usb 1-1.4.4.3: Not enough bandwidth for new device state.
-            #     _KERNEL_DEVICE=c189:122
-            #     _UDEV_DEVNODE=/dev/bus/usb/001/123
-            #     _BOOT_ID=5431e12877f64e10b32eae46c739923e
-            #     _SOURCE_MONOTONIC_TIMESTAMP=9430621282
-            r"MESSAGE=usb .*?: can't set config",
-            # Mon 2025-01-20 15:05:58.411820 CET [s=3c16c64ddc5e47d3860baf61bd03cdcb;i=f293a3;b=5431e12877f64e10b32eae46c739923e;m=2321b2b09;t=62c23c278662c;x=2f39069dda9f5cb2]
-            #     _TRANSPORT=kernel
+            #     PRIORITY=4
             #     SYSLOG_FACILITY=0
             #     SYSLOG_IDENTIFIER=kernel
-            #     _MACHINE_ID=77fcb404e8b74dec85b578d4ad7ddb25
+            r"MESSAGE=usb .*?: can't set config",
+            # Mon 2025-01-20 15:05:58.411820 CET [s=3c16c64ddc5e47d3860baf61bd03cdcb;i=f293a3;b=5431e12877f64e10b32eae46c739923e;m=2321b2b09;t=62c23c278662c;x=2f39069dda9f5cb2]
+            #     _BOOT_ID=5431e12877f64e10b32eae46c739923e
             #     _HOSTNAME=hans-Yoga-260
-            #     _RUNTIME_SCOPE=system
-            #     PRIORITY=3
+            #     _KERNEL_DEVICE=c189:122
             #     _KERNEL_SUBSYSTEM=usb
+            #     _MACHINE_ID=77fcb404e8b74dec85b578d4ad7ddb25
+            #     _RUNTIME_SCOPE=system
+            #     _SOURCE_MONOTONIC_TIMESTAMP=9430621300
+            #     _TRANSPORT=kernel
+            #     _UDEV_DEVNODE=/dev/bus/usb/001/123
             #     _UDEV_SYSNAME=1-1.4.4.3
             #     MESSAGE=usb 1-1.4.4.3: can't set config #1, error -28
-            #     _KERNEL_DEVICE=c189:122
-            #     _UDEV_DEVNODE=/dev/bus/usb/001/123
-            #     _BOOT_ID=5431e12877f64e10b32eae46c739923e
-            #     _SOURCE_MONOTONIC_TIMESTAMP=9430621300
+            #     PRIORITY=3
+            #     SYSLOG_FACILITY=0
+            #     SYSLOG_IDENTIFIER=kernel
+            r"MESSAGE=usb .*?: reset high-speed USB device number",
+            # Fri 2025-01-31 19:05:29.974116 CET [s=4ede5dd1820f435db5f6a683258a4ba2;i=820253;b=0c3168bbe06541a5a92be924dde8ae39;m=70c5d2d19;t=62d0463562964;x=8cc213e2058364b2]
+            #     _TRANSPORT=kernel
+            #     PRIORITY=6
+            #     SYSLOG_FACILITY=0
+            #     SYSLOG_IDENTIFIER=kernel
+            #     _BOOT_ID=0c3168bbe06541a5a92be924dde8ae39
+            #     _MACHINE_ID=7eb3b265d30d4b448a1afd26defdf766
+            #     _HOSTNAME=maerki-ideapad-320
+            #     _RUNTIME_SCOPE=system
+            #     _KERNEL_SUBSYSTEM=usb
+            #     _KERNEL_DEVICE=c189:323
+            #     _UDEV_DEVNODE=/dev/bus/usb/003/000
+            #     _UDEV_SYSNAME=3-1.1.4
+            #     _SOURCE_MONOTONIC_TIMESTAMP=30272105414
+            #     MESSAGE=usb 3-1.1.4: reset high-speed USB device number 68 using xhci_hcd
+            # MISSING: _KERNEL_SUBSYSTEM=usb
+            # Fri 2025-01-31 19:05:30.263733 CET [s=4ede5dd1820f435db5f6a683258a4ba2;i=820255;b=0c3168bbe06541a5a92be924dde8ae39;m=70c61986b;t=62d04635a94b5;x=f0139dbcb79be972]
+            #     _TRANSPORT=kernel
+            #     PRIORITY=6
+            #     SYSLOG_FACILITY=0
+            #     SYSLOG_IDENTIFIER=kernel
+            #     _BOOT_ID=0c3168bbe06541a5a92be924dde8ae39
+            #     _MACHINE_ID=7eb3b265d30d4b448a1afd26defdf766
+            #     _HOSTNAME=maerki-ideapad-320
+            #     _RUNTIME_SCOPE=system
+            #     MESSAGE=usb 3-1.1.4-port1: attempt power cycle
+            #     _SOURCE_MONOTONIC_TIMESTAMP=30272395116
         ]
     ]
 

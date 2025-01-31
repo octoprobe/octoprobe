@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 
-from octoprobe import util_usb_serial
+from octoprobe.usb_tentacle.usb_tentacle import UsbTentacles
 
 
 @dataclasses.dataclass
@@ -11,6 +11,6 @@ class Query:
     ids: set[str] = dataclasses.field(default_factory=set)
 
     def print(self) -> None:
-        result = util_usb_serial.QueryResultTentacle.query(verbose=self.verbose)
-        for r in result:
-            print(r.short)
+        usb_tentacles = UsbTentacles.query(require_serial=False)
+        for usb_tentacle in usb_tentacles:
+            print(usb_tentacle.short)

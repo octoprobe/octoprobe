@@ -15,7 +15,9 @@
 		"ruff.lint.run": "onSave",
 		"mpremote.srcSubdirectory": "src",
 		"python.testing.pytestArgs": [
-			"."
+			"-v",
+			"-s",
+			"tests"
 		],
 		"python.testing.cwd": "${workspaceFolder}",
 		"python.testing.unittestEnabled": false,

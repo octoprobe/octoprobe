@@ -5,13 +5,11 @@ import pathlib
 import time
 import typing
 
-from octoprobe import util_usb_serial
-
 from .lib_tentacle import TentacleBase
+from .usb_tentacle.usb_constants import UsbPlug, UsbPlugs
+from .usb_tentacle.usb_tentacle import UsbTentacles
 from .util_baseclasses import OctoprobeAppExitException
-from .util_power import UsbPlug, UsbPlugs
 from .util_pyudev import UdevPoller
-from .util_usb_serial import QueryResultTentacles
 
 FULL_POWERCYCLE_ALL_TENTACLES = False
 
@@ -20,7 +18,7 @@ class NTestRun:
     """
     Why this class is called 'NTestRun':
 
-        pytest collects all classes starting w'TestRun' would be collected by pytest: So we name it 'NTestRun'
+        pytest collects all classes starting with 'TestRun' would be collected by pytest: So we name it 'NTestRun'
     """
 
     def __init__(self, connected_tentacles: typing.Sequence[TentacleBase]) -> None:
@@ -29,37 +27,38 @@ class NTestRun:
         self.connected_tentacles = connected_tentacles
 
     @staticmethod
-    def session_powercycle_tentacles() -> QueryResultTentacles:
+    def session_powercycle_tentacles() -> UsbTentacles:
         """
         Powers all RP2 infra.
         Finds all tentacle by finding rp2_unique_id of the RP2 infra.
         """
         # We have to reset the power for all rp2-infra to become visible
-        hubs = util_usb_serial.QueryResultTentacle.query_fast()
-        hubs = hubs.select(serials=None)
+        usb_tentacles = UsbTentacles.query(require_serial=True)
+        usb_tentacles = usb_tentacles.select(serials=None)
         if FULL_POWERCYCLE_ALL_TENTACLES:
             # Powercycling ALL hubs
-            hubs.set_power(plugs=UsbPlugs.default_off())
+            usb_tentacles.set_plugs(plugs=UsbPlugs.default_off())
             time.sleep(0.2)  # success: 0.0
-            hubs.set_power(plugs=UsbPlugs({UsbPlug.INFRA: True}))
+            usb_tentacles.set_plugs(plugs=UsbPlugs({UsbPlug.INFRA: True}))
             # Without hub inbetween: failed: 0.4, success: 0.5
             # With hub inbetween: failed: 0.7, success: 0.8
             # RSHTECH 7 port hub produced errors using 1.2s
             time.sleep(2.0)
-        else:
-            hubs.set_power(
-                plugs=UsbPlugs(
-                    {
-                        UsbPlug.INFRA: True,
-                        UsbPlug.INFRABOOT: True,
-                        UsbPlug.DUT: False,
-                        UsbPlug.ERROR: False,
-                    }
-                )
-            )
-            time.sleep(2.0)
+        # else:
+        #     usb_tentacles.set_plugs(
+        #         plugs=UsbPlugs(
+        #             {
+        #                 UsbPlug.INFRA: True,
+        #                 UsbPlug.INFRABOOT: True,
+        #                 UsbPlug.DUT: False,
+        #                 UsbPlug.ERROR: False,
+        #             }
+        #         )
+        #     )
+        #     time.sleep(2.0)
 
-        return util_usb_serial.QueryResultTentacle.query_fast()
+        # return util_usb_serial.QueryResultTentacle.query_fast()
+        return usb_tentacles
 
     def session_teardown(self) -> None:
         pass
@@ -79,7 +78,9 @@ class NTestRun:
         )
 
     def function_setup_infra(
-        self, udev_poller: UdevPoller, tentacle: TentacleBase
+        self,
+        udev_poller: UdevPoller,
+        tentacle: TentacleBase,
     ) -> None:
         """
         Power off all other known usb power plugs.

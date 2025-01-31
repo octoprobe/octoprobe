@@ -31,7 +31,6 @@ classifiers = [
 ]
 
 dependencies = [
-    "usbhubctl@git+https://github.com/octoprobe/usbhubctl@v0.1-release",
     "pyudev",
     "mpremote@git+https://github.com/hmaerki/fork_micropython@master#egg=mpremote&subdirectory=tools/mpremote",
     "esptool",
@@ -203,8 +202,6 @@ ignore = [
 "octoprobe/__init__.py" = ["F401", "I001"]
 
 [tool.ruff.lint.isort]
-# known-third-party = ["usbhubctl"]
-# known-local-folder = ["usbhubctl"]
 case-sensitive = true
 combine-as-imports = true
 order-by-type = false

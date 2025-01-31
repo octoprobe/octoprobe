@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import abc
 import contextlib
-import dataclasses
 import enum  # pylint: disable=unused-import
 import io
 import logging
@@ -10,11 +9,9 @@ import pathlib
 import textwrap
 import typing
 
-from usbhubctl import DualConnectedHub, Hub
-
-from . import util_power, util_usb_serial
 from .lib_tentacle_dut import TentacleDut
 from .lib_tentacle_infra import TentacleInfra
+from .usb_tentacle.usb_tentacle import TentaclePlugsPower, UsbTentacle
 from .util_baseclasses import TentacleSpecBase
 from .util_firmware_spec import FirmwareSpecBase
 from .util_pyudev import UdevPoller
@@ -94,7 +91,7 @@ class TentacleBase(abc.ABC):
         tentacle_serial_number: str,
         tentacle_spec_base: TentacleSpecBase,
         hw_version: str,
-        hub: util_usb_serial.QueryResultTentacle,
+        usb_tentacle: UsbTentacle,
     ) -> None:
         assert isinstance(tentacle_serial_number, str)
         assert isinstance(tentacle_spec_base, TentacleSpecBase)
@@ -102,7 +99,7 @@ class TentacleBase(abc.ABC):
         assert (
             tentacle_serial_number == tentacle_serial_number.lower()
         ), f"Must not contain upper case letters: {tentacle_serial_number}"
-        assert isinstance(hub, util_usb_serial.QueryResultTentacle)
+        assert isinstance(usb_tentacle, UsbTentacle)
 
         self.tentacle_state = TentacleState()
         self.tentacle_serial_number = tentacle_serial_number
@@ -113,14 +110,14 @@ class TentacleBase(abc.ABC):
             return f"Tentacle {dut_or_infra}{self.label_short}"
 
         self.label = _label(dut_or_infra="")
-        self.infra = TentacleInfra(label=_label(dut_or_infra="INFRA "), hub=hub)
+        self.infra = TentacleInfra(
+            label=_label(dut_or_infra="INFRA "),
+            usb_tentacle=usb_tentacle,
+        )
 
         def get_dut() -> TentacleDut | None:
             if self.is_mcu:
-                return TentacleDut(
-                    label=_label(dut_or_infra="DUT "),
-                    tentacle=self,
-                )
+                return TentacleDut(label=_label(dut_or_infra="DUT "), tentacle=self)
             return None
 
         self._dut = get_dut()
@@ -154,7 +151,7 @@ class TentacleBase(abc.ABC):
         return self.tentacle_spec_base.is_mcu
 
     @property
-    def power(self) -> util_power.TentaclePlugsPower:
+    def power(self) -> TentaclePlugsPower:
         return self.infra.power
 
     @property
@@ -230,57 +227,10 @@ class TentacleBase(abc.ABC):
         self.dut.boot_and_init_mp_remote_dut(tentacle=self, udev=udev)
 
     @staticmethod
-    def tentacles_description_short(tentacles: list[TentacleBase]) -> str:
+    def tentacles_description_short(tentacles: typing.Sequence[TentacleBase]) -> str:
         f = io.StringIO()
         f.write("TENTACLES\n")
         for tentacle in tentacles:
             f.write(textwrap.indent(tentacle.description_short, prefix="  "))
 
         return f.getvalue()
-
-
-@dataclasses.dataclass
-class UsbHub:
-    label: str
-    model: Hub
-    connected_hub: None | DualConnectedHub = None
-
-    def get_plug(self, plug_number: int) -> UsbPlug:
-        assert (
-            1 <= plug_number <= self.model.plug_count
-        ), f"{self.model.model}: Plug {plug_number} does not exit! Valid plugs [0..{self.model.plug_count}]."
-        return UsbPlug(usb_hub=self, plug_number=plug_number)
-
-    def setup(self) -> None:
-        connected_hubs = self.model.find_connected_dualhubs()
-        self.connected_hub = connected_hubs.expect_one()
-
-    def teardown(self) -> None:
-        pass
-
-    @property
-    def description_short(self) -> str:
-        f = io.StringIO()
-        f.write(f"Label {self.label}\n")
-        f.write(f"  Model {self.model.model}\n")
-        return f.getvalue()
-
-
-@dataclasses.dataclass
-class UsbPlug:
-    usb_hub: UsbHub
-    plug_number: int
-
-    @property
-    def description_short(self) -> str:
-        return f"plug {self.plug_number} on '{self.usb_hub.label}' ({self.usb_hub.model.model})"
-
-    @property
-    def power(self) -> bool:
-        raise NotImplementedError()
-
-    @power.setter
-    def power(self, on: bool) -> None:
-        c = self.usb_hub.connected_hub
-        assert c is not None
-        c.get_plug(plug_number=self.plug_number).set_power(on=on)

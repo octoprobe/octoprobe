@@ -32,7 +32,7 @@
             "console": "integratedTerminal",
         },
         {
-            "name": "Python: Current File",
+            "name": "Current File",
             "type": "debugpy",
             "request": "launch",
             "program": "${file}",
@@ -40,7 +40,7 @@
             "justMyCode": false,
         },
         {
-            "name": "Python: Current File with Arguments",
+            "name": "Current File with Arguments",
             "type": "debugpy",
             "request": "launch",
             "program": "${file}",
@@ -49,7 +49,7 @@
             "justMyCode": false,
         },
         {
-            "name": "Python: Octoprobe main",
+            "name": "Octoprobe main",
             "type": "debugpy",
             "request": "launch",
             "module": "octoprobe.main",
@@ -61,7 +61,7 @@
             "justMyCode": false,
         },
         {
-            "name": "Python: op install",
+            "name": "op install",
             "type": "debugpy",
             "request": "launch",
             "module": "octoprobe.scripts.op",
@@ -76,7 +76,7 @@
             "justMyCode": false,
         },
         {
-            "name": "Python: op commissioning",
+            "name": "op commissioning",
             "type": "debugpy",
             "request": "launch",
             "module": "octoprobe.scripts.op",
@@ -91,13 +91,13 @@
             "justMyCode": false,
         },
         {
-            "name": "Python: op cycle dut",
+            "name": "op cycle dut",
             "type": "debugpy",
             "request": "launch",
             "module": "octoprobe.scripts.op",
             "cwd": "${workspaceFolder}",
             "args": [
-                "cycle",
+                "powercycle",
                 "dut",
             ],
             "env": {
@@ -107,13 +107,13 @@
             "justMyCode": false,
         },
         {
-            "name": "Python: op cycle infra --serial xxx",
+            "name": "op cycle infra --serial xxx",
             "type": "debugpy",
             "request": "launch",
             "module": "octoprobe.scripts.op",
             "cwd": "${workspaceFolder}",
             "args": [
-                "cycle",
+                "powercycle",
                 "infra",
                 // "--serial",
                 // "d32",
@@ -128,7 +128,7 @@
             "justMyCode": false,
         },
         {
-            "name": "Python: op power",
+            "name": "op power",
             "type": "debugpy",
             "request": "launch",
             "module": "octoprobe.scripts.op",
@@ -147,7 +147,7 @@
             "justMyCode": false,
         },
         {
-            "name": "Python: op query",
+            "name": "op query",
             "type": "debugpy",
             "request": "launch",
             "module": "octoprobe.scripts.op",
@@ -163,7 +163,7 @@
             "justMyCode": false,
         },
         {
-            "name": "Python: op udev",
+            "name": "op udev",
             "type": "debugpy",
             "request": "launch",
             "module": "octoprobe.scripts.op",
@@ -176,6 +176,24 @@
             },
             "console": "integratedTerminal",
             "justMyCode": false,
-        }
+        },
+        {
+            "name": "pytest",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pytest",
+            "cwd": "${workspaceFolder}",
+            "args": [
+                // "--collect-only",
+                // "-q",
+                "-s",
+                "-v",
+            ],
+            "console": "integratedTerminal",
+            "env": {
+                "PYDEVD_DISABLE_FILE_VALIDATION": "1"
+            },
+            "justMyCode": false,
+        },
     ]
 }
