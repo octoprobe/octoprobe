@@ -101,6 +101,10 @@ ignore_missing_imports = true
 check_untyped_defs = true
 
 [[tool.mypy.overrides]]
+module = "pallets_sphinx_themes.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
 module = "serial.*"
 ignore_missing_imports = true
 

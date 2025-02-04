@@ -9,7 +9,7 @@ import typing
 from .lib_tentacle import TentacleBase
 from .util_baseclasses import BootApplicationUsbID, UsbID
 from .util_dut_programmer_abc import DutProgrammerABC, IDX1_RELAYS_DUT_BOOT
-from .util_firmware_spec import FirmwareBuildSpec, FirmwareSpecBase
+from .util_firmware_spec import FirmwareSpecBase
 from .util_mcu import FILENAME_FLASHING
 from .util_mcu_rp2 import Rp2UdevBootModeEvent
 from .util_pyudev import UdevEventBase, UdevFilter, UdevPoller
@@ -79,7 +79,7 @@ class DutProgrammerDfuUtil(DutProgrammerABC):
     ) -> None:
         """ """
         assert isinstance(tentacle, TentacleBase)
-        assert isinstance(firmware_spec, FirmwareBuildSpec)
+        assert isinstance(firmware_spec, FirmwareSpecBase)
         assert (
             len(tentacle.tentacle_spec_base.programmer_args) == 0
         ), "Not yet supported"

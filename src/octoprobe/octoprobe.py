@@ -117,6 +117,9 @@ class NTestRun:
         tentacle: TentacleBase,
         directory_logs: pathlib.Path,
     ) -> None:
+        if not tentacle.is_mcu:
+            return
+
         # Flash the MCU
         tentacle.flash_dut(
             udev_poller=udev_poller,
@@ -133,6 +136,8 @@ class NTestRun:
 
         for tentacle in active_tentacles:
             # Before we power off the DUT: free mp_remote
+            if not tentacle.is_mcu:
+                continue
             tentacle.dut.mp_remote_close()
             # Before we can switch the relays: Connect to infra, power off and free mp_remote
             tentacle.infra.connect_mpremote_if_needed()

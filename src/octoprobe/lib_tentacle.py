@@ -143,7 +143,7 @@ class TentacleBase(abc.ABC):
 
     @property
     def dut(self) -> TentacleDut:
-        assert self._dut is not None
+        assert self._dut is not None, f"{self.label}: self._dut is None!"
         return self._dut
 
     @property

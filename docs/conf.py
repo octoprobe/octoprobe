@@ -21,7 +21,7 @@ release, version = "0.0.1", "0.0.1.dev0"
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = "Octoprobe: Octoprobe"
-copyright = "2024 Hans Märki"
+copyright = "2024,2025 Hans Märki"
 author = "Hans Märki"
 
 # -- General configuration ---------------------------------------------------
@@ -85,7 +85,8 @@ html_context = {
             "Octoprobe: testbed_showcase", "https://www.octoprobe.org/testbed_showcase/"
         ),
         ProjectLink(
-            "Octoprobe: testbed_micropython", "https://www.octoprobe.org/testbed_micropython/"
+            "Octoprobe: testbed_micropython",
+            "https://www.octoprobe.org/testbed_micropython/",
         ),
         # ProjectLink("Octoprobe: usbhubctl", "https://www.octoprobe.org/usbhubctl/"),
         # ProjectLink("Donate", "https://palletsprojects.com/donate"),
