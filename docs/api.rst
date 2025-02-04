@@ -12,7 +12,7 @@ important right here and provide links to the canonical documentation.
 Application Object
 ------------------
 
-.. autoclass:: octoprobe.octoprobe.NTestRun
+.. autoclass:: octoprobe.octoprobe.CtxTestRun
    :members:
    :inherited-members:
 
