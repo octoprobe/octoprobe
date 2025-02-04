@@ -28,20 +28,28 @@ Goal
 octoprobe testenvironment
 -------------------------
 
-* Software:
+* Software
+  
   * dockerized on linux
   * Test script: `pytest`
   * github runner
+
 * Hardware
+  
   * A tentacle may be ordered assembled at JLCPCB and will cost below USD50.
   * Every tentacle is equipped by a RP2040 which controls the DUT.
   * The Inkbus connects the tentacles. Typically exactly one BoardTentacle and one GadgetTentacle is connected to the Inkbus.
 * Extended Hardware
+  
   * octoprobe may also have specialized tentacles like a scope tentacle.
   * octoprobe may also control cams to read displays, wlan hotspot, etc.
+  
 * Firmware under test
+
   * Must be provided by the tester
+
 * Test software
+
   * octoprobe provides basic functionality like updating firmware, connecting the inkbus, tentacle inventory.
   * However the pytest code itselve is provided by the tester together with the firmware.
 

@@ -1,4 +1,4 @@
-Documentatation generation
+Documentation generation
 ==========================
 
 Goal

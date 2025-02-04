@@ -14,11 +14,9 @@ from .util_pyudev import UdevPoller
 FULL_POWERCYCLE_ALL_TENTACLES = False
 
 
-class NTestRun:
+class CtxTestRun:
     """
-    Why this class is called 'NTestRun':
-
-        pytest collects all classes starting with 'TestRun' would be collected by pytest: So we name it 'NTestRun'
+    The context of a test run
     """
 
     def __init__(self, connected_tentacles: typing.Sequence[TentacleBase]) -> None:
