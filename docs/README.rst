@@ -10,8 +10,7 @@ Octoprobe entry page
 HIL (Hardware in the Loop) testinfrastructure
 ---------------------------------------------
 
-`Presentation at MicroPython Meetup Melbourne <README_images/2024-07-27_melbourne_micropython_meetup.pdf>`_
-
+:download:`2024-07-27_melbourne_micropython_meetup.pdf <README_images/2024-07-27_melbourne_micropython_meetup.pdf>`
 
 Terms
 -----
