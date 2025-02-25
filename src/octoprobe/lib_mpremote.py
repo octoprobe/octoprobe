@@ -107,6 +107,9 @@ class MpRemote:
         # download as compiled .mpy files (default)
         mpy: bool = False
 
+        self.state.ensure_raw_repl()
+        self.state.did_action()
+
         mip._install_package(  # pylint: disable=W0212:protected-access
             transport=self.state.transport,
             package=package,

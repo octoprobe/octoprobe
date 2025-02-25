@@ -32,7 +32,9 @@ classifiers = [
 
 dependencies = [
     "pyudev",
-    "mpremote@git+https://github.com/hmaerki/fork_micropython@master#egg=mpremote&subdirectory=tools/mpremote",
+    # "mpremote@git+https://github.com/hmaerki/fork_micropython@master#egg=mpremote&subdirectory=tools/mpremote",
+    "mpremote@git+https://github.com/micropython/micropython@master#egg=mpremote&subdirectory=tools/mpremote",
+    # "mpremote==1.24.1",
     "esptool",
     "typer-slim",
     "Jinja2",

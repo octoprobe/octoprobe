@@ -11,6 +11,7 @@ from urllib.error import HTTPError
 from urllib.parse import urlparse
 from urllib.request import urlretrieve
 
+from .util_baseclasses import OctoprobeAppExitException
 from .util_constants import (
     DIRECTORY_OCTOPROBE_CACHE_FIRMWARE,
     TAG_BOARDS,
@@ -208,6 +209,15 @@ class FirmwareDownloadSpec(FirmwareSpecBase):
 
         json_obj["board_variant"] = BoardVariant.factory(json_obj["board_variant"])
         return FirmwareDownloadSpec(**json_obj)
+
+    @staticmethod
+    def is_download(filename: str) -> bool:
+        assert isinstance(filename, str)
+        if not filename.endswith(FIRMWARE_DOWNLOAD_EXTENSION):
+            return False
+        if not pathlib.Path(filename).is_file():
+            raise OctoprobeAppExitException(f"File does not exist: {filename}")
+        return True
 
 
 class FirmwaresBuilt(dict[str, FirmwareBuildSpec]):

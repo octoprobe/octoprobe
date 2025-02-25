@@ -4,6 +4,12 @@
     "version": "2.0.0",
     "tasks": [
         {
+            "label": "pip upgrade",
+            "type": "shell",
+            "command": "uv pip install --no-deps --no-cache --upgrade -e .",
+            "problemMatcher": []
+        },
+        {
             "label": "static check",
             "type": "shell",
             "command": "echo DONE",
