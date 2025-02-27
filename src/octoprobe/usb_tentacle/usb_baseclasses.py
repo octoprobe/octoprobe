@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import dataclasses
+import enum
 import logging
 import pathlib
 
@@ -11,12 +13,58 @@ from .usb_constants import UsbPlug, UsbPlugs
 logger = logging.Logger(__file__)
 
 
+class HubPort(enum.IntEnum):
+    PORT_1 = 1
+    PORT_2 = 2
+    PORT_3 = 3
+    """
+    DUT
+    """
+    PORT_4 = 4
+
+
+@dataclasses.dataclass
+class TentacleVersion:
+    port_rp2_infra: HubPort
+    port_rp2_probe: HubPort | None
+    port_rp2_boot: HubPort
+    port_rp2_dut: HubPort
+    port_rp2_error: HubPort | None
+    ports: set[int]
+
+
+TENTACLE_VERSION_V03 = TentacleVersion(
+    port_rp2_infra=HubPort.PORT_1,
+    port_rp2_boot=HubPort.PORT_2,
+    port_rp2_dut=HubPort.PORT_3,
+    port_rp2_error=HubPort.PORT_4,
+    port_rp2_probe=None,
+    ports={HubPort.PORT_1},
+)
+TENTACLE_VERSION_V04 = TentacleVersion(
+    port_rp2_probe=HubPort.PORT_1,
+    port_rp2_infra=HubPort.PORT_2,
+    port_rp2_dut=HubPort.PORT_3,
+    port_rp2_boot=HubPort.PORT_4,
+    port_rp2_error=None,
+    ports={HubPort.PORT_1, HubPort.PORT_2},
+)
+
+
 class Location:
     def __init__(self, bus: int, path: list[int]) -> None:
         self.bus = bus
         self.path = path
         path_text = ".".join(map(str, self.path))
         self.short = f"{self.bus}-{path_text}"
+        """
+        Tentacle v0.3:
+          rp2_infra on hub_port 1
+        Tentacle v0.4:
+          rp2_infra on hub_port 2
+          rp2_probe on hub_port 1
+        """
+        self.tentacle_version: TentacleVersion | None = None
 
     @staticmethod
     def factory_sysfs(port: list_ports_linux.SysFS) -> Location:
@@ -38,21 +86,6 @@ class Location:
         assert isinstance(device, usb.core.Device)
         # This is a RP2 in boot mode.
         return Location(bus=device.bus, path=list(device.port_numbers))
-
-    def is_my_hub(self, hub4_location: Location) -> bool:
-        """
-        Expected:
-          'this' is the location of the rp2 on the tentacle
-          'hub4_location' is the location of the hub on the same tentacle
-        """
-        if self.bus != hub4_location.bus:
-            return False
-        if self.path[:-1] == hub4_location.path:
-            assert (
-                self.path[-1] == 1
-            ), f"The rp2 is always connected on port 1, but not {self.short}!"
-            return True
-        return False
 
     def sysfs_path(self, plug: UsbPlug) -> pathlib.Path:
         """

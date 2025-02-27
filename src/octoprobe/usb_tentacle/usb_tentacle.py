@@ -35,7 +35,13 @@ import usb.util
 from serial.tools import list_ports, list_ports_linux
 from usb.legacy import CLASS_HUB
 
-from ..usb_tentacle.usb_baseclasses import Location
+from ..usb_tentacle.usb_baseclasses import (
+    HubPort,
+    Location,
+    TENTACLE_VERSION_V03,
+    TENTACLE_VERSION_V04,
+    TentacleVersion,
+)
 from ..usb_tentacle.usb_constants import TyperPowerCycle, UsbPlug, UsbPlugs
 
 logger = logging.Logger(__file__)
@@ -66,7 +72,9 @@ class UsbRp2:
 
     @staticmethod
     def factory_sysfs(
-        port: list_ports_linux.SysFS, serial: str, serial_port: str
+        port: list_ports_linux.SysFS,
+        serial: str,
+        serial_port: str,
     ) -> UsbRp2:
         return UsbRp2(
             location=Location.factory_sysfs(port=port),
@@ -96,13 +104,17 @@ class UsbTentacle:
     The usb-location of the hub on the tentacle pcb.
     """
 
-    rp2_infra: UsbRp2 | None
+    tentacle_version: TentacleVersion
+
+    rp2_infra: UsbRp2
     """
     The usb-location of the rp2 on the tentacle pcb
     and the serial number if known.
     None: The rp2 is powered off.
     """
+    rp2_probe: UsbRp2 | None = None
 
+    # TODO: Obsolete?
     _cache_on: dict[UsbPlug, bool] = dataclasses.field(default_factory=dict)
 
     def set_power(self, plug: UsbPlug, on: bool) -> bool:
@@ -253,35 +265,56 @@ def _query_rp2_serial() -> list[UsbRp2]:
 
 
 def _combine_hubs_and_rp2(
-    hub4_locations, list_rp2, require_serial: bool
+    hub4_locations: list[Location],
+    list_rp2: list[UsbRp2],
+    require_serial: bool,
 ) -> UsbTentacles:
     """
     Now we combine 'hubs' and 'list_rp2'
     """
 
-    def get_rp2_infra(hub4_location: Location) -> UsbRp2 | None:
+    def get_tentacle_version(hub4_location: Location) -> UsbTentacle | None:
         """
         There might be rp2 connected, but we are only intersted in the rp2 infra!
         """
+
+        dict_usb_rp2: dict[int, UsbRp2] = {}
         for rp2 in list_rp2:
-            if rp2.location.is_my_hub(hub4_location):
-                # This is a rp2 infra
-                return rp2
-        # This might be a third party hub using the same chip as the tentacle
-        # This might be a tentacle which a broken rp2.
-        if require_serial:
-            raise Rp2NoSerialException(hub4_location=hub4_location)
-        return None
+            if rp2.location.bus != hub4_location.bus:
+                return None
+            if rp2.location.path[:-1] != hub4_location.path:
+                continue
+            hub_port = rp2.location.path[-1]
+            if hub_port == HubPort.PORT_3:
+                # The DUT might be a rp2, we ignore it
+                continue
+            dict_usb_rp2[hub_port] = rp2
+
+        if len(dict_usb_rp2) == 0:
+            return None
+        if set(dict_usb_rp2) == TENTACLE_VERSION_V04.ports:
+            assert TENTACLE_VERSION_V04.port_rp2_probe is not None
+            return UsbTentacle(
+                hub4_location=hub4_location,
+                tentacle_version=TENTACLE_VERSION_V04,
+                rp2_infra=dict_usb_rp2[TENTACLE_VERSION_V04.port_rp2_infra],
+                rp2_probe=dict_usb_rp2[TENTACLE_VERSION_V04.port_rp2_probe],
+            )
+        if set(dict_usb_rp2) == TENTACLE_VERSION_V03.ports:
+            return UsbTentacle(
+                hub4_location=hub4_location,
+                tentacle_version=TENTACLE_VERSION_V03,
+                rp2_infra=dict_usb_rp2[TENTACLE_VERSION_V03.port_rp2_infra],
+            )
+        raise ValueError(
+            f"The rp2 is always connected on port 1, but not {sorted(dict_usb_rp2)}!"
+        )
 
     tentacles = UsbTentacles()
     for hub4_location in hub4_locations:
-        rp2_infra = get_rp2_infra(hub4_location)
-        tentacles.append(
-            UsbTentacle(
-                hub4_location=hub4_location,
-                rp2_infra=rp2_infra,
-            )
-        )
+        usb_tentacle = get_tentacle_version(hub4_location)
+        if usb_tentacle is not None:
+            tentacles.append(usb_tentacle)
     return tentacles
 
 
@@ -449,7 +482,7 @@ def main() -> None:
 
     usb_tentacles = UsbTentacles.query(require_serial=True)
 
-    print(f"{time.monotonic()-time_start_s:0.3f}s")
+    print(f"{time.monotonic() - time_start_s:0.3f}s")
 
     for usb_tentacle in usb_tentacles:
         print(repr(usb_tentacle))
