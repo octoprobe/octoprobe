@@ -10,6 +10,7 @@ class TyperPowerCycle(str, enum.Enum):
     OFF = "off"
 
 
+# TODO: This might be UsbPortFunction
 class UsbPlug(int, enum.Enum):
     INFRA = 1
     INFRABOOT = 2

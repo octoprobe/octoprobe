@@ -46,7 +46,7 @@ class TentacleInfra:
 
         self.label = label
         self.usb_tentacle = usb_tentacle
-        self.power = TentaclePlugsPower(hub_location=self.usb_tentacle.hub4_location)
+        self.power = TentaclePlugsPower(usb_tentacle=self.usb_tentacle)
         self._mp_remote: MpRemote | None = None
         self._power: TentaclePlugsPower | None = None
         self.mcu_infra: InfraRP2 = InfraRP2(self)

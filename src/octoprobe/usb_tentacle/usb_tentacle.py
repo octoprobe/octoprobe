@@ -132,7 +132,12 @@ class UsbTentacle:
             return False
 
         self._cache_on[plug] = on
-        self.hub4_location.set_power(plug=plug, on=on)
+        hub_port = self.get_hub_port(plug=plug)
+        if hub_port is None:
+            # TODO: Handle correctly
+            return False
+
+        self.hub4_location.set_power(hub_port=hub_port, on=on)
 
         logger.debug(f"{plug_text} set({on})")
         return True
@@ -144,9 +149,22 @@ class UsbTentacle:
         if on is not None:
             return on
 
-        on = self.hub4_location.get_power(plug=plug)
+        hub_port = self.get_hub_port(plug=plug)
+        if hub_port is None:
+            # TODO: Handle correctly
+            return False
+        on = self.hub4_location.get_power(hub_port=hub_port)
         self._cache_on[plug] = on
         return on
+
+    def get_hub_port(self, plug: UsbPlug) -> HubPort | None:
+        hub_port = self.tentacle_version.get_hub_port(plug=plug)
+        if hub_port is None:
+            # TODO: Handle this error.
+            logger.error(f"'{plug}' does not match any usb port")
+            return None
+
+        return hub_port
 
     def set_plugs(self, plugs: UsbPlugs) -> None:
         for plug, on in plugs.ordered:
@@ -197,7 +215,7 @@ class UsbTentacle:
             return f"usb hub {self.hub4_location.short}"
         if self.rp2_infra.application_mode:
             return f"tentacle {self.hub4_location.short}: {self.rp2_infra.serial} {self.rp2_infra.serial_port}"
-        return f"tentacle {self.hub4_location.short}: RP2 in boot (programming) mode"
+        return f"tentacle {self.hub4_location.short}: RP2 in boot (programming) mode. Tentacle {self.tentacle_version.version}"
 
     @property
     def serial(self) -> str:
@@ -307,7 +325,7 @@ def _combine_hubs_and_rp2(
                 rp2_infra=dict_usb_rp2[TENTACLE_VERSION_V03.port_rp2_infra],
             )
         raise ValueError(
-            f"The rp2 is always connected on port 1, but not {sorted(dict_usb_rp2)}!"
+            f"The rp2 is always connected on ports {1} or {1, 2}, but not {sorted(dict_usb_rp2)}!"
         )
 
     tentacles = UsbTentacles()
@@ -386,6 +404,11 @@ class UsbTentacles(list[UsbTentacle]):
         * Tentacle with rp2 in boot mode
         * Tentacle with rp2 powered off
         """
+
+        def set_power(hub4_location: Location, hub_port: HubPort | None, on: bool):
+            if hub_port is not None:
+                hub4_location.set_power(hub_port=hub_port, on=on)
+
         #
         # Identify all tentalces by getting a list of all hubs.
         # Power on all rp2 infra to be able to read the serial numbers.
@@ -393,8 +416,9 @@ class UsbTentacles(list[UsbTentacle]):
         hub4_locations = _query_hubs()
         if require_serial:
             for hub4_location in hub4_locations:
-                hub4_location.set_power(UsbPlug.INFRA, on=True)
-                hub4_location.set_power(UsbPlug.ERROR, on=False)
+                set_power(hub4_location, TENTACLE_VERSION_V04.port_rp2_infra, on=True)
+                set_power(hub4_location, TENTACLE_VERSION_V04.port_rp2_probe, on=True)
+                set_power(hub4_location, TENTACLE_VERSION_V04.port_rp2_error, on=False)
 
         begin_s = time.monotonic()
         #
@@ -419,24 +443,29 @@ class UsbTentacles(list[UsbTentacle]):
                 duration_s = time.monotonic() - begin_s
                 if duration_s > cls.TIMEOUT_RP2_BOOT:
                     # Switch the error LED on
-                    e.hub4_location.set_power(UsbPlug.ERROR, on=True)
+                    set_power(
+                        e.hub4_location,
+                        TENTACLE_VERSION_V04.port_rp2_error,
+                        on=True,
+                    )
+
                     raise e from e
                 time.sleep(0.2)
 
 
 class TentaclePlugsPower:
-    def __init__(self, hub_location: Location) -> None:
-        assert isinstance(hub_location, Location)
-        self._hub_location = hub_location
+    def __init__(self, usb_tentacle: UsbTentacle) -> None:
+        assert isinstance(usb_tentacle, UsbTentacle)
+        self._usb_tentacle = usb_tentacle
 
     def set_power_plugs(self, plugs: UsbPlugs) -> None:
-        self._hub_location.set_plugs(plugs=plugs)
+        self._usb_tentacle.set_plugs(plugs=plugs)
 
     def _get_power_plug(self, plug: UsbPlug) -> bool:
-        return self._hub_location.get_power(plug=plug)
+        return self._usb_tentacle.get_power(plug=plug)
 
     def set_power_plug(self, plug: UsbPlug, on: bool) -> None:
-        self._hub_location.set_power(plug=plug, on=on)
+        self._usb_tentacle.set_power(plug=plug, on=on)
 
     def set_default_off(self) -> None:
         self.set_power_plugs(UsbPlugs.default_off())
