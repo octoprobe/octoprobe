@@ -5,7 +5,6 @@ import pathlib
 import time
 
 from .lib_mpremote import MpRemote
-from .usb_tentacle.usb_constants import UsbPlug
 from .usb_tentacle.usb_tentacle import TentaclePlugsPower, UsbTentacle
 from .util_baseclasses import VersionMismatchException
 from .util_firmware_spec import FirmwareDownloadSpec, FirmwareSpecBase
@@ -25,13 +24,6 @@ class TentacleInfra:
     * Allows to run micropython code on the RP2.
     """
 
-    RELAY_COUNT = 7
-    LIST_ALL_RELAYS = list(range(1, RELAY_COUNT + 1))
-
-    @staticmethod
-    def is_valid_relay_index(i: int) -> bool:
-        return 1 <= i <= TentacleInfra.RELAY_COUNT
-
     @staticmethod
     def get_firmware_spec() -> FirmwareDownloadSpec:
         json_filename = DIRECTORY_OF_THIS_FILE / "util_tentacle_infra_firmware.json"
@@ -42,22 +34,38 @@ class TentacleInfra:
         assert isinstance(usb_tentacle, UsbTentacle)
 
         # pylint: disable=import-outside-toplevel
-        from .lib_tentacle_infra_rp2 import InfraRP2
+        from .lib_tentacle_infra_pico import InfraRP2
 
         self.label = label
         self.usb_tentacle = usb_tentacle
-        self.power = TentaclePlugsPower(hub_location=self.usb_tentacle.hub4_location)
+        self.power = TentaclePlugsPower(usb_tentacle=self.usb_tentacle)
         self._mp_remote: MpRemote | None = None
         self._power: TentaclePlugsPower | None = None
         self.mcu_infra: InfraRP2 = InfraRP2(self)
 
+    def is_valid_relay_index(self, i: int) -> bool:
+        return i in self.list_all_relays
+
+    # @property
+    # def relay_count(self) -> int:
+    #     return self.usb_tentacle.tentacle_version.micropython_jina.relay_count
+
+    @property
+    def list_all_relays(self) -> list[int]:
+        return self.usb_tentacle.tentacle_version.micropython_jina.list_all_relays
+
     @property
     def usb_location_infra(self) -> str:
-        return f"{self.usb_tentacle.hub4_location.short}.{UsbPlug.INFRA.number}"
+        return f"{self.usb_tentacle.hub4_location.short}.{self.usb_tentacle.tentacle_version.portnumber_pico_infra}"
+
+    @property
+    def usb_location_probe(self) -> str:
+        assert self.usb_tentacle.tentacle_version.portnumber_pico_probe is not None
+        return f"{self.usb_tentacle.hub4_location.short}.{self.usb_tentacle.tentacle_version.portnumber_pico_probe}"
 
     @property
     def usb_location_dut(self) -> str:
-        return f"{self.usb_tentacle.hub4_location.short}.{UsbPlug.DUT.number}"
+        return f"{self.usb_tentacle.hub4_location.short}.{self.usb_tentacle.tentacle_version.portnumber_dut}"
 
     def mp_remote_close(self) -> str | None:
         """
@@ -82,7 +90,7 @@ class TentacleInfra:
             self.power.dut = False
             time.sleep(0.5)
 
-    def rp2_test_mp_remote(self) -> None:
+    def pico_test_mp_remote(self) -> None:
         assert self.usb_tentacle is not None
         unique_id = self.mcu_infra.get_unique_id()
         assert self.usb_tentacle.serial == unique_id
@@ -94,11 +102,13 @@ class TentacleInfra:
             # We are already connected
             return
 
-        self._mp_remote = MpRemote(tty=self.usb_tentacle.serial_port)
+        serial_port = self.usb_tentacle.serial_port
+        assert serial_port is not None
+        self._mp_remote = MpRemote(tty=serial_port)
 
     def setup_infra(self, udev: UdevPoller) -> None:
         self.connect_mpremote_if_needed()
-        self.rp2_test_mp_remote()
+        self.pico_test_mp_remote()
 
     def verify_micropython_version(self, firmware_spec: FirmwareSpecBase) -> None:
         assert isinstance(firmware_spec, FirmwareSpecBase)
@@ -127,10 +137,10 @@ class TentacleInfra:
         Attach self._mp_remote to the serial port of this RP2
         """
         # pylint: disable=import-outside-toplevel
-        from .util_mcu_rp2 import (
+        from .util_mcu_pico import (
             RPI_PICO_USB_ID,
+            pico_udev_filter_boot_mode,
             picotool_flash_micropython,
-            rp2_udev_filter_boot_mode,
         )
 
         # Power off everything and release boot button
@@ -147,7 +157,7 @@ class TentacleInfra:
             # print("Power on RP2")
             self.power.infra = True
 
-            udev_filter = rp2_udev_filter_boot_mode(
+            udev_filter = pico_udev_filter_boot_mode(
                 RPI_PICO_USB_ID.boot,
                 usb_location=usb_location,
             )

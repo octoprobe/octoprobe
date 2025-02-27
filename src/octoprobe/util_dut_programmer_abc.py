@@ -31,6 +31,8 @@ class DutProgrammerABC(abc.ABC):
     ) -> None: ...
 
     def enter_boot_mode(
-        self, tentacle: TentacleBase, udev: UdevPoller
+        self,
+        tentacle: TentacleBase,
+        udev: UdevPoller,
     ) -> UdevEventBase:
         raise NotImplementedError()

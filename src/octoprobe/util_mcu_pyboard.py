@@ -11,7 +11,7 @@ from .util_baseclasses import BootApplicationUsbID, UsbID
 from .util_dut_programmer_abc import DutProgrammerABC, IDX1_RELAYS_DUT_BOOT
 from .util_firmware_spec import FirmwareSpecBase
 from .util_mcu import FILENAME_FLASHING
-from .util_mcu_rp2 import Rp2UdevBootModeEvent
+from .util_mcu_pico import Rp2UdevBootModeEvent
 from .util_pyudev import UdevEventBase, UdevFilter, UdevPoller
 from .util_subprocess import subprocess_run
 

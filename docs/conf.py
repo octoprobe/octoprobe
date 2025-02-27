@@ -92,7 +92,7 @@ html_context = {
         # ProjectLink("Donate", "https://palletsprojects.com/donate"),
         # ProjectLink("PyPI Releases", "https://pypi.org/project/octoprobe"),
         ProjectLink("Source Code", "https://github.com/octoprobe"),
-        ProjectLink("Issue Tracker", "https://github.com/pallets/flask/issues/"),
+        ProjectLink("Issue Tracker", "https://github.com/octoprobe/issues/"),
         # ProjectLink("Chat", "https://discord.gg/pallets"),
     ]
 }

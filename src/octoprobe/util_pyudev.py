@@ -16,13 +16,14 @@ import pyudev
 logger = logging.getLogger(__file__)
 
 
-_RE_USB_LOCATION = re.compile(r".*/(?P<location>\d+-\d+(\.\d+)+)")
+_RE_USB_LOCATION = re.compile(r".*/(?P<location>\d+-\d+(\.\d+)*)")
 """
 Input:
     /sys/devices/pci0000:00/0000:00:14.0/usb3/3-5/3-5.2/3-5.2.3/3-5.2.3:1.0/ttyACM1
     /sys/devices/pci0000:00/0000:00:14.0/usb3/3-5/3-5.2/3-5.2.3/3-5.2.3:1.1
     /sys/devices/pci0000:00/0000:00:14.0/usb3/3-5/3-5.2/3-5.2.3/3-5.2.3:1.0/tty/ttyACM
     /sys/devices/pci0000:00/0000:00:14.0/usb3/3-5/3-5.2/3-5.2.3
+    /sys/devices/pci0000:00/0000:00:14.0/usb3/3-1
 match:3-5.2.3
 """
 
@@ -43,25 +44,29 @@ class UdevEventBase(abc.ABC):
 _TIMEOUT_MOUNT_S = 5.0
 
 
-def get_device_debug(device: pyudev.Device, subsystem_filtered: str) -> str:
-    assert isinstance(device, pyudev.Device)
+def get_device_debug(device_event: pyudev.Device, subsystem_filtered: str) -> str:
+    assert isinstance(device_event, pyudev.Device)
     lines: list[str] = []
-    lines.append(f"subsystem={device.subsystem} {device.action=} {device.sys_path=}")
     lines.append(
-        f"  usb_location (parsed sys_path)={UdevFilter.parse_usb_location(device.sys_path)}"
+        f"subsystem={device_event.subsystem} {device_event.action=} {device_event.sys_path=}"
+    )
+    lines.append(
+        f"  usb_location (parsed sys_path)={UdevFilter.parse_usb_location(device_event.sys_path)}"
     )
 
-    lines.append(f"  {device.device_node=}")
-    lines.append(f"  {device.device_type=}")
-    if device.action == "add" and device.device_type == "disk":
+    lines.append(f"  {device_event.device_node=}")
+    lines.append(f"  {device_event.device_type=}")
+    if device_event.action == "add" and device_event.device_type == "disk":
         if subsystem_filtered == "block":
             # We only log the mount point if we also filtered for "block".
             # For example the pico would not get here, as we filter for "tty"
-            mount_point = UdevFilter.get_mount_point(device.device_node)
+            mount_point = UdevFilter.get_mount_point(
+                device_event.device_node, allow_partition_mount=True
+            )
             lines.append(f"  mount_point={mount_point}")
 
     def get_value(tag: str) -> str:
-        value = device.properties.get(tag, None)
+        value = device_event.properties.get(tag, None)
         if value is None:
             return "-"
         value_int = int(value, 16)
@@ -99,36 +104,43 @@ class UdevFilter:
     @staticmethod
     def parse_usb_location(sys_path: str) -> str:
         match = _RE_USB_LOCATION.match(sys_path)
-        assert match is not None
+        assert match is not None, sys_path
         # Example 'match': '3-5.2.3'
         usb_location = match.group("location")
         assert usb_location != "0000"
         return usb_location
 
     @staticmethod
-    def get_mount_point(device_node: str) -> str:
+    def get_mount_point(device_node: str, allow_partition_mount: bool = False) -> str:
+        """
+        Example 'device_node': /dev/sda
+        If 'allow_partition_mount': /dev/sda1 will be considered as allowed.
+        """
         begin_s = time.monotonic()
-        while time.monotonic() < begin_s + +_TIMEOUT_MOUNT_S:
+        while time.monotonic() < begin_s + _TIMEOUT_MOUNT_S:
             for line in pathlib.Path("/proc/mounts").read_text().splitlines():
                 partition, mount_point, _ = line.split(" ", maxsplit=2)
+                if allow_partition_mount:
+                    if partition.startswith(device_node):
+                        return mount_point
                 if partition == device_node:
                     return mount_point
             time.sleep(0.1)
 
         raise UdevTimoutException(f"Waiting for '{device_node}' to be mounted.")
 
-    def matches(self, device: pyudev.Device) -> bool:
-        if device.action not in self.actions:
+    def matches(self, device_event: pyudev.Device) -> bool:
+        if device_event.action not in self.actions:
             return False
-        if device.subsystem != self.subsystem:
+        if device_event.subsystem != self.subsystem:
             return False
-        usb_location = self.parse_usb_location(sys_path=device.sys_path)
+        usb_location = self.parse_usb_location(sys_path=device_event.sys_path)
         if usb_location != self.usb_location:
             return False
 
         try:
-            id_vendor = device.properties["ID_USB_VENDOR_ID"]
-            id_product = device.properties["ID_USB_MODEL_ID"]
+            id_vendor = device_event.properties["ID_USB_VENDOR_ID"]
+            id_product = device_event.properties["ID_USB_MODEL_ID"]
         except KeyError:
             return False
         if self.id_vendor is not None:
@@ -137,7 +149,7 @@ class UdevFilter:
         if self.id_product is not None:
             if id_product != self.id_product_str:
                 return False
-        if device.device_type != self.device_type:
+        if device_event.device_type != self.device_type:
             return False
         return True
 
@@ -197,8 +209,8 @@ class UdevPoller:
         timeout_s: float = 1.0,
     ) -> UdevEventBase:
         while True:
-            for event in self._do_poll(
-                filters=[udev_filter],
+            for _udev_filter_matched, event in self._do_poll(
+                udev_filters=[udev_filter],
                 text_where=text_where,
                 text_expect=text_expect,
                 timeout_s=timeout_s,
@@ -207,16 +219,16 @@ class UdevPoller:
 
     def _do_poll(
         self,
-        filters: list[UdevFilter],
+        udev_filters: list[UdevFilter],
         text_where: str,
         text_expect: str,
         fail_filters: None | list[UdevFilter] = None,
         timeout_s: float = 1.0,
-    ) -> Iterator[UdevEventBase]:
-        assert isinstance(filters, list)
+    ) -> Iterator[tuple[UdevFilter, UdevEventBase]]:
+        assert isinstance(udev_filters, list)
         assert isinstance(fail_filters, None | list)
         assert isinstance(timeout_s, float)
-        for f in filters:
+        for f in udev_filters:
             assert isinstance(f, UdevFilter)
         if fail_filters is not None:
             for f in fail_filters:
@@ -237,25 +249,27 @@ class UdevPoller:
             for fileno, _ in events:
                 if fileno != self.monitor.fileno():
                     continue
-                device = self.monitor.poll()
-                for udev_filter in filters:
-                    if udev_filter.matches(device=device):
+                device_event = self.monitor.poll()
+                for udev_filter in udev_filters:
+                    if udev_filter.matches(device_event=device_event):
                         logger.debug(
-                            f"matched:\n{get_device_debug(device=device, subsystem_filtered=udev_filter.subsystem)}"
+                            f"matched:\n{get_device_debug(device_event=device_event, subsystem_filtered=udev_filter.subsystem)}"
                         )
-                        yield udev_filter.udev_event_class(device=device)
+                        yield udev_filter, udev_filter.udev_event_class(
+                            device=device_event
+                        )
                         continue
                     logger.debug(
-                        f"not matched:\n{get_device_debug(device=device, subsystem_filtered=udev_filter.subsystem)}"
+                        f"not matched:\n{get_device_debug(device_event=device_event, subsystem_filtered=udev_filter.subsystem)}"
                     )
 
                 if fail_filters is None:
                     continue
 
                 for udev_filter in fail_filters:
-                    if udev_filter.matches(device=device):
+                    if udev_filter.matches(device_event=device_event):
                         raise UdevFailException(
-                            f"Event '{device}' matches '{udev_filter.label}'!"
+                            f"Device event '{device_event}' matches '{udev_filter.label}'!"
                         )
 
     def close(self) -> None:

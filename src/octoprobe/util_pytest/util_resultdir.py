@@ -47,7 +47,7 @@ class ResultFile:
         """
         Example nodeids:
         test function:
-            tests/test_simple.py::test_i2c[rp2_1722-POTPOURRY_3f31-DAQ_SALEAE_1331]
+            tests/test_simple.py::test_i2c[pico-1722-POTPOURRY_3f31-DAQ_SALEAE_1331]
         class with test method:
             tests/test_simple.py::Test::test_a
         Returns a relative path
@@ -115,11 +115,11 @@ class ResultsDir:
         assert isinstance(test_nodeid, str)
         self.test_name = test_name
         """
-        For example: tests/test_simple.py::test_i2c[rp2_1722-POTPOURRY_3f31-DAQ_SALEAE_1331]
+        For example: tests/test_simple.py::test_i2c[pico-1722-POTPOURRY_3f31-DAQ_SALEAE_1331]
         """
         self.test_nodeid = test_nodeid
         """
-        For example: test_i2c[rp2_1722-POTPOURRY_3f31-DAQ_SALEAE_1331]
+        For example: test_i2c[pico-1722-POTPOURRY_3f31-DAQ_SALEAE_1331]
         """
         self.directory_top = directory_top
         """

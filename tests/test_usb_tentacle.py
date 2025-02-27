@@ -5,17 +5,17 @@ from octoprobe.usb_tentacle.usb_tentacle import UsbTentacles
 
 
 def test_power_default_infra_on():
-    usb_tentacles = UsbTentacles.query(require_serial=False)
+    usb_tentacles = UsbTentacles.query(poweron=False)
     usb_tentacles.set_plugs(plugs=UsbPlugs.default_infra_on())
 
 
 def test_power_default_off():
-    usb_tentacles = UsbTentacles.query(require_serial=False)
+    usb_tentacles = UsbTentacles.query(poweron=False)
     usb_tentacles.set_plugs(plugs=UsbPlugs.default_off())
 
 
 def test_query_serial():
-    usb_tentacles = UsbTentacles.query(require_serial=True)
+    usb_tentacles = UsbTentacles.query(poweron=True)
     for usb_tentacle in usb_tentacles:
         print(repr(usb_tentacle))
 
@@ -50,7 +50,7 @@ def test_blib():
                         |__ Port 001: Dev 078, If 1, Class=CDC Data, Driver=cdc_acm, 12M
                             ID 2e8a:0005
     """
-    usb_tentacles = UsbTentacles.query(require_serial=False)
+    usb_tentacles = UsbTentacles.query(poweron=False)
     usb_tentacles.set_plugs(plugs=UsbPlugs.default_off())
 
     usb_tentacles.set_plugs(plugs=UsbPlugs.default_infra_on())
@@ -60,7 +60,7 @@ def test_blib2():
     """
     Same error provoked as above
     """
-    usb_tentacles = UsbTentacles.query(require_serial=False)
+    usb_tentacles = UsbTentacles.query(poweron=False)
     usb_tentacles.set_plugs(plugs=UsbPlugs.default_off())
     time.sleep(1.0)
 
@@ -71,8 +71,8 @@ def test_blib2():
 
     if False:
         # attempt power cycle
-        usb_tentacles[0].set_plugs(plugs=UsbPlugs({UsbPlug.INFRA: True}))
-        usb_tentacles[1].set_plugs(plugs=UsbPlugs({UsbPlug.INFRA: True}))
+        usb_tentacles[0].set_plugs(plugs=UsbPlugs({UsbPlug.PICO_INFRA: True}))
+        usb_tentacles[1].set_plugs(plugs=UsbPlugs({UsbPlug.PICO_INFRA: True}))
 
     if False:
         # NO: attempt power cycle
@@ -81,5 +81,5 @@ def test_blib2():
 
     if False:
         # attempt power cycle - strange rythm
-        usb_tentacles[0].set_plugs(plugs=UsbPlugs({UsbPlug.INFRA: True}))
+        usb_tentacles[0].set_plugs(plugs=UsbPlugs({UsbPlug.PICO_INFRA: True}))
         usb_tentacles[1].set_plugs(plugs=UsbPlugs({UsbPlug.ERROR: True}))

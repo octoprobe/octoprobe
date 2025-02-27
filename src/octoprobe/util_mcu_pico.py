@@ -41,7 +41,21 @@ class Rp2UdevBootModeEvent(UdevEventBase):
         return f"{self.__class__.__name__}(serial={self.serial}, bus_num={self.bus_num}, dev_num={self.dev_num})"
 
 
-def rp2_udev_filter_boot_mode(usb_id: UsbID, usb_location: str) -> UdevFilter:
+class Rp2UdevBootModeEvent2(UdevEventBase):
+    """
+    Triggers a mount point when a USB drive was inserted.
+    """
+
+    def __init__(self, device: pyudev.Device):
+        self.mount_point = UdevFilter.get_mount_point(
+            device.device_node, allow_partition_mount=True
+        )
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(mount_point={self.mount_point})"
+
+
+def pico_udev_filter_boot_mode(usb_id: UsbID, usb_location: str) -> UdevFilter:
     assert isinstance(usb_id, UsbID)
     assert isinstance(usb_location, str)
     return UdevFilter(
@@ -56,24 +70,50 @@ def rp2_udev_filter_boot_mode(usb_id: UsbID, usb_location: str) -> UdevFilter:
     )
 
 
+def pico_udev_filter_boot_mode2(usb_id: UsbID, usb_location: str) -> UdevFilter:
+    """
+    Triggers a mount point when a USB drive was inserted.
+    """
+    assert isinstance(usb_id, UsbID)
+    assert isinstance(usb_location, str)
+
+    return UdevFilter(
+        label="Boot Mode",
+        usb_location=usb_location,
+        udev_event_class=Rp2UdevBootModeEvent2,
+        id_vendor=usb_id.vendor_id,
+        id_product=usb_id.product_id,
+        subsystem="block",
+        device_type="disk",
+        actions=["add"],
+    )
+
+
+def picotool_cmd(event: UdevEventBase, filename_firmware: str) -> list[str]:
+    assert isinstance(event, Rp2UdevBootModeEvent)
+    assert isinstance(filename_firmware, str)
+
+    return [
+        str(FILENAME_PICOTOOL),
+        "load",
+        "--update",
+        # "--verify",
+        "--bus",
+        str(event.bus_num),
+        "--address",
+        str(event.dev_num),
+        "--execute",
+        filename_firmware,
+    ]
+
+
 def picotool_flash_micropython(
     event: UdevEventBase, directory_logs: pathlib.Path, filename_firmware: pathlib.Path
 ) -> None:
     assert isinstance(event, Rp2UdevBootModeEvent)
     assert filename_firmware.is_file(), str(filename_firmware)
 
-    args = [
-        str(FILENAME_PICOTOOL),
-        "load",
-        "--update",
-        # "--verify",
-        "--execute",
-        str(filename_firmware),
-        "--bus",
-        str(event.bus_num),
-        "--address",
-        str(event.dev_num),
-    ]
+    args = picotool_cmd(event=event, filename_firmware=str(filename_firmware))
     subprocess_run(
         args=args,
         cwd=directory_logs,
@@ -109,7 +149,7 @@ class DutProgrammerPicotool(DutProgrammerABC):
             tentacle.power.dut = True
 
             assert tentacle.tentacle_spec_base.mcu_usb_id is not None
-            udev_filter = rp2_udev_filter_boot_mode(
+            udev_filter = pico_udev_filter_boot_mode(
                 tentacle.tentacle_spec_base.mcu_usb_id.boot,
                 usb_location=tentacle.infra.usb_location_dut,
             )

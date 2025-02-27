@@ -91,6 +91,40 @@
             "justMyCode": false,
         },
         {
+            "name": "op bootmode-infra",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "octoprobe.scripts.op",
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "bootmode-infra",
+                "--picotool-cmd",
+                "--poweron",
+            ],
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            },
+            "console": "integratedTerminal",
+            "justMyCode": false,
+        },
+        {
+            "name": "op bootmode-probe",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "octoprobe.scripts.op",
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "bootmode-probe",
+                "--picotool-cmd",
+                "--poweron",
+            ],
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            },
+            "console": "integratedTerminal",
+            "justMyCode": false,
+        },
+        {
             "name": "op cycle dut",
             "type": "debugpy",
             "request": "launch",
@@ -154,7 +188,22 @@
             "cwd": "${workspaceFolder}",
             "args": [
                 "query",
-                "--verbose",
+            ],
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            },
+            "console": "integratedTerminal",
+            "justMyCode": false,
+        },
+        {
+            "name": "op query --poweron",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "octoprobe.scripts.op",
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "query",
+                "--poweron",
             ],
             "env": {
                 "PYTHONPATH": "${workspaceFolder}/src"
