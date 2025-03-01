@@ -141,7 +141,7 @@ class CtxTestRun:
             tentacle.infra.connect_mpremote_if_needed()
             try:
                 tentacle.infra.mcu_infra.relays(
-                    relays_open=tentacle.infra.LIST_ALL_RELAYS
+                    relays_open=tentacle.infra.list_all_relays
                 )
             except Exception as e:
                 raise OctoprobeAppExitException(

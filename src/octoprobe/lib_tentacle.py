@@ -207,7 +207,7 @@ class TentacleBase(abc.ABC):
         assert isinstance(fut, enum.StrEnum)
         assert isinstance(open_others, bool)
 
-        relays_open = self.infra.LIST_ALL_RELAYS if open_others else []
+        relays_open = self.infra.list_all_relays if open_others else []
         try:
             list_relays = self.tentacle_spec_base.relays_closed[fut]
         except KeyError as e:

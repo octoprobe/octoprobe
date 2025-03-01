@@ -5,7 +5,6 @@ import pathlib
 import time
 
 from .lib_mpremote import MpRemote
-from .usb_tentacle.usb_constants import UsbPlug
 from .usb_tentacle.usb_tentacle import TentaclePlugsPower, UsbTentacle
 from .util_baseclasses import VersionMismatchException
 from .util_firmware_spec import FirmwareDownloadSpec, FirmwareSpecBase
@@ -24,13 +23,6 @@ class TentacleInfra:
     * Allows to program the RP2
     * Allows to run micropython code on the RP2.
     """
-
-    RELAY_COUNT = 7
-    LIST_ALL_RELAYS = list(range(1, RELAY_COUNT + 1))
-
-    @staticmethod
-    def is_valid_relay_index(i: int) -> bool:
-        return 1 <= i <= TentacleInfra.RELAY_COUNT
 
     @staticmethod
     def get_firmware_spec() -> FirmwareDownloadSpec:
@@ -51,13 +43,28 @@ class TentacleInfra:
         self._power: TentaclePlugsPower | None = None
         self.mcu_infra: InfraRP2 = InfraRP2(self)
 
+    def is_valid_relay_index(self, i: int) -> bool:
+        return i in self.list_all_relays
+
+    # @property
+    # def relay_count(self) -> int:
+    #     return self.usb_tentacle.tentacle_version.micropython_jina.relay_count
+
+    @property
+    def list_all_relays(self) -> list[int]:
+        return self.usb_tentacle.tentacle_version.micropython_jina.list_all_relays
+
     @property
     def usb_location_infra(self) -> str:
-        return f"{self.usb_tentacle.hub4_location.short}.{UsbPlug.INFRA.number}"
+        return f"{self.usb_tentacle.hub4_location.short}.{self.usb_tentacle.tentacle_version.port_rp2_infra}"
+
+    @property
+    def usb_location_probe(self) -> str:
+        return f"{self.usb_tentacle.hub4_location.short}.{self.usb_tentacle.tentacle_version.port_rp2_probe}"
 
     @property
     def usb_location_dut(self) -> str:
-        return f"{self.usb_tentacle.hub4_location.short}.{UsbPlug.DUT.number}"
+        return f"{self.usb_tentacle.hub4_location.short}.{self.usb_tentacle.tentacle_version.port_rp2_dut}"
 
     def mp_remote_close(self) -> str | None:
         """

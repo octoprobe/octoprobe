@@ -24,7 +24,39 @@ class HubPort(enum.IntEnum):
     PORT_4 = 4
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
+class MicropythonJina:
+    """
+    GPIOx used, See KiCad schematics.
+    Different Tentacles version used different GPIO.
+    """
+
+    gpio_relays: list[int]
+    """
+    See KiCad schematics: RELAYS_1 .. RELAYS_7
+    """
+    gpio_led_active: int
+    """
+    See KiCad schematics: LED_ACTIVE
+    """
+    gpio_led_error: int
+    """
+    See KiCad schematics: LED_ERROR
+    """
+
+    # @property
+    # def relay_count(self) -> int:
+    #     return len(self.gpio_relays)
+
+    @property
+    def list_all_relays(self) -> list[int]:
+        """
+        relays [1, 2, 3, 4, 5, 6, 7]
+        """
+        return list(range(1, len(self.gpio_relays) + 1))
+
+
+@dataclasses.dataclass(frozen=True)
 class TentacleVersion:
     port_rp2_infra: HubPort
     port_rp2_probe: HubPort | None
@@ -32,6 +64,7 @@ class TentacleVersion:
     port_rp2_dut: HubPort
     port_rp2_error: HubPort | None
     ports: set[int]
+    micropython_jina: MicropythonJina
     version: str
 
     def get_hub_port(self, plug: UsbPlug) -> HubPort | None:
@@ -57,6 +90,11 @@ TENTACLE_VERSION_V03 = TentacleVersion(
     port_rp2_error=HubPort.PORT_4,
     port_rp2_probe=None,
     ports={HubPort.PORT_1},
+    micropython_jina=MicropythonJina(
+        gpio_relays=[1, 2, 3, 4, 5, 6, 7],
+        gpio_led_active=24,
+        gpio_led_error=25,  # GPIO25 is NOT used!
+    ),
     version="v0.3",
 )
 TENTACLE_VERSION_V04 = TentacleVersion(
@@ -66,6 +104,11 @@ TENTACLE_VERSION_V04 = TentacleVersion(
     port_rp2_infraboot=HubPort.PORT_4,
     port_rp2_error=None,
     ports={HubPort.PORT_1, HubPort.PORT_2},
+    micropython_jina=MicropythonJina(
+        gpio_relays=[8, 9, 10, 11, 12, 13, 14],
+        gpio_led_active=24,
+        gpio_led_error=15,
+    ),
     version="v0.4",
 )
 

@@ -101,7 +101,9 @@ class Commissioning:
             return usb_tentacles[0]
 
     def do_program_rp2(
-        self, udev: UdevPoller, firmware_spec: FirmwareDownloadSpec
+        self,
+        udev: UdevPoller,
+        firmware_spec: FirmwareDownloadSpec,
     ) -> None:
         assert isinstance(udev, UdevPoller)
         assert isinstance(firmware_spec, FirmwareDownloadSpec)

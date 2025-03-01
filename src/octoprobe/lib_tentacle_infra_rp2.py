@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from .lib_tentacle import TentacleInfra
+from .util_jinja2 import render
 
 
 class InfraRP2:
@@ -12,7 +13,7 @@ class InfraRP2:
     The interface is type save and all micropython code is hidden in this class.
     """
 
-    BASE_CODE = """
+    _MICROPYTHON_BASE_CODE_JINJA2 = """
 import os
 import sys
 import time
@@ -22,16 +23,13 @@ import ubinascii
 rp2_unique_id = ubinascii.hexlify(unique_id()).decode('ascii')
 files_on_flash = len(os.listdir())
 
-pin_led_active = Pin('GPIO24', Pin.OUT)
+pin_led_active = Pin('GPIO{{ micropython_jina.gpio_led_active }}', Pin.OUT)
+pin_led_error = Pin('GPIO{{ micropython_jina.gpio_led_error }}', Pin.OUT)
 
 pin_relays = {
-    1: Pin('GPIO1', Pin.OUT),
-    2: Pin('GPIO2', Pin.OUT),
-    3: Pin('GPIO3', Pin.OUT),
-    4: Pin('GPIO4', Pin.OUT),
-    5: Pin('GPIO5', Pin.OUT),
-    6: Pin('GPIO6', Pin.OUT),
-    7: Pin('GPIO7', Pin.OUT),
+{% for gpio  in micropython_jina.gpio_relays %}
+    {{ loop.index }}: Pin('GPIO{{ gpio }}', Pin.OUT),
+{%- endfor %}
 }
 
 def set_relays(list_relays):
@@ -47,7 +45,7 @@ def set_relays_pulse(relays, initial_closed, durations_ms):
 """
 
     def __init__(self, tentacle_infra: TentacleInfra) -> None:
-        assert tentacle_infra.__class__.__qualname__ == "TentacleInfra"
+        assert isinstance(tentacle_infra, TentacleInfra)
         self._infra = tentacle_infra
         self._base_code_loaded = False
 
@@ -55,7 +53,11 @@ def set_relays_pulse(relays, initial_closed, durations_ms):
         if self._base_code_loaded:
             return
         assert self._infra.mp_remote is not None
-        self._infra.mp_remote.exec_raw(self.BASE_CODE)
+        micropython_base_code = render(
+            micropython_code=self._MICROPYTHON_BASE_CODE_JINJA2,
+            micropython_jina=self._infra.usb_tentacle.tentacle_version.micropython_jina,
+        )
+        self._infra.mp_remote.exec_raw(micropython_base_code)
 
     def get_unique_id(self) -> str:
         self._load_base_code()
@@ -137,3 +139,9 @@ def set_relays_pulse(relays, initial_closed, durations_ms):
         self._load_base_code()
 
         self._infra.mp_remote.exec_raw(cmd=f"pin_led_active.value({int(on)})")
+
+    def error_led(self, on: bool) -> None:
+        assert isinstance(on, bool)
+        self._load_base_code()
+
+        self._infra.mp_remote.exec_raw(cmd=f"pin_led_error.value({int(on)})")
