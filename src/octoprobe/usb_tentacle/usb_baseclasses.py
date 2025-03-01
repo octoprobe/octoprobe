@@ -1,3 +1,9 @@
+"""
+This module describes the USB related aspects of the tentacles.
+The USB ports differ between tentacle versions.
+This module also defines the GPIO assignements.
+"""
+
 from __future__ import annotations
 
 import dataclasses
@@ -13,15 +19,16 @@ from .usb_constants import UsbPlug
 logger = logging.Logger(__file__)
 
 
-# TODO: This might be UsbPortNumber
-class HubPort(enum.IntEnum):
-    PORT_1 = 1
-    PORT_2 = 2
-    PORT_3 = 3
+class HubPortNumber(enum.IntEnum):
     """
-    DUT
+    Every tentacle has a 4 port USB hub.
+    This enum is the number for every port.
     """
-    PORT_4 = 4
+
+    IDX1_1 = 1
+    IDX1_2 = 2
+    IDX1_3 = 3
+    IDX1_4 = 4
 
 
 @dataclasses.dataclass(frozen=True)
@@ -44,10 +51,6 @@ class MicropythonJina:
     See KiCad schematics: LED_ERROR
     """
 
-    # @property
-    # def relay_count(self) -> int:
-    #     return len(self.gpio_relays)
-
     @property
     def list_all_relays(self) -> list[int]:
         """
@@ -58,38 +61,38 @@ class MicropythonJina:
 
 @dataclasses.dataclass(frozen=True)
 class TentacleVersion:
-    port_rp2_infra: HubPort
-    port_rp2_probe: HubPort | None
-    port_rp2_infraboot: HubPort
-    port_rp2_dut: HubPort
-    port_rp2_error: HubPort | None
+    portnumber_rp2_infra: HubPortNumber
+    portnumber_rp2_probe: HubPortNumber | None
+    portnumber_infraboot: HubPortNumber
+    portnumber_dut: HubPortNumber
+    portnumber_error: HubPortNumber | None
     ports: set[int]
     micropython_jina: MicropythonJina
     version: str
 
-    def get_hub_port(self, plug: UsbPlug) -> HubPort | None:
+    def get_hub_port(self, plug: UsbPlug) -> HubPortNumber | None:
         """
         UsbPlug is the generic naming.
         This code converts it into the tentacle version specific number.
         """
         if plug == UsbPlug.INFRA:
-            return self.port_rp2_infra
+            return self.portnumber_rp2_infra
         if plug == UsbPlug.DUT:
-            return self.port_rp2_dut
+            return self.portnumber_dut
         if plug == UsbPlug.ERROR:
-            return self.port_rp2_error
+            return self.portnumber_error
         if plug == UsbPlug.INFRABOOT:
-            return self.port_rp2_infraboot
+            return self.portnumber_infraboot
         return None
 
 
 TENTACLE_VERSION_V03 = TentacleVersion(
-    port_rp2_infra=HubPort.PORT_1,
-    port_rp2_infraboot=HubPort.PORT_2,
-    port_rp2_dut=HubPort.PORT_3,
-    port_rp2_error=HubPort.PORT_4,
-    port_rp2_probe=None,
-    ports={HubPort.PORT_1},
+    portnumber_rp2_infra=HubPortNumber.IDX1_1,
+    portnumber_infraboot=HubPortNumber.IDX1_2,
+    portnumber_dut=HubPortNumber.IDX1_3,
+    portnumber_error=HubPortNumber.IDX1_4,
+    portnumber_rp2_probe=None,
+    ports={HubPortNumber.IDX1_1},
     micropython_jina=MicropythonJina(
         gpio_relays=[1, 2, 3, 4, 5, 6, 7],
         gpio_led_active=24,
@@ -98,12 +101,12 @@ TENTACLE_VERSION_V03 = TentacleVersion(
     version="v0.3",
 )
 TENTACLE_VERSION_V04 = TentacleVersion(
-    port_rp2_probe=HubPort.PORT_1,
-    port_rp2_infra=HubPort.PORT_2,
-    port_rp2_dut=HubPort.PORT_3,
-    port_rp2_infraboot=HubPort.PORT_4,
-    port_rp2_error=None,
-    ports={HubPort.PORT_1, HubPort.PORT_2},
+    portnumber_rp2_probe=HubPortNumber.IDX1_1,
+    portnumber_rp2_infra=HubPortNumber.IDX1_2,
+    portnumber_dut=HubPortNumber.IDX1_3,
+    portnumber_infraboot=HubPortNumber.IDX1_4,
+    portnumber_error=None,
+    ports={HubPortNumber.IDX1_1, HubPortNumber.IDX1_2},
     micropython_jina=MicropythonJina(
         gpio_relays=[8, 9, 10, 11, 12, 13, 14],
         gpio_led_active=24,
@@ -149,7 +152,7 @@ class Location:
         # This is a RP2 in boot mode.
         return Location(bus=device.bus, path=list(device.port_numbers))
 
-    def sysfs_path(self, hub_port: HubPort) -> pathlib.Path:
+    def sysfs_path(self, hub_port: HubPortNumber) -> pathlib.Path:
         """
         The path to the sysfs filesystem
         """
@@ -157,15 +160,15 @@ class Location:
             f"/sys/bus/usb/devices/{self.short}:1.0/{self.short}-port{hub_port.value}/disable"
         )
 
-    def set_power(self, hub_port: HubPort, on: bool) -> None:
-        assert isinstance(hub_port, HubPort)
+    def set_power(self, hub_port: HubPortNumber, on: bool) -> None:
+        assert isinstance(hub_port, HubPortNumber)
 
         path = self.sysfs_path(hub_port=hub_port)
         value = "0" if on else "1"
         path.write_text(value)
 
-    def get_power(self, hub_port: HubPort) -> bool:
-        assert isinstance(hub_port, HubPort)
+    def get_power(self, hub_port: HubPortNumber) -> bool:
+        assert isinstance(hub_port, HubPortNumber)
         path = self.sysfs_path(hub_port=hub_port)
         value = path.read_text().strip()
         assert value in ("0", "1")

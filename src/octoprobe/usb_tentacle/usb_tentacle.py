@@ -36,7 +36,7 @@ from serial.tools import list_ports, list_ports_linux
 from usb.legacy import CLASS_HUB
 
 from ..usb_tentacle.usb_baseclasses import (
-    HubPort,
+    HubPortNumber,
     Location,
     TENTACLE_VERSION_V03,
     TENTACLE_VERSION_V04,
@@ -157,7 +157,7 @@ class UsbTentacle:
         self._cache_on[plug] = on
         return on
 
-    def get_hub_port(self, plug: UsbPlug) -> HubPort | None:
+    def get_hub_port(self, plug: UsbPlug) -> HubPortNumber | None:
         hub_port = self.tentacle_version.get_hub_port(plug=plug)
         if hub_port is None:
             # TODO: Handle this error.
@@ -303,7 +303,7 @@ def _combine_hubs_and_rp2(
             if rp2.location.path[:-1] != hub4_location.path:
                 continue
             hub_port = rp2.location.path[-1]
-            if hub_port == HubPort.PORT_3:
+            if hub_port == HubPortNumber.IDX1_3:
                 # The DUT might be a rp2, we ignore it
                 continue
             dict_usb_rp2[hub_port] = rp2
@@ -311,18 +311,18 @@ def _combine_hubs_and_rp2(
         if len(dict_usb_rp2) == 0:
             return None
         if set(dict_usb_rp2) == TENTACLE_VERSION_V04.ports:
-            assert TENTACLE_VERSION_V04.port_rp2_probe is not None
+            assert TENTACLE_VERSION_V04.portnumber_rp2_probe is not None
             return UsbTentacle(
                 hub4_location=hub4_location,
                 tentacle_version=TENTACLE_VERSION_V04,
-                rp2_infra=dict_usb_rp2[TENTACLE_VERSION_V04.port_rp2_infra],
-                rp2_probe=dict_usb_rp2[TENTACLE_VERSION_V04.port_rp2_probe],
+                rp2_infra=dict_usb_rp2[TENTACLE_VERSION_V04.portnumber_rp2_infra],
+                rp2_probe=dict_usb_rp2[TENTACLE_VERSION_V04.portnumber_rp2_probe],
             )
         if set(dict_usb_rp2) == TENTACLE_VERSION_V03.ports:
             return UsbTentacle(
                 hub4_location=hub4_location,
                 tentacle_version=TENTACLE_VERSION_V03,
-                rp2_infra=dict_usb_rp2[TENTACLE_VERSION_V03.port_rp2_infra],
+                rp2_infra=dict_usb_rp2[TENTACLE_VERSION_V03.portnumber_rp2_infra],
             )
         raise ValueError(
             f"The rp2 is always connected on ports {1} or {1, 2}, but not {sorted(dict_usb_rp2)}!"
@@ -405,7 +405,9 @@ class UsbTentacles(list[UsbTentacle]):
         * Tentacle with rp2 powered off
         """
 
-        def set_power(hub4_location: Location, hub_port: HubPort | None, on: bool):
+        def set_power(
+            hub4_location: Location, hub_port: HubPortNumber | None, on: bool
+        ):
             if hub_port is not None:
                 hub4_location.set_power(hub_port=hub_port, on=on)
 
@@ -416,9 +418,15 @@ class UsbTentacles(list[UsbTentacle]):
         hub4_locations = _query_hubs()
         if require_serial:
             for hub4_location in hub4_locations:
-                set_power(hub4_location, TENTACLE_VERSION_V04.port_rp2_infra, on=True)
-                set_power(hub4_location, TENTACLE_VERSION_V04.port_rp2_probe, on=True)
-                set_power(hub4_location, TENTACLE_VERSION_V04.port_rp2_error, on=False)
+                set_power(
+                    hub4_location, TENTACLE_VERSION_V04.portnumber_rp2_infra, on=True
+                )
+                set_power(
+                    hub4_location, TENTACLE_VERSION_V04.portnumber_rp2_probe, on=True
+                )
+                set_power(
+                    hub4_location, TENTACLE_VERSION_V04.portnumber_error, on=False
+                )
 
         begin_s = time.monotonic()
         #
@@ -445,7 +453,7 @@ class UsbTentacles(list[UsbTentacle]):
                     # Switch the error LED on
                     set_power(
                         e.hub4_location,
-                        TENTACLE_VERSION_V04.port_rp2_error,
+                        TENTACLE_VERSION_V04.portnumber_error,
                         on=True,
                     )
 

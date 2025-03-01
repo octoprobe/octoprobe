@@ -56,15 +56,15 @@ class TentacleInfra:
 
     @property
     def usb_location_infra(self) -> str:
-        return f"{self.usb_tentacle.hub4_location.short}.{self.usb_tentacle.tentacle_version.port_rp2_infra}"
+        return f"{self.usb_tentacle.hub4_location.short}.{self.usb_tentacle.tentacle_version.portnumber_rp2_infra}"
 
     @property
     def usb_location_probe(self) -> str:
-        return f"{self.usb_tentacle.hub4_location.short}.{self.usb_tentacle.tentacle_version.port_rp2_probe}"
+        return f"{self.usb_tentacle.hub4_location.short}.{self.usb_tentacle.tentacle_version.portnumber_rp2_probe}"
 
     @property
     def usb_location_dut(self) -> str:
-        return f"{self.usb_tentacle.hub4_location.short}.{self.usb_tentacle.tentacle_version.port_rp2_dut}"
+        return f"{self.usb_tentacle.hub4_location.short}.{self.usb_tentacle.tentacle_version.portnumber_dut}"
 
     def mp_remote_close(self) -> str | None:
         """

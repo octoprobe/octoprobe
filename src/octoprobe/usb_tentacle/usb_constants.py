@@ -1,28 +1,35 @@
+"""
+This module defines the different USB functions like rp2_infra or dut.
+The different version are hidden so for one function, for exaple rp2_infra, different
+USB hub ports may be assigned depending of the version of the tentacle.
+"""
+
 from __future__ import annotations
 
 import enum
 
 
 class TyperPowerCycle(str, enum.Enum):
+    """
+    Used as command line argument (Typer)
+    """
+
     INFRA = "infra"
     INFRBOOT = "infraboot"
     DUT = "dut"
     OFF = "off"
 
 
-# TODO: This might be UsbPortFunction
 class UsbPlug(int, enum.Enum):
-    INFRA = 1
-    INFRABOOT = 2
-    DUT = 3
-    ERROR = 4
+    """
+    Every tentacle has a USB hub.
+    Every port of this hub as a function, we call it 'UsbPlug'.
+    """
 
-    @property
-    def number(self) -> int:
-        """
-        Return the plug/port number from 1 to 4
-        """
-        return self.value
+    INFRA = 42
+    INFRABOOT = 43
+    DUT = 44
+    ERROR = 45
 
     @property
     def text(self) -> str:
@@ -30,6 +37,10 @@ class UsbPlug(int, enum.Enum):
 
 
 class TyperUsbPlug(str, enum.Enum):
+    """
+    Used as command line argument (Typer)
+    """
+
     INFRA = "infra"
     INFRABOOT = "infraboot"
     DUT = "dut"
@@ -73,7 +84,7 @@ class UsbPlugs(dict[UsbPlug, bool]):
         * first switch off plugs.
         * then switch on plugs.
         """
-        return sorted(self.items(), key=lambda item: (item[1], item[0].number))
+        return sorted(self.items(), key=lambda item: (item[1], item[0].value))
 
     @property
     def text(self) -> str:
