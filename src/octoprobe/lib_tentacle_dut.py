@@ -108,10 +108,18 @@ class TentacleDut:
         Will return both strings with a ',' inbetween.
         """
         assert self.mp_remote is not None
-        version_implementation = self.mp_remote.exec_raw(
-            f"import sys; print(sys.version + '{VERSION_IMPLEMENTATION_SEPARATOR}' + sys.implementation[2])",
-            timeout=2,
-        )
+        cmd = f"""
+import sys
+l = []
+try:
+    l.append(sys.implementation._build)
+except AttributeError:
+    pass
+l.append(sys.version)
+l.append(sys.implementation[2])
+print('{VERSION_IMPLEMENTATION_SEPARATOR}'.join(l))
+        """
+        version_implementation = self.mp_remote.exec_raw(cmd=cmd, timeout=2)
         return version_implementation.strip()
 
     def is_dut_required_firmware_already_installed(
@@ -175,7 +183,6 @@ class TentacleDut:
                         f"{self.label}: Firmware spec requires flashing '{firmware_spec.board_variant.name_normalized}'!"
                     )
                 else:
-
                     if self.is_dut_required_firmware_already_installed(
                         firmware_spec=firmware_spec
                     ):
