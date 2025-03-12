@@ -48,7 +48,6 @@ def do_commissioning() -> None:
                     c.do_commissioning()
         except Exception as e:
             logger.warning(e)
-            raise
             time.sleep(1.0)
 
 

@@ -161,7 +161,11 @@ class UsbTentacle:
         hub_port = self.tentacle_version.get_hub_port(plug=plug)
         if hub_port is None:
             # TODO: Handle this error.
-            logger.error(f"'{plug}' does not match any usb port")
+            msg = f"'{plug}' does not match any usb port"
+            if plug is UsbPlug.ERROR:
+                logger.debug(msg)
+            else:
+                logger.error(msg)
             return None
 
         return hub_port
@@ -211,11 +215,26 @@ class UsbTentacle:
 
     @property
     def short(self) -> str:
+        """
+        Example:
+        tentacle 3-1.4: v0.3 e46340474b4c3f31 /dev/ttyACM2
+        tentacle 3-1.3: v0.3 e46340474b4c1331 /dev/ttyACM0
+        tentacle 3-1.2: v0.4 de646cc20b925425 /dev/ttyACM1
+        """
         if self.rp2_infra is None:
             return f"usb hub {self.hub4_location.short}"
+
+        words = [
+            "tentacle",
+            self.hub4_location.short + ":",
+            self.tentacle_version.version,
+        ]
         if self.rp2_infra.application_mode:
-            return f"tentacle {self.hub4_location.short}: {self.rp2_infra.serial} {self.rp2_infra.serial_port}"
-        return f"tentacle {self.hub4_location.short}: RP2 in boot (programming) mode. Tentacle {self.tentacle_version.version}"
+            words.append(str(self.rp2_infra.serial))
+            words.append(str(self.rp2_infra.serial_port))
+        else:
+            words.append("RP2 in boot (programming) mode.")
+        return " ".join(words)
 
     @property
     def serial(self) -> str:
@@ -310,22 +329,24 @@ def _combine_hubs_and_rp2(
 
         if len(dict_usb_rp2) == 0:
             return None
-        if set(dict_usb_rp2) == TENTACLE_VERSION_V04.ports:
+        if TENTACLE_VERSION_V04.portnumber_rp2_infra in dict_usb_rp2:
             assert TENTACLE_VERSION_V04.portnumber_rp2_probe is not None
             return UsbTentacle(
                 hub4_location=hub4_location,
                 tentacle_version=TENTACLE_VERSION_V04,
                 rp2_infra=dict_usb_rp2[TENTACLE_VERSION_V04.portnumber_rp2_infra],
-                rp2_probe=dict_usb_rp2[TENTACLE_VERSION_V04.portnumber_rp2_probe],
+                rp2_probe=dict_usb_rp2.get(
+                    TENTACLE_VERSION_V04.portnumber_rp2_probe, None
+                ),
             )
-        if set(dict_usb_rp2) == TENTACLE_VERSION_V03.ports:
+        if TENTACLE_VERSION_V03.portnumber_rp2_infra in dict_usb_rp2:
             return UsbTentacle(
                 hub4_location=hub4_location,
                 tentacle_version=TENTACLE_VERSION_V03,
                 rp2_infra=dict_usb_rp2[TENTACLE_VERSION_V03.portnumber_rp2_infra],
             )
         raise ValueError(
-            f"The rp2 is always connected on ports {1} or {1, 2}, but not {sorted(dict_usb_rp2)}!"
+            f"The rp2 infra is always connected on port {TENTACLE_VERSION_V03.portnumber_rp2_infra} or {TENTACLE_VERSION_V04.portnumber_rp2_infra}, but found rp2 on ports {sorted(dict_usb_rp2)}!"
         )
 
     tentacles = UsbTentacles()

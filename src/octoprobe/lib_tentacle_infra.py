@@ -60,6 +60,7 @@ class TentacleInfra:
 
     @property
     def usb_location_probe(self) -> str:
+        assert self.usb_tentacle.tentacle_version.portnumber_rp2_probe is not None
         return f"{self.usb_tentacle.hub4_location.short}.{self.usb_tentacle.tentacle_version.portnumber_rp2_probe}"
 
     @property

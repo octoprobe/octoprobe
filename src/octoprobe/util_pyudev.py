@@ -16,13 +16,14 @@ import pyudev
 logger = logging.getLogger(__file__)
 
 
-_RE_USB_LOCATION = re.compile(r".*/(?P<location>\d+-\d+(\.\d+)+)")
+_RE_USB_LOCATION = re.compile(r".*/(?P<location>\d+-\d+(\.\d+)*)")
 """
 Input:
     /sys/devices/pci0000:00/0000:00:14.0/usb3/3-5/3-5.2/3-5.2.3/3-5.2.3:1.0/ttyACM1
     /sys/devices/pci0000:00/0000:00:14.0/usb3/3-5/3-5.2/3-5.2.3/3-5.2.3:1.1
     /sys/devices/pci0000:00/0000:00:14.0/usb3/3-5/3-5.2/3-5.2.3/3-5.2.3:1.0/tty/ttyACM
     /sys/devices/pci0000:00/0000:00:14.0/usb3/3-5/3-5.2/3-5.2.3
+    /sys/devices/pci0000:00/0000:00:14.0/usb3/3-1
 match:3-5.2.3
 """
 
@@ -57,7 +58,9 @@ def get_device_debug(device: pyudev.Device, subsystem_filtered: str) -> str:
         if subsystem_filtered == "block":
             # We only log the mount point if we also filtered for "block".
             # For example the pico would not get here, as we filter for "tty"
-            mount_point = UdevFilter.get_mount_point(device.device_node)
+            mount_point = UdevFilter.get_mount_point(
+                device.device_node, allow_partition_mount=True
+            )
             lines.append(f"  mount_point={mount_point}")
 
     def get_value(tag: str) -> str:
@@ -99,18 +102,25 @@ class UdevFilter:
     @staticmethod
     def parse_usb_location(sys_path: str) -> str:
         match = _RE_USB_LOCATION.match(sys_path)
-        assert match is not None
+        assert match is not None, sys_path
         # Example 'match': '3-5.2.3'
         usb_location = match.group("location")
         assert usb_location != "0000"
         return usb_location
 
     @staticmethod
-    def get_mount_point(device_node: str) -> str:
+    def get_mount_point(device_node: str, allow_partition_mount: bool = False) -> str:
+        """
+        Example 'device_node': /dev/sda
+        If 'allow_partition_mount': /dev/sda1 will be considered as allowed.
+        """
         begin_s = time.monotonic()
-        while time.monotonic() < begin_s + +_TIMEOUT_MOUNT_S:
+        while time.monotonic() < begin_s + _TIMEOUT_MOUNT_S:
             for line in pathlib.Path("/proc/mounts").read_text().splitlines():
                 partition, mount_point, _ = line.split(" ", maxsplit=2)
+                if allow_partition_mount:
+                    if partition.startswith(device_node):
+                        return mount_point
                 if partition == device_node:
                     return mount_point
             time.sleep(0.1)
@@ -237,6 +247,8 @@ class UdevPoller:
             for fileno, _ in events:
                 if fileno != self.monitor.fileno():
                     continue
+                # TODO: rename 'device' -> 'device_event'
+                # TODO: See also udev_event_class() below
                 device = self.monitor.poll()
                 for udev_filter in filters:
                     if udev_filter.matches(device=device):

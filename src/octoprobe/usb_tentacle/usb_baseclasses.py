@@ -66,7 +66,7 @@ class TentacleVersion:
     portnumber_infraboot: HubPortNumber
     portnumber_dut: HubPortNumber
     portnumber_error: HubPortNumber | None
-    ports: set[int]
+    # ports: set[int]
     micropython_jina: MicropythonJina
     version: str
 
@@ -75,8 +75,11 @@ class TentacleVersion:
         UsbPlug is the generic naming.
         This code converts it into the tentacle version specific number.
         """
+
         if plug == UsbPlug.INFRA:
             return self.portnumber_rp2_infra
+        if plug == UsbPlug.PROBE:
+            return self.portnumber_rp2_probe
         if plug == UsbPlug.DUT:
             return self.portnumber_dut
         if plug == UsbPlug.ERROR:
@@ -92,7 +95,7 @@ TENTACLE_VERSION_V03 = TentacleVersion(
     portnumber_dut=HubPortNumber.IDX1_3,
     portnumber_error=HubPortNumber.IDX1_4,
     portnumber_rp2_probe=None,
-    ports={HubPortNumber.IDX1_1},
+    # ports={HubPortNumber.IDX1_1},
     micropython_jina=MicropythonJina(
         gpio_relays=[1, 2, 3, 4, 5, 6, 7],
         gpio_led_active=24,
@@ -106,7 +109,7 @@ TENTACLE_VERSION_V04 = TentacleVersion(
     portnumber_dut=HubPortNumber.IDX1_3,
     portnumber_infraboot=HubPortNumber.IDX1_4,
     portnumber_error=None,
-    ports={HubPortNumber.IDX1_1, HubPortNumber.IDX1_2},
+    # ports={HubPortNumber.IDX1_1, HubPortNumber.IDX1_2},
     micropython_jina=MicropythonJina(
         gpio_relays=[8, 9, 10, 11, 12, 13, 14],
         gpio_led_active=24,
@@ -128,6 +131,8 @@ class Location:
         Tentacle v0.4:
           rp2_infra on hub_port 2
           rp2_probe on hub_port 1
+            rp2_probe just controls USB communication, NOT USB power.
+            rp2_infra powers rp2_infra AND rp2_probe!
         """
         self.tentacle_version: TentacleVersion | None = None
 

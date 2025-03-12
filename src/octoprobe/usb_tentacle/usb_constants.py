@@ -15,6 +15,7 @@ class TyperPowerCycle(str, enum.Enum):
     """
 
     INFRA = "infra"
+    PROBE = "probe"  # Only v0.4
     INFRBOOT = "infraboot"
     DUT = "dut"
     OFF = "off"
@@ -26,10 +27,31 @@ class UsbPlug(int, enum.Enum):
     Every port of this hub as a function, we call it 'UsbPlug'.
     """
 
+    # TODO: Rename to PICOINFRA
     INFRA = 42
-    INFRABOOT = 43
-    DUT = 44
-    ERROR = 45
+    """
+    Power AND data for rp2_infra.
+    Power for rp2_probe
+    """
+    # TODO: Rename to PICOPROBE
+    PROBE = 43
+    """
+    Only v0.4
+    Data ONLY for rp2_probe (power is shared with rp2_infra)
+    """
+    INFRABOOT = 44
+    """
+    If low: Enable Boot for rp2_infra AND rp2_probe.
+    """
+    DUT = 45
+    """
+    Power AND data for DUT.
+    """
+    ERROR = 46
+    """
+    Only v0.3
+    Power for red error led
+    """
 
     @property
     def text(self) -> str:
@@ -42,14 +64,17 @@ class TyperUsbPlug(str, enum.Enum):
     """
 
     INFRA = "infra"
+    PROBE = "probe"  # Only v0.4
     INFRABOOT = "infraboot"
     DUT = "dut"
-    ERROR = "error"
+
+    ERROR = "error"  # only v0.3
 
     @property
     def usbplug(self) -> UsbPlug:
         return {
             TyperUsbPlug.INFRA: UsbPlug.INFRA,
+            TyperUsbPlug.PROBE: UsbPlug.PROBE,
             TyperUsbPlug.INFRABOOT: UsbPlug.INFRABOOT,
             TyperUsbPlug.DUT: UsbPlug.DUT,
             TyperUsbPlug.ERROR: UsbPlug.ERROR,
@@ -65,6 +90,7 @@ class TyperUsbPlug(str, enum.Enum):
 class UsbPlugs(dict[UsbPlug, bool]):
     _DICT_DEFAULT_OFF = {
         UsbPlug.INFRA: False,
+        UsbPlug.PROBE: False,
         UsbPlug.INFRABOOT: True,
         UsbPlug.DUT: False,
         UsbPlug.ERROR: False,
@@ -72,6 +98,7 @@ class UsbPlugs(dict[UsbPlug, bool]):
 
     _DICT_INFRA_ON = {
         UsbPlug.INFRA: True,
+        UsbPlug.PROBE: True,
         UsbPlug.INFRABOOT: True,
         UsbPlug.DUT: False,
         UsbPlug.ERROR: False,

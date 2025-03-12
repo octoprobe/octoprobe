@@ -91,6 +91,21 @@
             "justMyCode": false,
         },
         {
+            "name": "op bootmode",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "octoprobe.scripts.op",
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "bootmode",
+            ],
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            },
+            "console": "integratedTerminal",
+            "justMyCode": false,
+        },
+        {
             "name": "op cycle dut",
             "type": "debugpy",
             "request": "launch",

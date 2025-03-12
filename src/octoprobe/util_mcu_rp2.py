@@ -41,6 +41,20 @@ class Rp2UdevBootModeEvent(UdevEventBase):
         return f"{self.__class__.__name__}(serial={self.serial}, bus_num={self.bus_num}, dev_num={self.dev_num})"
 
 
+class Rp2UdevBootModeEvent2(UdevEventBase):
+    """
+    Triggers a mount point when a USB drive was inserted.
+    """
+
+    def __init__(self, device: pyudev.Device):
+        self.mount_point = UdevFilter.get_mount_point(
+            device.device_node, allow_partition_mount=True
+        )
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(mount_point={self.mount_point})"
+
+
 def rp2_udev_filter_boot_mode(usb_id: UsbID, usb_location: str) -> UdevFilter:
     assert isinstance(usb_id, UsbID)
     assert isinstance(usb_location, str)
@@ -52,6 +66,25 @@ def rp2_udev_filter_boot_mode(usb_id: UsbID, usb_location: str) -> UdevFilter:
         id_product=usb_id.product_id,
         subsystem="usb",
         device_type="usb_device",
+        actions=["add"],
+    )
+
+
+def rp2_udev_filter_boot_mode2(usb_id: UsbID, usb_location: str) -> UdevFilter:
+    """
+    Triggers a mount point when a USB drive was inserted.
+    """
+    assert isinstance(usb_id, UsbID)
+    assert isinstance(usb_location, str)
+
+    return UdevFilter(
+        label="Boot Mode",
+        usb_location=usb_location,
+        udev_event_class=Rp2UdevBootModeEvent2,
+        id_vendor=usb_id.vendor_id,
+        id_product=usb_id.product_id,
+        subsystem="block",
+        device_type="disk",
         actions=["add"],
     )
 
@@ -95,9 +128,9 @@ class DutProgrammerPicotool(DutProgrammerABC):
         """ """
         assert isinstance(tentacle, TentacleBase)
         assert isinstance(firmware_spec, FirmwareSpecBase)
-        assert (
-            len(tentacle.tentacle_spec_base.programmer_args) == 0
-        ), "Not yet supported"
+        assert len(tentacle.tentacle_spec_base.programmer_args) == 0, (
+            "Not yet supported"
+        )
         assert tentacle.dut is not None
 
         tentacle.infra.power_dut_off_and_wait()
