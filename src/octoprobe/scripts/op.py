@@ -37,6 +37,13 @@ _SerialAnnotation = TyperAnnotated[
     typer.Option(help="Apply only to the selected tentacles"),
 ]
 
+_PoweronAnnotation = TyperAnnotated[
+    bool,
+    typer.Option(
+        help="If a PICO_INFRA is powered off, it will not be detected in a query. This option will detect all hubs and power on PICO_INFRA."
+    ),
+]
+
 
 @app.command(help="Installs some binaries which require root rights.")
 def install(url: str = URL_RELEASE_DEFAULT) -> None:
@@ -59,9 +66,13 @@ def commissioning() -> None:
 @app.command(help="Power cycle usb ports.")
 def powercycle(
     power_cycle: TyperPowerCycle,
-    serial: TyperAnnotated[Optional[list[str]], typer.Option()] = None,  # noqa: UP007
+    serial: TyperAnnotated[
+        Optional[list[str]],  # noqa: UP007
+        typer.Option(help="The serial number to be powercycled"),
+    ] = None,
+    poweron: _PoweronAnnotation = False,
 ) -> None:
-    usb_tentacles = UsbTentacles.query(require_serial=serial is not None)
+    usb_tentacles = UsbTentacles.query(poweron=poweron)
     usb_tentacles = usb_tentacles.select(serials=serial)
     usb_tentacles.powercycle(power_cycle=power_cycle)
 
@@ -137,8 +148,11 @@ def _bootmode(usb_tentacle: UsbTentacle) -> None:
 
 
 @app.command(help="Bring PICO_INFRA and PICO_PROBE into boot mode.")
-def bootmode(serial: _SerialAnnotation = None) -> None:
-    usb_tentacles = UsbTentacles.query(require_serial=serial is not None)
+def bootmode(
+    serial: _SerialAnnotation = None,
+    poweron: _PoweronAnnotation = False,
+) -> None:
+    usb_tentacles = UsbTentacles.query(poweron=poweron)
     usb_tentacles = usb_tentacles.select(serials=serial)
     # usb_tentacles.set_plugs(plugs=UsbPlugs.default_off())
     for usb_tentacle in usb_tentacles:
@@ -163,7 +177,7 @@ def power(
         ),
     ] = False,
 ) -> None:
-    usb_tentacles = UsbTentacles.query(require_serial=serial is not None)
+    usb_tentacles = UsbTentacles.query(poweron=False)
     usb_tentacles = usb_tentacles.select(serials=serial)
 
     _on = TyperUsbPlug.convert(on)
@@ -184,10 +198,8 @@ def power(
 
 
 @app.command(help="Query connected tentacles.")
-def query(
-    verbose: TyperAnnotated[bool, typer.Option()] = True,
-) -> None:
-    hubs = typer_query.Query(verbose=verbose)
+def query(poweron: _PoweronAnnotation = False) -> None:
+    hubs = typer_query.Query(poweron=poweron)
     hubs.print()
 
 

@@ -169,7 +169,22 @@
             "cwd": "${workspaceFolder}",
             "args": [
                 "query",
-                "--verbose",
+            ],
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            },
+            "console": "integratedTerminal",
+            "justMyCode": false,
+        },
+        {
+            "name": "op query --poweron",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "octoprobe.scripts.op",
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "query",
+                "--poweron",
             ],
             "env": {
                 "PYTHONPATH": "${workspaceFolder}/src"

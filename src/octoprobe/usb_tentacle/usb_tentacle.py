@@ -253,13 +253,6 @@ class UsbTentacle:
         return serial_port
 
 
-class Rp2NoSerialException(Exception):
-    def __init__(self, hub4_location: Location):
-        self.hub4_location = hub4_location
-        msg = f"Can not get the tentacles serial number: Expected rp2 on {hub4_location.short} to be in application mode!"
-        super().__init__(msg)
-
-
 def _query_hubs() -> list[Location]:
     """
     Return all connected tentacle hubs.
@@ -302,9 +295,7 @@ def _query_rp2_serial() -> list[UsbRp2]:
 
 
 def _combine_hubs_and_rp2(
-    hub4_locations: list[Location],
-    list_rp2: list[UsbRp2],
-    require_serial: bool,
+    hub4_locations: list[Location], list_rp2: list[UsbRp2]
 ) -> UsbTentacles:
     """
     Now we combine 'hubs' and 'list_rp2'
@@ -399,18 +390,18 @@ class UsbTentacles(list[UsbTentacle]):
         return UsbTentacles(filter(matches, self))
 
     @classmethod
-    def query(cls, require_serial: bool) -> UsbTentacles:
+    def query(cls, poweron: bool) -> UsbTentacles:
         """
         Some rp2 may not present a serial number as they are not powered.
 
-        require_serial == True: Switch on all unpowered rp2 and wait till the serial numbers appear.
+        poweron == True: Switch on all unpowered rp2 and wait till the serial numbers appear.
           If a hub does not find a corresponding rp2 serial number: An exception is thrown.
           This is typically used for testing.
 
-        require_serial == False: Just query without changing any power states.
+        poweron == False: Just query without changing any power states.
           This is typically used for code completion.
 
-        # Manual testing of this class: require_serial == True:
+        # Manual testing of this class: poweron == True:
         Rationale: A exception should be throw if there is tentacle is 'not in order'.
         If a tentacle rp2 is not powered, the query should power it on and wait till the rp2 appears.
         Throw an exception if after some timeout:
@@ -418,7 +409,7 @@ class UsbTentacles(list[UsbTentacle]):
         * A tentacle rp2 is still not powered
 
 
-        # Manual testing of this class: require_serial == False:
+        # Manual testing of this class: poweron == False:
         Rationale: The query should return fast without changing the power state.
         All tentacles should be visible:
         * Tentacle with serial
@@ -426,28 +417,32 @@ class UsbTentacles(list[UsbTentacle]):
         * Tentacle with rp2 powered off
         """
 
-        def set_power(
-            hub4_location: Location, hub_port: HubPortNumber | None, on: bool
-        ):
-            if hub_port is not None:
-                hub4_location.set_power(hub_port=hub_port, on=on)
-
         #
         # Identify all tentalces by getting a list of all hubs.
         # Power on all rp2 infra to be able to read the serial numbers.
         #
         hub4_locations = _query_hubs()
-        if require_serial:
+
+        def set_power(hub_port: HubPortNumber | None, on: bool):
+            if hub_port is None:
+                return
             for hub4_location in hub4_locations:
-                set_power(
-                    hub4_location, TENTACLE_VERSION_V04.portnumber_rp2_infra, on=True
-                )
-                set_power(
-                    hub4_location, TENTACLE_VERSION_V04.portnumber_rp2_probe, on=True
-                )
-                set_power(
-                    hub4_location, TENTACLE_VERSION_V04.portnumber_error, on=False
-                )
+                hub4_location.set_power(hub_port=hub_port, on=on)
+
+        timeout_poweron_s = 0.0
+        if poweron:
+            # Release Boot Button
+            set_power(TENTACLE_VERSION_V04.portnumber_infraboot, on=True)
+            set_power(TENTACLE_VERSION_V04.portnumber_error, on=False)
+            # Power OFF rp2_infra and rp2_probe
+            set_power(TENTACLE_VERSION_V04.portnumber_rp2_infra, on=False)
+            set_power(TENTACLE_VERSION_V04.portnumber_rp2_probe, on=False)
+            time.sleep(0.2)
+
+            # Power ON rp2_infra and rp2_probe
+            set_power(TENTACLE_VERSION_V04.portnumber_rp2_infra, on=True)
+            set_power(TENTACLE_VERSION_V04.portnumber_rp2_probe, on=True)
+            timeout_poweron_s = 1.5  # 0.8: failed, 1.0: ok
 
         begin_s = time.monotonic()
         #
@@ -455,31 +450,27 @@ class UsbTentacles(list[UsbTentacle]):
         #
         while True:
             list_rp2 = _query_rp2_serial()
-            if not require_serial:
-                # if require_serial == False: We also query rp2 in boot mode
-                list_rp2.extend(_query_rp2_boot_mode())
+            # if not poweron:
+            #     # if poweron == False: We also query rp2 in boot mode
+            #     list_rp2.extend(_query_rp2_boot_mode())
+            list_rp2.extend(_query_rp2_boot_mode())
 
-            try:
-                tentacles = _combine_hubs_and_rp2(
-                    hub4_locations=hub4_locations,
-                    list_rp2=list_rp2,
-                    require_serial=require_serial,
-                )
-                # if require_serial == False: We return immedately
-                return tentacles
-            except Rp2NoSerialException as e:
-                # Give some time for the rp2 to start up
-                duration_s = time.monotonic() - begin_s
-                if duration_s > cls.TIMEOUT_RP2_BOOT:
-                    # Switch the error LED on
-                    set_power(
-                        e.hub4_location,
-                        TENTACLE_VERSION_V04.portnumber_error,
-                        on=True,
+            tentacles = _combine_hubs_and_rp2(
+                hub4_locations=hub4_locations,
+                list_rp2=list_rp2,
+            )
+            duration_s = time.monotonic() - begin_s
+            if duration_s > timeout_poweron_s:
+                undetected_tentacles = len(hub4_locations) - len(tentacles)
+                if undetected_tentacles > 0:
+                    print(
+                        f"WARNING: {len(hub4_locations)} hubs have been detected but only {len(tentacles)} rp2_infra! It seems that {undetected_tentacles} rp2_infra are not powered/responding. This might fix the problem: op query --poweron"
                     )
+                return tentacles
 
-                    raise e from e
-                time.sleep(0.2)
+            if len(tentacles) == len(hub4_locations):
+                # We found all tentacles
+                return tentacles
 
 
 class TentaclePlugsPower:
@@ -538,7 +529,7 @@ class TentaclePlugsPower:
 def main() -> None:
     time_start_s = time.monotonic()
 
-    usb_tentacles = UsbTentacles.query(require_serial=True)
+    usb_tentacles = UsbTentacles.query(poweron=True)
 
     print(f"{time.monotonic() - time_start_s:0.3f}s")
 
