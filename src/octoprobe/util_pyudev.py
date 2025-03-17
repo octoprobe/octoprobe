@@ -207,8 +207,8 @@ class UdevPoller:
         timeout_s: float = 1.0,
     ) -> UdevEventBase:
         while True:
-            for event in self._do_poll(
-                filters=[udev_filter],
+            for _udev_filter_matched, event in self._do_poll(
+                udev_filters=[udev_filter],
                 text_where=text_where,
                 text_expect=text_expect,
                 timeout_s=timeout_s,
@@ -217,16 +217,16 @@ class UdevPoller:
 
     def _do_poll(
         self,
-        filters: list[UdevFilter],
+        udev_filters: list[UdevFilter],
         text_where: str,
         text_expect: str,
         fail_filters: None | list[UdevFilter] = None,
         timeout_s: float = 1.0,
-    ) -> Iterator[UdevEventBase]:
-        assert isinstance(filters, list)
+    ) -> Iterator[tuple[UdevFilter, UdevEventBase]]:
+        assert isinstance(udev_filters, list)
         assert isinstance(fail_filters, None | list)
         assert isinstance(timeout_s, float)
-        for f in filters:
+        for f in udev_filters:
             assert isinstance(f, UdevFilter)
         if fail_filters is not None:
             for f in fail_filters:
@@ -250,12 +250,12 @@ class UdevPoller:
                 # TODO: rename 'device' -> 'device_event'
                 # TODO: See also udev_event_class() below
                 device = self.monitor.poll()
-                for udev_filter in filters:
+                for udev_filter in udev_filters:
                     if udev_filter.matches(device=device):
                         logger.debug(
                             f"matched:\n{get_device_debug(device=device, subsystem_filtered=udev_filter.subsystem)}"
                         )
-                        yield udev_filter.udev_event_class(device=device)
+                        yield udev_filter, udev_filter.udev_event_class(device=device)
                         continue
                     logger.debug(
                         f"not matched:\n{get_device_debug(device=device, subsystem_filtered=udev_filter.subsystem)}"

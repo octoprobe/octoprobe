@@ -90,6 +90,22 @@ class UsbRp2:
             serial_port=None,
         )
 
+    @property
+    def as_rp2_probe(self) -> UsbRp2:
+        """
+        Return this UsbRp2, but with the port number of the rp2_probe.
+        """
+        assert TENTACLE_VERSION_V04.portnumber_rp2_probe is not None
+        path = [
+            *self.location.path[:-1],
+            TENTACLE_VERSION_V04.portnumber_rp2_probe.value,
+        ]
+        return UsbRp2(
+            location=Location(bus=self.location.bus, path=path),
+            serial=None,
+            serial_port=None,
+        )
+
 
 @dataclasses.dataclass(frozen=True, repr=True)
 class UsbTentacle:
@@ -320,15 +336,15 @@ def _combine_hubs_and_rp2(
 
         if len(dict_usb_rp2) == 0:
             return None
+
         if TENTACLE_VERSION_V04.portnumber_rp2_infra in dict_usb_rp2:
             assert TENTACLE_VERSION_V04.portnumber_rp2_probe is not None
+            rp2_infra = dict_usb_rp2[TENTACLE_VERSION_V04.portnumber_rp2_infra]
             return UsbTentacle(
                 hub4_location=hub4_location,
                 tentacle_version=TENTACLE_VERSION_V04,
-                rp2_infra=dict_usb_rp2[TENTACLE_VERSION_V04.portnumber_rp2_infra],
-                rp2_probe=dict_usb_rp2.get(
-                    TENTACLE_VERSION_V04.portnumber_rp2_probe, None
-                ),
+                rp2_infra=rp2_infra,
+                rp2_probe=rp2_infra.as_rp2_probe,
             )
         if TENTACLE_VERSION_V03.portnumber_rp2_infra in dict_usb_rp2:
             return UsbTentacle(
@@ -455,22 +471,24 @@ class UsbTentacles(list[UsbTentacle]):
             #     list_rp2.extend(_query_rp2_boot_mode())
             list_rp2.extend(_query_rp2_boot_mode())
 
-            tentacles = _combine_hubs_and_rp2(
+            usb_tentacles = _combine_hubs_and_rp2(
                 hub4_locations=hub4_locations,
                 list_rp2=list_rp2,
             )
             duration_s = time.monotonic() - begin_s
             if duration_s > timeout_poweron_s:
-                undetected_tentacles = len(hub4_locations) - len(tentacles)
+                undetected_tentacles = len(hub4_locations) - len(usb_tentacles)
                 if undetected_tentacles > 0:
                     print(
-                        f"WARNING: {len(hub4_locations)} hubs have been detected but only {len(tentacles)} rp2_infra! It seems that {undetected_tentacles} rp2_infra are not powered/responding. This might fix the problem: op query --poweron"
+                        f"WARNING: {len(hub4_locations)} hubs have been detected but only {len(usb_tentacles)} rp2_infra! It seems that {undetected_tentacles} rp2_infra are not powered/responding. This might fix the problem: op query --poweron"
                     )
-                return tentacles
+                return usb_tentacles
 
-            if len(tentacles) == len(hub4_locations):
+            if len(usb_tentacles) == len(hub4_locations):
                 # We found all tentacles
-                return tentacles
+                return usb_tentacles
+
+            time.sleep(0.2)
 
 
 class TentaclePlugsPower:

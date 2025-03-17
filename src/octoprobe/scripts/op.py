@@ -113,29 +113,54 @@ def _bootmode(usb_tentacle: UsbTentacle) -> None:
             )
         )
 
-        def expect_mount(tag: str, usb_location: str) -> None:
-            udev_filter = rp2_udev_filter_boot_mode2(
+        udev_filters = [
+            rp2_udev_filter_boot_mode2(
                 RPI_PICO_USB_ID.boot,
-                usb_location=usb_location,
+                usb_location=usb_tentacle.rp2_infra.location.short,
             )
-            event = guard.expect_event(
-                udev_filter=udev_filter,
-                text_where=f"Tentacle with serial {usb_tentacle.serial}",
-                text_expect=f"Expect {tag} in programming mode to become visible on udev after power on",
-                timeout_s=10.0,
-            )
-            assert isinstance(event, Rp2UdevBootModeEvent2)
-            print(f"{tag} on port {usb_location} is mounted on {event.mount_point}")
-
+        ]
         if usb_tentacle.rp2_probe is not None:
-            expect_mount(
-                tag="PICO_PROBE",
-                usb_location=usb_tentacle.rp2_probe.location.short,
+            udev_filters.append(
+                rp2_udev_filter_boot_mode2(
+                    RPI_PICO_USB_ID.boot,
+                    usb_location=usb_tentacle.rp2_probe.location.short,
+                )
             )
-        expect_mount(
-            tag="PICO_INFRA",
-            usb_location=usb_tentacle.rp2_infra.location.short,
-        )
+        while True:
+            for _udev_filter_matched, event in guard._do_poll(
+                udev_filters=udev_filters,
+                text_where=f"Tentacle with serial {usb_tentacle.serial}",
+                text_expect=f"Expect XY in programming mode to become visible on udev after power on",
+                timeout_s=10.0,
+            ):
+                print(_udev_filter_matched, event)
+                udev_filters.remove(_udev_filter_matched)
+                if len(udev_filters) == 0:
+                    return
+
+        # def expect_mount(tag: str, usb_location: str) -> None:
+        #     udev_filter = rp2_udev_filter_boot_mode2(
+        #         RPI_PICO_USB_ID.boot,
+        #         usb_location=usb_location,
+        #     )
+        #     event = guard.expect_event(
+        #         udev_filters=[udev_filter_probe, udev_filter_infra],
+        #         text_where=f"Tentacle with serial {usb_tentacle.serial}",
+        #         text_expect=f"Expect {tag} in programming mode to become visible on udev after power on",
+        #         timeout_s=10.0,
+        #     )
+        #     assert isinstance(event, Rp2UdevBootModeEvent2)
+        #     print(f"{tag} on port {usb_location} is mounted on {event.mount_point}")
+
+        # if usb_tentacle.rp2_probe is not None:
+        #     expect_mount(
+        #         tag="PICO_PROBE",
+        #         usb_location=usb_tentacle.rp2_probe.location.short,
+        #     )
+        # expect_mount(
+        #     tag="PICO_INFRA",
+        #     usb_location=usb_tentacle.rp2_infra.location.short,
+        # )
 
         print("Release Boot Button")
         usb_tentacle.set_plugs(
