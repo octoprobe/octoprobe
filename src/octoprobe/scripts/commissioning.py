@@ -81,7 +81,7 @@ class Commissioning:
 
         while True:
             # actual_usb_topology = backend_query_lsusb.lsusb()
-            usb_tentacles = UsbTentacles.query(require_serial=False)
+            usb_tentacles = UsbTentacles.query(poweron=False)
 
             if len(usb_tentacles) > 1:
                 if msg_period.do_print:

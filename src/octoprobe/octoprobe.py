@@ -31,7 +31,7 @@ class CtxTestRun:
         Finds all tentacle by finding rp2_unique_id of the RP2 infra.
         """
         # We have to reset the power for all rp2-infra to become visible
-        usb_tentacles = UsbTentacles.query(require_serial=True)
+        usb_tentacles = UsbTentacles.query(poweron=False)
         # usb_tentacles = usb_tentacles.select(serials=None)
         if FULL_POWERCYCLE_ALL_TENTACLES:
             # Powercycling ALL hubs
@@ -45,7 +45,7 @@ class CtxTestRun:
             time.sleep(2.0)
 
             # We scan again for the tentacles as the serial ports might have changed!
-            usb_tentacles = UsbTentacles.query(require_serial=True)
+            usb_tentacles = UsbTentacles.query(poweron=False)
 
         # else:
         #     usb_tentacles.set_plugs(

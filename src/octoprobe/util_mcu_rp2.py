@@ -89,24 +89,31 @@ def rp2_udev_filter_boot_mode2(usb_id: UsbID, usb_location: str) -> UdevFilter:
     )
 
 
+def picotool_cmd(event: UdevEventBase, filename_firmware: str) -> list[str]:
+    assert isinstance(event, Rp2UdevBootModeEvent)
+    assert isinstance(filename_firmware, str)
+
+    return [
+        str(FILENAME_PICOTOOL),
+        "load",
+        "--update",
+        # "--verify",
+        "--bus",
+        str(event.bus_num),
+        "--address",
+        str(event.dev_num),
+        "--execute",
+        filename_firmware,
+    ]
+
+
 def picotool_flash_micropython(
     event: UdevEventBase, directory_logs: pathlib.Path, filename_firmware: pathlib.Path
 ) -> None:
     assert isinstance(event, Rp2UdevBootModeEvent)
     assert filename_firmware.is_file(), str(filename_firmware)
 
-    args = [
-        str(FILENAME_PICOTOOL),
-        "load",
-        "--update",
-        # "--verify",
-        "--execute",
-        str(filename_firmware),
-        "--bus",
-        str(event.bus_num),
-        "--address",
-        str(event.dev_num),
-    ]
+    args = picotool_cmd(event=event, filename_firmware=str(filename_firmware))
     subprocess_run(
         args=args,
         cwd=directory_logs,

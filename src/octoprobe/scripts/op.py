@@ -6,15 +6,15 @@ from typing import Optional
 import typer
 import typing_extensions
 
-from octoprobe.usb_tentacle.usb_tentacle import UsbTentacle, UsbTentacles
-from octoprobe.util_mcu_rp2 import Rp2UdevBootModeEvent2
-
+from .. import util_mcu_rp2
 from ..usb_tentacle.usb_constants import (
     TyperPowerCycle,
     TyperUsbPlug,
     UsbPlug,
     UsbPlugs,
 )
+from ..usb_tentacle.usb_tentacle import UsbTentacle, UsbTentacles
+from ..util_pyudev import UdevPoller
 from ..util_pyudev_monitor import do_udev_monitor
 from . import typer_query
 from .commissioning import do_commissioning
@@ -42,6 +42,11 @@ _PoweronAnnotation = TyperAnnotated[
     typer.Option(
         help="If a PICO_INFRA is powered off, it will not be detected in a query. This option will detect all hubs and power on PICO_INFRA."
     ),
+]
+
+_PicotoolCmdAnnotation = TyperAnnotated[
+    bool,
+    typer.Option(help="Show the picotoolcommand."),
 ]
 
 
@@ -77,12 +82,13 @@ def powercycle(
     usb_tentacles.powercycle(power_cycle=power_cycle)
 
 
-def _bootmode(usb_tentacle: UsbTentacle, is_infra: bool) -> None:
+def _bootmode(usb_tentacle: UsbTentacle, is_infra: bool, picotool_cmd: bool) -> None:
     if usb_tentacle.rp2_infra.serial is None:
         print("Tentacle is already in boot mode. Please unconnect and reconnect USB.")
         return
 
-    print("Power off PICO_INFRA and PICO_PROBE. Press Boot Button.")
+    print("Press Boot Button.")
+    print("Power off PICO_INFRA and PICO_PROBE.")
     usb_tentacle.set_plugs(
         plugs=UsbPlugs(
             {
@@ -95,12 +101,6 @@ def _bootmode(usb_tentacle: UsbTentacle, is_infra: bool) -> None:
     )
 
     time.sleep(0.1)
-    # pylint: disable=import-outside-toplevel
-    from octoprobe.util_mcu_rp2 import (
-        RPI_PICO_USB_ID,
-        rp2_udev_filter_boot_mode2,
-    )
-    from octoprobe.util_pyudev import UdevPoller
 
     with UdevPoller() as guard:
         print("Power on PICO_INFRA and PICO_PROBE.")
@@ -126,45 +126,67 @@ def _bootmode(usb_tentacle: UsbTentacle, is_infra: bool) -> None:
         tag = "PICO_INFRA" if is_infra else "PICO_PROBE"
         assert rp2 is not None
 
-        udev_filter = rp2_udev_filter_boot_mode2(
-            RPI_PICO_USB_ID.boot,
-            usb_location=rp2.location.short,
-        )
-
+        if picotool_cmd:
+            udev_filter = util_mcu_rp2.rp2_udev_filter_boot_mode(
+                util_mcu_rp2.RPI_PICO_USB_ID.boot,
+                usb_location=rp2.location.short,
+            )
+        else:
+            udev_filter = util_mcu_rp2.rp2_udev_filter_boot_mode2(
+                util_mcu_rp2.RPI_PICO_USB_ID.boot,
+                usb_location=rp2.location.short,
+            )
         event = guard.expect_event(
             udev_filter=udev_filter,
             text_where=f"Tentacle with serial {usb_tentacle.serial}",
             text_expect=f"Expect {tag} in programming mode to become visible on udev after power on",
             timeout_s=10.0,
         )
-        assert isinstance(event, Rp2UdevBootModeEvent2)
-        print(
-            f"{usb_tentacle.serial}: {tag} on port {rp2.location.short} is mounted on {event.mount_point}"
-        )
+        if picotool_cmd:
+            assert isinstance(event, util_mcu_rp2.Rp2UdevBootModeEvent)
+            picotool = util_mcu_rp2.picotool_cmd(
+                event=event,
+                filename_firmware="firmware.uf2",
+            )
+            picotool_text = " ".join(picotool)
+            print(
+                f"{usb_tentacle.serial}: Detected {tag} on port {rp2.location.short}."
+            )
+            print("Please use:")
+            print("  " + picotool_text)
+        else:
+            assert isinstance(event, util_mcu_rp2.Rp2UdevBootModeEvent2)
+            print(
+                f"{usb_tentacle.serial}: Detected {tag} on port {rp2.location.short}."
+            )
+            print("Please use:")
+            print("  " + f"cp firmware.uf2 {event.mount_point}")
 
 
 @app.command(help="Bring and PICO_INFRA into boot mode.")
 def bootmode_infra(
     serial: _SerialAnnotation = None,
     poweron: _PoweronAnnotation = False,
+    picotool_cmd: _PicotoolCmdAnnotation = False,
 ) -> None:
     usb_tentacles = UsbTentacles.query(poweron=poweron)
     usb_tentacles = usb_tentacles.select(serials=serial)
     # usb_tentacles.set_plugs(plugs=UsbPlugs.default_off())
     for usb_tentacle in usb_tentacles:
-        _bootmode(usb_tentacle=usb_tentacle, is_infra=True)
+        _bootmode(usb_tentacle=usb_tentacle, is_infra=True, picotool_cmd=picotool_cmd)
 
 
 @app.command(help="Bring and PICO_PROBE into boot mode.")
 def bootmode_probe(
     serial: _SerialAnnotation = None,
     poweron: _PoweronAnnotation = False,
+    picotool_cmd: _PicotoolCmdAnnotation = False,
 ) -> None:
     usb_tentacles = UsbTentacles.query(poweron=poweron)
     usb_tentacles = usb_tentacles.select(serials=serial)
     # usb_tentacles.set_plugs(plugs=UsbPlugs.default_off())
     for usb_tentacle in usb_tentacles:
-        _bootmode(usb_tentacle=usb_tentacle, is_infra=False)
+        _bootmode(usb_tentacle=usb_tentacle, is_infra=False, picotool_cmd=picotool_cmd)
 
 
 @app.command(help="Power on/off usb ports.")
