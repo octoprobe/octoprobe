@@ -46,6 +46,8 @@ from ..usb_tentacle.usb_constants import TyperPowerCycle, UsbPlug, UsbPlugs
 
 logger = logging.Logger(__file__)
 
+SERIALNUMBER_SHORT = 4
+
 
 # Specification of a raspberry pi pico soldered on to the tentacle
 RP2_VENDOR = 0x2E8A
@@ -261,6 +263,20 @@ class UsbTentacle:
         return serial
 
     @property
+    def serial_short(self) -> str:
+        return self.serial[-SERIALNUMBER_SHORT:]
+
+    @property
+    def label_long(self) -> str:
+        words = ["Tentacle"]
+        if self.rp2_infra.serial is not None:
+            words.append(f"{self.serial_short}({self.serial})")
+        else:
+            words.append(" in boot mode ")
+        words.append(f"on USB {self.hub4_location.short}")
+        return " ".join(words)
+
+    @property
     def serial_port(self) -> str:
         rp2_infra = self.rp2_infra
         assert rp2_infra is not None
@@ -375,10 +391,6 @@ class UsbTentacles(list[UsbTentacle]):
         for usb_tentacle in self:
             usb_tentacle.set_plugs(plugs=plugs)
 
-    def powercycle(self, power_cycle: TyperPowerCycle) -> None:
-        for usb_tentacle in self:
-            usb_tentacle.powercycle(power_cycle=power_cycle)
-
     def select(self, serials: list[str] | None) -> UsbTentacles:
         """
         if serial is None: return all tentacles
@@ -479,7 +491,7 @@ class UsbTentacles(list[UsbTentacle]):
             if duration_s > timeout_poweron_s:
                 undetected_tentacles = len(hub4_locations) - len(usb_tentacles)
                 if undetected_tentacles > 0:
-                    print(
+                    logging.warning(
                         f"WARNING: {len(hub4_locations)} hubs have been detected but only {len(usb_tentacles)} rp2_infra! It seems that {undetected_tentacles} rp2_infra are not powered/responding. This might fix the problem: op query --poweron"
                     )
                 return usb_tentacles

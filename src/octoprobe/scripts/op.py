@@ -1,22 +1,19 @@
 from __future__ import annotations
 
-import time
+import typing
 from typing import Optional
 
 import typer
 import typing_extensions
 
-from .. import util_mcu_rp2
 from ..usb_tentacle.usb_constants import (
     TyperPowerCycle,
     TyperUsbPlug,
-    UsbPlug,
     UsbPlugs,
 )
 from ..usb_tentacle.usb_tentacle import UsbTentacle, UsbTentacles
-from ..util_pyudev import UdevPoller
 from ..util_pyudev_monitor import do_udev_monitor
-from . import typer_query
+from . import util_bootmode
 from .commissioning import do_commissioning
 from .install import URL_RELEASE_DEFAULT, do_install
 
@@ -32,7 +29,7 @@ TyperAnnotated = typing_extensions.Annotated
 app = typer.Typer()
 
 
-_SerialAnnotation = TyperAnnotated[
+_SerialsAnnotation = TyperAnnotated[
     Optional[list[str]],  # noqa: UP007
     typer.Option(help="Apply only to the selected tentacles"),
 ]
@@ -68,125 +65,53 @@ def commissioning() -> None:
     do_commissioning()
 
 
+def iter_usb_tentacles(
+    poweron: bool,
+    serials: list[str] | None,
+) -> typing.Iterator[UsbTentacle]:
+    """
+    Query and select tentacles.
+    Verbose iterate
+    """
+    usb_tentacles = UsbTentacles.query(poweron=poweron)
+    usb_tentacles = usb_tentacles.select(serials=serials)
+    for usb_tentacle in usb_tentacles:
+        print(usb_tentacle.label_long)
+        yield usb_tentacle
+
+
 @app.command(help="Power cycle usb ports.")
 def powercycle(
     power_cycle: TyperPowerCycle,
-    serial: TyperAnnotated[
-        Optional[list[str]],  # noqa: UP007
-        typer.Option(help="The serial number to be powercycled"),
-    ] = None,
+    serials: _SerialsAnnotation = None,
     poweron: _PoweronAnnotation = False,
 ) -> None:
-    usb_tentacles = UsbTentacles.query(poweron=poweron)
-    usb_tentacles = usb_tentacles.select(serials=serial)
-    usb_tentacles.powercycle(power_cycle=power_cycle)
-
-
-def _bootmode(usb_tentacle: UsbTentacle, is_infra: bool, picotool_cmd: bool) -> None:
-    if usb_tentacle.rp2_infra.serial is None:
-        print("Tentacle is already in boot mode. Please unconnect and reconnect USB.")
-        return
-
-    print("Press Boot Button.")
-    print("Power off PICO_INFRA and PICO_PROBE.")
-    usb_tentacle.set_plugs(
-        plugs=UsbPlugs(
-            {
-                UsbPlug.INFRA: False,
-                UsbPlug.PROBE: False,
-                UsbPlug.DUT: False,
-                UsbPlug.INFRABOOT: False,
-            }
-        )
-    )
-
-    time.sleep(0.1)
-
-    with UdevPoller() as guard:
-        print("Power on PICO_INFRA and PICO_PROBE.")
-        usb_tentacle.set_plugs(
-            plugs=UsbPlugs(
-                {
-                    UsbPlug.INFRA: True,
-                    UsbPlug.PROBE: True,
-                }
-            )
-        )
-        time.sleep(0.2)
-        print("Release Boot Button")
-        usb_tentacle.set_plugs(
-            plugs=UsbPlugs(
-                {
-                    UsbPlug.INFRABOOT: True,
-                }
-            )
-        )
-
-        rp2 = usb_tentacle.rp2_infra if is_infra else usb_tentacle.rp2_probe
-        tag = "PICO_INFRA" if is_infra else "PICO_PROBE"
-        assert rp2 is not None
-
-        if picotool_cmd:
-            udev_filter = util_mcu_rp2.rp2_udev_filter_boot_mode(
-                util_mcu_rp2.RPI_PICO_USB_ID.boot,
-                usb_location=rp2.location.short,
-            )
-        else:
-            udev_filter = util_mcu_rp2.rp2_udev_filter_boot_mode2(
-                util_mcu_rp2.RPI_PICO_USB_ID.boot,
-                usb_location=rp2.location.short,
-            )
-        event = guard.expect_event(
-            udev_filter=udev_filter,
-            text_where=f"Tentacle with serial {usb_tentacle.serial}",
-            text_expect=f"Expect {tag} in programming mode to become visible on udev after power on",
-            timeout_s=10.0,
-        )
-        if picotool_cmd:
-            assert isinstance(event, util_mcu_rp2.Rp2UdevBootModeEvent)
-            picotool = util_mcu_rp2.picotool_cmd(
-                event=event,
-                filename_firmware="firmware.uf2",
-            )
-            picotool_text = " ".join(picotool)
-            print(
-                f"{usb_tentacle.serial}: Detected {tag} on port {rp2.location.short}."
-            )
-            print("Please use:")
-            print("  " + picotool_text)
-        else:
-            assert isinstance(event, util_mcu_rp2.Rp2UdevBootModeEvent2)
-            print(
-                f"{usb_tentacle.serial}: Detected {tag} on port {rp2.location.short}."
-            )
-            print("Please use:")
-            print("  " + f"cp firmware.uf2 {event.mount_point}")
+    for usb_tentacle in iter_usb_tentacles(poweron=poweron, serials=serials):
+        usb_tentacle.powercycle(power_cycle=power_cycle)
 
 
 @app.command(help="Bring and PICO_INFRA into boot mode.")
 def bootmode_infra(
-    serial: _SerialAnnotation = None,
+    serials: _SerialsAnnotation = None,
     poweron: _PoweronAnnotation = False,
     picotool_cmd: _PicotoolCmdAnnotation = False,
 ) -> None:
-    usb_tentacles = UsbTentacles.query(poweron=poweron)
-    usb_tentacles = usb_tentacles.select(serials=serial)
-    # usb_tentacles.set_plugs(plugs=UsbPlugs.default_off())
-    for usb_tentacle in usb_tentacles:
-        _bootmode(usb_tentacle=usb_tentacle, is_infra=True, picotool_cmd=picotool_cmd)
+    for usb_tentacle in iter_usb_tentacles(poweron=poweron, serials=serials):
+        util_bootmode.bootmode(
+            usb_tentacle=usb_tentacle, is_infra=True, picotool_cmd=picotool_cmd
+        )
 
 
 @app.command(help="Bring and PICO_PROBE into boot mode.")
 def bootmode_probe(
-    serial: _SerialAnnotation = None,
+    serials: _SerialsAnnotation = None,
     poweron: _PoweronAnnotation = False,
     picotool_cmd: _PicotoolCmdAnnotation = False,
 ) -> None:
-    usb_tentacles = UsbTentacles.query(poweron=poweron)
-    usb_tentacles = usb_tentacles.select(serials=serial)
-    # usb_tentacles.set_plugs(plugs=UsbPlugs.default_off())
-    for usb_tentacle in usb_tentacles:
-        _bootmode(usb_tentacle=usb_tentacle, is_infra=False, picotool_cmd=picotool_cmd)
+    for usb_tentacle in iter_usb_tentacles(poweron=poweron, serials=serials):
+        util_bootmode.bootmode(
+            usb_tentacle=usb_tentacle, is_infra=False, picotool_cmd=picotool_cmd
+        )
 
 
 @app.command(help="Power on/off usb ports.")
@@ -199,17 +124,15 @@ def power(
         Optional[list[TyperUsbPlug]],  # noqa: UP007
         typer.Option(help="Power OFF given usb hub port on all tentacles"),
     ] = None,
-    serial: _SerialAnnotation = None,
+    serials: _SerialsAnnotation = None,
     set_off: TyperAnnotated[
         bool,
         typer.Option(
             help="Power OFF ALL usb hub ports (except infraboot) on ALL tentacles"
         ),
     ] = False,
+    poweron: _PoweronAnnotation = False,
 ) -> None:
-    usb_tentacles = UsbTentacles.query(poweron=False)
-    usb_tentacles = usb_tentacles.select(serials=serial)
-
     _on = TyperUsbPlug.convert(on)
     _off = TyperUsbPlug.convert(off)
 
@@ -222,15 +145,17 @@ def power(
     if _off is not None:
         for __off in _off:
             plugs[__off] = False
-    usb_tentacles.set_plugs(plugs)
 
-    print(plugs.text)
+    for usb_tentacle in iter_usb_tentacles(poweron=poweron, serials=serials):
+        usb_tentacle.set_plugs(plugs)
+
+        print(util_bootmode._DELIM + plugs.text)
 
 
 @app.command(help="Query connected tentacles.")
 def query(poweron: _PoweronAnnotation = False) -> None:
-    hubs = typer_query.Query(poweron=poweron)
-    hubs.print()
+    for _ in iter_usb_tentacles(poweron=poweron, serials=None):
+        pass
 
 
 if __name__ == "__main__":

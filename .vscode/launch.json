@@ -98,6 +98,8 @@
             "cwd": "${workspaceFolder}",
             "args": [
                 "bootmode-infra",
+                "--picotool-cmd",
+                "--poweron",
             ],
             "env": {
                 "PYTHONPATH": "${workspaceFolder}/src"
@@ -113,6 +115,8 @@
             "cwd": "${workspaceFolder}",
             "args": [
                 "bootmode-probe",
+                "--picotool-cmd",
+                "--poweron",
             ],
             "env": {
                 "PYTHONPATH": "${workspaceFolder}/src"
