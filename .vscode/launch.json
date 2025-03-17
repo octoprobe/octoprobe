@@ -91,13 +91,28 @@
             "justMyCode": false,
         },
         {
-            "name": "op bootmode",
+            "name": "op bootmode-infra",
             "type": "debugpy",
             "request": "launch",
             "module": "octoprobe.scripts.op",
             "cwd": "${workspaceFolder}",
             "args": [
-                "bootmode",
+                "bootmode-infra",
+            ],
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            },
+            "console": "integratedTerminal",
+            "justMyCode": false,
+        },
+        {
+            "name": "op bootmode-probe",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "octoprobe.scripts.op",
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "bootmode-probe",
             ],
             "env": {
                 "PYTHONPATH": "${workspaceFolder}/src"

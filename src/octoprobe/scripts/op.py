@@ -77,7 +77,7 @@ def powercycle(
     usb_tentacles.powercycle(power_cycle=power_cycle)
 
 
-def _bootmode(usb_tentacle: UsbTentacle) -> None:
+def _bootmode(usb_tentacle: UsbTentacle, is_infra: bool) -> None:
     if usb_tentacle.rp2_infra.serial is None:
         print("Tentacle is already in boot mode. Please unconnect and reconnect USB.")
         return
@@ -112,56 +112,7 @@ def _bootmode(usb_tentacle: UsbTentacle) -> None:
                 }
             )
         )
-
-        udev_filters = [
-            rp2_udev_filter_boot_mode2(
-                RPI_PICO_USB_ID.boot,
-                usb_location=usb_tentacle.rp2_infra.location.short,
-            )
-        ]
-        if usb_tentacle.rp2_probe is not None:
-            udev_filters.append(
-                rp2_udev_filter_boot_mode2(
-                    RPI_PICO_USB_ID.boot,
-                    usb_location=usb_tentacle.rp2_probe.location.short,
-                )
-            )
-        while True:
-            for _udev_filter_matched, event in guard._do_poll(
-                udev_filters=udev_filters,
-                text_where=f"Tentacle with serial {usb_tentacle.serial}",
-                text_expect=f"Expect XY in programming mode to become visible on udev after power on",
-                timeout_s=10.0,
-            ):
-                print(_udev_filter_matched, event)
-                udev_filters.remove(_udev_filter_matched)
-                if len(udev_filters) == 0:
-                    return
-
-        # def expect_mount(tag: str, usb_location: str) -> None:
-        #     udev_filter = rp2_udev_filter_boot_mode2(
-        #         RPI_PICO_USB_ID.boot,
-        #         usb_location=usb_location,
-        #     )
-        #     event = guard.expect_event(
-        #         udev_filters=[udev_filter_probe, udev_filter_infra],
-        #         text_where=f"Tentacle with serial {usb_tentacle.serial}",
-        #         text_expect=f"Expect {tag} in programming mode to become visible on udev after power on",
-        #         timeout_s=10.0,
-        #     )
-        #     assert isinstance(event, Rp2UdevBootModeEvent2)
-        #     print(f"{tag} on port {usb_location} is mounted on {event.mount_point}")
-
-        # if usb_tentacle.rp2_probe is not None:
-        #     expect_mount(
-        #         tag="PICO_PROBE",
-        #         usb_location=usb_tentacle.rp2_probe.location.short,
-        #     )
-        # expect_mount(
-        #     tag="PICO_INFRA",
-        #     usb_location=usb_tentacle.rp2_infra.location.short,
-        # )
-
+        time.sleep(0.2)
         print("Release Boot Button")
         usb_tentacle.set_plugs(
             plugs=UsbPlugs(
@@ -171,9 +122,29 @@ def _bootmode(usb_tentacle: UsbTentacle) -> None:
             )
         )
 
+        rp2 = usb_tentacle.rp2_infra if is_infra else usb_tentacle.rp2_probe
+        tag = "PICO_INFRA" if is_infra else "PICO_PROBE"
+        assert rp2 is not None
 
-@app.command(help="Bring PICO_INFRA and PICO_PROBE into boot mode.")
-def bootmode(
+        udev_filter = rp2_udev_filter_boot_mode2(
+            RPI_PICO_USB_ID.boot,
+            usb_location=rp2.location.short,
+        )
+
+        event = guard.expect_event(
+            udev_filter=udev_filter,
+            text_where=f"Tentacle with serial {usb_tentacle.serial}",
+            text_expect=f"Expect {tag} in programming mode to become visible on udev after power on",
+            timeout_s=10.0,
+        )
+        assert isinstance(event, Rp2UdevBootModeEvent2)
+        print(
+            f"{usb_tentacle.serial}: {tag} on port {rp2.location.short} is mounted on {event.mount_point}"
+        )
+
+
+@app.command(help="Bring and PICO_INFRA into boot mode.")
+def bootmode_infra(
     serial: _SerialAnnotation = None,
     poweron: _PoweronAnnotation = False,
 ) -> None:
@@ -181,7 +152,19 @@ def bootmode(
     usb_tentacles = usb_tentacles.select(serials=serial)
     # usb_tentacles.set_plugs(plugs=UsbPlugs.default_off())
     for usb_tentacle in usb_tentacles:
-        _bootmode(usb_tentacle=usb_tentacle)
+        _bootmode(usb_tentacle=usb_tentacle, is_infra=True)
+
+
+@app.command(help="Bring and PICO_PROBE into boot mode.")
+def bootmode_probe(
+    serial: _SerialAnnotation = None,
+    poweron: _PoweronAnnotation = False,
+) -> None:
+    usb_tentacles = UsbTentacles.query(poweron=poweron)
+    usb_tentacles = usb_tentacles.select(serials=serial)
+    # usb_tentacles.set_plugs(plugs=UsbPlugs.default_off())
+    for usb_tentacle in usb_tentacles:
+        _bootmode(usb_tentacle=usb_tentacle, is_infra=False)
 
 
 @app.command(help="Power on/off usb ports.")
