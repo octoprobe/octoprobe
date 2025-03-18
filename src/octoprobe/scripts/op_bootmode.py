@@ -72,19 +72,19 @@ def do_bootmode(
             )
         )
 
-        rp2 = usb_tentacle.pico_infra if is_infra else usb_tentacle.pico_probe
+        pico = usb_tentacle.pico_infra if is_infra else usb_tentacle.pico_probe
         tag = "PICO_INFRA" if is_infra else "PICO_PROBE"
-        assert rp2 is not None
+        assert pico is not None
 
         if picotool_cmd:
             udev_filter = util_mcu_pico.pico_udev_filter_boot_mode(
                 util_mcu_pico.RPI_PICO_USB_ID.boot,
-                usb_location=rp2.location.short,
+                usb_location=pico.location.short,
             )
         else:
             udev_filter = util_mcu_pico.pico_udev_filter_boot_mode2(
                 util_mcu_pico.RPI_PICO_USB_ID.boot,
-                usb_location=rp2.location.short,
+                usb_location=pico.location.short,
             )
         event = guard.expect_event(
             udev_filter=udev_filter,
@@ -101,14 +101,14 @@ def do_bootmode(
             )
             picotool_text = " ".join(picotool)
             print_cb(
-                DELIM + f"Detected {tag} on port {rp2.location.short}. Please flash:"
+                DELIM + f"Detected {tag} on port {pico.location.short}. Please flash:"
             )
             print_cb(DELIM2 + picotool_text)
             return event
         else:
             assert isinstance(event, util_mcu_pico.Rp2UdevBootModeEvent2)
             print_cb(
-                DELIM + f"Detected {tag} on port {rp2.location.short}. Please flash:"
+                DELIM + f"Detected {tag} on port {pico.location.short}. Please flash:"
             )
             print_cb(DELIM2 + f"cp firmware.uf2 {event.mount_point}")
             return None

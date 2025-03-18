@@ -25,10 +25,10 @@ class CtxTestRun:
     @staticmethod
     def session_powercycle_tentacles() -> UsbTentacles:
         """
-        Powers all RP2 infra.
-        Finds all tentacle by finding pico_unique_id of the RP2 infra.
+        Powers all Pico infra.
+        Finds all tentacle by finding pico_unique_id of the Pico infra.
         """
-        # We have to reset the power for all rp2-infra to become visible
+        # We have to reset the power for all pico-infra to become visible
         return UsbTentacles.query(poweron=FULL_POWERCYCLE_ALL_TENTACLES)
 
     def session_teardown(self) -> None:

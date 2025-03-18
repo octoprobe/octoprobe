@@ -1,7 +1,7 @@
 """
 Terms:
 
-* rp2: A raspberry pi pico soldered on to the tentacle.
+* pico: A raspberry pi pico soldered on to the tentacle.
 * hub4: A hub soldered on to the tentacle.
 * plug: A hub has 4 plugs - we do NOT use the term 'port' as this term conflicts with serial port.
 * port: A comport in the context of the python 'serial' package.
@@ -13,7 +13,7 @@ This module controls the tentacle via usb.
 
 It allows to query for
 * tentacles
-* rp2 on the tentacle and there state:
+* pico on the tentacle and there state:
   * unpowered
   * in boot mode
   * in application mode presenting its serial number
@@ -85,9 +85,9 @@ def assert_serialdelimtied_valid(serial_delimited: str) -> None:
 
 
 # Specification of a raspberry pi pico soldered on to the tentacle
-RP2_VENDOR = 0x2E8A
-RP2_PRODUCT_BOOT_MODE = 0x0003
-RP2_PRODUCT_APPLICATION_MODE = 0x0005
+PICO_VENDOR = 0x2E8A
+PICO_PRODUCT_BOOT_MODE = 0x0003
+PICO_PRODUCT_APPLICATION_MODE = 0x0005
 
 # Specification of a hub soldered on to a tentacle
 HUB4_VENDOR = 0x0424
@@ -99,7 +99,7 @@ class UsbPico:
     location: Location
     serial: str | None
     """
-    None: rp2 is in boot mode and the serial is not known.
+    None: pico is in boot mode and the serial is not known.
     """
     serial_port: str | None
 
@@ -167,9 +167,9 @@ class UsbTentacle:
 
     pico_infra: UsbPico
     """
-    The usb-location of the rp2 on the tentacle pcb
+    The usb-location of the pico on the tentacle pcb
     and the serial number if known.
-    None: The rp2 is powered off.
+    None: The pico is powered off.
     """
     pico_probe: UsbPico | None = None
 
@@ -266,7 +266,7 @@ class UsbTentacle:
     def __repr__(self) -> str:
         repr = f"UsbTentacle({self.hub4_location.short}"
         if self.pico_infra is not None:
-            repr += f"rp2(application_mode={self.pico_infra.application_mode}"
+            repr += f"pico(application_mode={self.pico_infra.application_mode}"
             if self.pico_infra.application_mode:
                 repr += f",serial={self.pico_infra.serial}"
                 repr += f",serial_port={self.pico_infra.serial_port}"
@@ -294,7 +294,7 @@ class UsbTentacle:
             words.append(str(self.pico_infra.serial))
             words.append(str(self.pico_infra.serial_port))
         else:
-            words.append("RP2 in boot (programming) mode.")
+            words.append(" in boot (programming) mode.")
         return " ".join(words)
 
     @property
@@ -358,75 +358,75 @@ def _query_hubs() -> list[Location]:
 
 def _query_pico_boot_mode() -> list[UsbPico]:
     """
-    Query all rp2 in boot mode.
-    This will return also rp2 which are not soldered on the tentacles.
+    Query all pico in boot mode.
+    This will return also pico which are not soldered on the tentacles.
     """
     return [
         UsbPico.factory_device(device=device)
-        for device in usb.core.find(idVendor=RP2_VENDOR, find_all=True)
-        if device.idProduct == RP2_PRODUCT_BOOT_MODE
+        for device in usb.core.find(idVendor=PICO_VENDOR, find_all=True)
+        if device.idProduct == PICO_PRODUCT_BOOT_MODE
     ]
 
 
 def _query_pico_serial() -> list[UsbPico]:
     """
-    Query all rp2 in application mode which provide the serial number.
-    This will return also rp2 which are not soldered on the tentacles.
+    Query all pico in application mode which provide the serial number.
+    This will return also pico which are not soldered on the tentacles.
     """
     return [
         UsbPico.factory_sysfs(
             port=port, serial=port.serial_number, serial_port=port.device
         )
         for port in list_ports.comports()
-        if (RP2_VENDOR == port.vid) and (RP2_PRODUCT_APPLICATION_MODE == port.pid)
+        if (PICO_VENDOR == port.vid) and (PICO_PRODUCT_APPLICATION_MODE == port.pid)
     ]
 
 
-def _combine_hubs_and_rp2(
+def _combine_hubs_and_pico(
     hub4_locations: list[Location],
-    list_rp2: list[UsbPico],
+    list_pico: list[UsbPico],
 ) -> UsbTentacles:
     """
-    Now we combine 'hubs' and 'list_rp2'
+    Now we combine 'hubs' and 'list_pico'
     """
 
     def get_tentacle_version(hub4_location: Location) -> UsbTentacle | None:
         """
-        There might be rp2 connected, but we are only intersted in the rp2 infra!
+        There might be pico connected, but we are only intersted in the pico infra!
         """
 
-        dict_usb_rp2: dict[int, UsbPico] = {}
-        for rp2 in list_rp2:
-            if rp2.location.bus != hub4_location.bus:
+        dict_usb_pico: dict[int, UsbPico] = {}
+        for pico in list_pico:
+            if pico.location.bus != hub4_location.bus:
                 return None
-            if rp2.location.path[:-1] != hub4_location.path:
+            if pico.location.path[:-1] != hub4_location.path:
                 continue
-            hub_port = rp2.location.path[-1]
+            hub_port = pico.location.path[-1]
             if hub_port == HubPortNumber.IDX1_3:
-                # The DUT might be a rp2, we ignore it
+                # The DUT might be a pico, we ignore it
                 continue
-            dict_usb_rp2[hub_port] = rp2
+            dict_usb_pico[hub_port] = pico
 
-        if len(dict_usb_rp2) == 0:
+        if len(dict_usb_pico) == 0:
             return None
 
-        if TENTACLE_VERSION_V04.portnumber_pico_infra in dict_usb_rp2:
+        if TENTACLE_VERSION_V04.portnumber_pico_infra in dict_usb_pico:
             assert TENTACLE_VERSION_V04.portnumber_pico_probe is not None
-            pico_infra = dict_usb_rp2[TENTACLE_VERSION_V04.portnumber_pico_infra]
+            pico_infra = dict_usb_pico[TENTACLE_VERSION_V04.portnumber_pico_infra]
             return UsbTentacle(
                 hub4_location=hub4_location,
                 tentacle_version=TENTACLE_VERSION_V04,
                 pico_infra=pico_infra,
                 pico_probe=pico_infra.as_pico_probe,
             )
-        if TENTACLE_VERSION_V03.portnumber_pico_infra in dict_usb_rp2:
+        if TENTACLE_VERSION_V03.portnumber_pico_infra in dict_usb_pico:
             return UsbTentacle(
                 hub4_location=hub4_location,
                 tentacle_version=TENTACLE_VERSION_V03,
-                pico_infra=dict_usb_rp2[TENTACLE_VERSION_V03.portnumber_pico_infra],
+                pico_infra=dict_usb_pico[TENTACLE_VERSION_V03.portnumber_pico_infra],
             )
         raise ValueError(
-            f"The rp2 infra is always connected on port {TENTACLE_VERSION_V03.portnumber_pico_infra} or {TENTACLE_VERSION_V04.portnumber_pico_infra}, but found rp2 on ports {sorted(dict_usb_rp2)}!"
+            f"The pico infra is always connected on port {TENTACLE_VERSION_V03.portnumber_pico_infra} or {TENTACLE_VERSION_V04.portnumber_pico_infra}, but found pico on ports {sorted(dict_usb_pico)}!"
         )
 
     tentacles = UsbTentacles()
@@ -438,7 +438,7 @@ def _combine_hubs_and_rp2(
 
 
 class UsbTentacles(list[UsbTentacle]):
-    TIMEOUT_RP2_BOOT = 2.0
+    TIMEOUT_PICO_BOOT = 2.0
 
     def set_power(self, plug: UsbPlug, on: bool) -> None:
         for usb_tentacle in self:
@@ -477,10 +477,10 @@ class UsbTentacles(list[UsbTentacle]):
     @classmethod
     def query(cls, poweron: bool) -> UsbTentacles:
         """
-        Some rp2 may not present a serial number as they are not powered.
+        Some pico may not present a serial number as they are not powered.
 
-        poweron == True: Switch on all unpowered rp2 and wait till the serial numbers appear.
-          If a hub does not find a corresponding rp2 serial number: An exception is thrown.
+        poweron == True: Switch on all unpowered pico and wait till the serial numbers appear.
+          If a hub does not find a corresponding pico serial number: An exception is thrown.
           This is typically used for testing.
 
         poweron == False: Just query without changing any power states.
@@ -488,23 +488,23 @@ class UsbTentacles(list[UsbTentacle]):
 
         # Manual testing of this class: poweron == True:
         Rationale: A exception should be throw if there is tentacle is 'not in order'.
-        If a tentacle rp2 is not powered, the query should power it on and wait till the rp2 appears.
+        If a tentacle pico is not powered, the query should power it on and wait till the pico appears.
         Throw an exception if after some timeout:
-        * A tentacle rp2 is still in boot mode
-        * A tentacle rp2 is still not powered
+        * A tentacle pico is still in boot mode
+        * A tentacle pico is still not powered
 
 
         # Manual testing of this class: poweron == False:
         Rationale: The query should return fast without changing the power state.
         All tentacles should be visible:
         * Tentacle with serial
-        * Tentacle with rp2 in boot mode
-        * Tentacle with rp2 powered off
+        * Tentacle with pico in boot mode
+        * Tentacle with pico powered off
         """
 
         #
         # Identify all tentalces by getting a list of all hubs.
-        # Power on all rp2 infra to be able to read the serial numbers.
+        # Power on all pico infra to be able to read the serial numbers.
         #
         hub4_locations = _query_hubs()
 
@@ -531,18 +531,18 @@ class UsbTentacles(list[UsbTentacle]):
 
         begin_s = time.monotonic()
         #
-        # We loop till all rp2 present there serial numbers.
+        # We loop till all pico present there serial numbers.
         #
         while True:
-            list_rp2 = _query_pico_serial()
+            list_pico = _query_pico_serial()
             # if not poweron:
-            #     # if poweron == False: We also query rp2 in boot mode
-            #     list_rp2.extend(_query_pico_boot_mode())
-            list_rp2.extend(_query_pico_boot_mode())
+            #     # if poweron == False: We also query pico in boot mode
+            #     list_pico.extend(_query_pico_boot_mode())
+            list_pico.extend(_query_pico_boot_mode())
 
-            usb_tentacles = _combine_hubs_and_rp2(
+            usb_tentacles = _combine_hubs_and_pico(
                 hub4_locations=hub4_locations,
-                list_rp2=list_rp2,
+                list_pico=list_pico,
             )
             duration_s = time.monotonic() - begin_s
             if duration_s > timeout_poweron_s:

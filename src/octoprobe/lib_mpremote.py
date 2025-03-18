@@ -51,7 +51,7 @@ class MpRemote:
         )
         # TODO: It would be beneficial to add a timeout parameter to mpremote
         # Rationale. The timeout is required as 'mp_remote.exec_raw()' may block forever as
-        # it will not return from 'serial.read()'. This happens when a rp2 is flashed with
+        # it will not return from 'serial.read()'. This happens when a pico is flashed with
         # this firmware: https://github.com/gusmanb/logicanalyzer
         # self.state.transport.serial.timeout = timeout_s
 

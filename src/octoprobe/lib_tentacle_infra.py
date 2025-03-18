@@ -20,8 +20,8 @@ class TentacleInfra:
     """
     The Infrastructure side of a tentacle PCB.
 
-    * Allows to program the RP2
-    * Allows to run micropython code on the RP2.
+    * Allows to program the Pico
+    * Allows to run micropython code on the Pico.
     """
 
     @staticmethod
@@ -34,14 +34,14 @@ class TentacleInfra:
         assert isinstance(usb_tentacle, UsbTentacle)
 
         # pylint: disable=import-outside-toplevel
-        from .lib_tentacle_infra_pico import InfraRP2
+        from .lib_tentacle_infra_pico import InfraPico
 
         self.label = label
         self.usb_tentacle = usb_tentacle
         self.power = TentaclePlugsPower(usb_tentacle=self.usb_tentacle)
         self._mp_remote: MpRemote | None = None
         self._power: TentaclePlugsPower | None = None
-        self.mcu_infra: InfraRP2 = InfraRP2(self)
+        self.mcu_infra: InfraPico = InfraPico(self)
 
     def is_valid_relay_index(self, i: int) -> bool:
         return i in self.list_all_relays
@@ -132,9 +132,9 @@ class TentacleInfra:
         directory_test: pathlib.Path,
     ) -> None:
         """
-        Flashed the RP2.
+        Flashed the Pico.
 
-        Attach self._mp_remote to the serial port of this RP2
+        Attach self._mp_remote to the serial port of this Pico
         """
         # pylint: disable=import-outside-toplevel
         from .util_mcu_pico import (
@@ -153,8 +153,8 @@ class TentacleInfra:
         time.sleep(0.1)
 
         with udev.guard as guard:
-            # Power on RP2
-            # print("Power on RP2")
+            # Power on Pico
+            # print("Power on Pico")
             self.power.infra = True
 
             udev_filter = pico_udev_filter_boot_mode(
@@ -164,7 +164,7 @@ class TentacleInfra:
             event = guard.expect_event(
                 udev_filter=udev_filter,
                 text_where=self.label,
-                text_expect="Expect RP2 in programming mode to become visible on udev after power on",
+                text_expect="Expect Pico in programming mode to become visible on udev after power on",
                 timeout_s=2.0,
             )
 
@@ -173,7 +173,7 @@ class TentacleInfra:
             self.power.infraboot = True
 
         with udev.guard as guard:
-            # This will flash the RP2
+            # This will flash the Pico
             # print("Flash")
             picotool_flash_micropython(
                 event=event,
@@ -181,7 +181,7 @@ class TentacleInfra:
                 filename_firmware=filename_firmware,
             )
 
-            # The RP2 will reboot in application mode
+            # The Pico will reboot in application mode
             # and we wait for this event here
             udev_filter = udev_filter_application_mode(
                 usb_id=RPI_PICO_USB_ID.application,
@@ -190,7 +190,7 @@ class TentacleInfra:
             event = udev.expect_event(
                 udev_filter=udev_filter,
                 text_where=self.label,
-                text_expect="Expect RP2 in application mode to become visible on udev after programming ",
+                text_expect="Expect Pico in application mode to become visible on udev after programming ",
                 timeout_s=3.0,
             )
 

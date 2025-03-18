@@ -1,5 +1,5 @@
 """
-This file implements generic logic for all boards with a RP2040/RP2350 mcu or alike.
+This file implements generic logic for all boards with a Pico040/Pico350 mcu or alike.
 """
 
 import logging
@@ -157,7 +157,7 @@ class DutProgrammerPicotool(DutProgrammerABC):
             event = guard.expect_event(
                 udev_filter=udev_filter,
                 text_where=tentacle.dut.label,
-                text_expect="Expect RP2 to become visible on udev after power on",
+                text_expect="Expect  to become visible on udev after power on",
                 timeout_s=2.0,
             )
 

@@ -140,7 +140,7 @@ class Location:
         This is returnemd from the 'location' property of the 'Device' object of the 'serial' library.
         """
         assert isinstance(port, list_ports_linux.SysFS)
-        # This is a RP2 in application mode.
+        # This is a Pico in application mode.
         # Returned from package 'list_ports', method 'serial.list_ports'
         location, _, _ = port.location.partition(":")
         bus_str, _, path_str = location.partition("-")
@@ -151,7 +151,7 @@ class Location:
     @staticmethod
     def factory_device(device: usb.core.Device) -> Location:
         assert isinstance(device, usb.core.Device)
-        # This is a RP2 in boot mode.
+        # This is a Pico in boot mode.
         return Location(bus=device.bus, path=list(device.port_numbers))
 
     def sysfs_path(self, hub_port: HubPortNumber) -> pathlib.Path:

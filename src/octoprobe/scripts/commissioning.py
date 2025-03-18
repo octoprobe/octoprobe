@@ -29,8 +29,8 @@ def do_commissioning() -> None:
       * Toggle Error LED
       * Infra Boot: On
       * Infra Power: On
-    RP2 Infra
-      * Program RP2
+     Infra
+      * Program Pico
       * Cycle Relays
       * Toggle DUT Boot
     """
@@ -43,7 +43,7 @@ def do_commissioning() -> None:
         c = Commissioning()
         try:
             with UdevPoller() as udev:
-                c.do_program_rp2(udev=udev, firmware_spec=firmware_spec)
+                c.do_program_pici(udev=udev, firmware_spec=firmware_spec)
                 while True:
                     c.do_commissioning()
         except Exception as e:
@@ -99,7 +99,7 @@ class Commissioning:
                 continue
             return usb_tentacles[0]
 
-    def do_program_rp2(
+    def do_program_pici(
         self,
         udev: UdevPoller,
         firmware_spec: FirmwareDownloadSpec,

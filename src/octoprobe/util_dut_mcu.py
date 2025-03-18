@@ -58,7 +58,7 @@ class DutMicropythonSTM32(DutMcu):
         return tty
 
 
-class DutMicropythonRP2(DutMcu):
+class DutMicropythonPico(DutMcu):
     def application_mode_power_up(
         self,
         tentacle: TentacleBase,
@@ -285,7 +285,7 @@ def dut_mcu_factory(tags: str) -> DutMcu:
     if mcu == "stm32":
         return DutMicropythonSTM32()
     if mcu == "rp2":
-        return DutMicropythonRP2()
+        return DutMicropythonPico()
     if mcu == "esp8266":
         return DutMicropythonEsp8266()
     if mcu == "esp32":

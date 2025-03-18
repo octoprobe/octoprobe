@@ -4,11 +4,11 @@ from .lib_tentacle import TentacleInfra
 from .util_jinja2 import render
 
 
-class InfraRP2:
+class InfraPico:
     """
     This class wrapps all the calls to
     micropython running on
-    the infrastructure-RP2 on the tentacle.
+    the infrastructure-Pico on the tentacle.
 
     The interface is type save and all micropython code is hidden in this class.
     """
