@@ -102,7 +102,9 @@ class TentacleInfra:
             # We are already connected
             return
 
-        self._mp_remote = MpRemote(tty=self.usb_tentacle.serial_port)
+        serial_port = self.usb_tentacle.serial_port
+        assert serial_port is not None
+        self._mp_remote = MpRemote(tty=serial_port)
 
     def setup_infra(self, udev: UdevPoller) -> None:
         self.connect_mpremote_if_needed()

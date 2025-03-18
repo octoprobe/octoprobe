@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import dataclasses
 import logging
+import re
 import time
 
 import usb.core
@@ -47,6 +48,40 @@ from ..usb_tentacle.usb_constants import TyperPowerCycle, UsbPlug, UsbPlugs
 logger = logging.Logger(__file__)
 
 SERIALNUMBER_SHORT = 4
+SERIALNUMBER_DELIMITER = "-"
+
+REGEX_SERIAL_DELIMITED = re.compile(r"^\w{12}-\w{4}$")
+REGEX_SERIAL = re.compile(r"^\w{16}$")
+
+
+def serial_delimited(serial: str) -> str:
+    return (
+        serial[:-SERIALNUMBER_SHORT]
+        + SERIALNUMBER_DELIMITER
+        + serial[-SERIALNUMBER_SHORT:]
+    )
+
+
+def is_serial_valid(serial: str) -> bool:
+    return REGEX_SERIAL.match(serial) is not None
+
+
+def is_serialdelimtied_valid(serial_delimited: str) -> bool:
+    return REGEX_SERIAL_DELIMITED.match(serial_delimited) is not None
+
+
+def assert_serial_valid(serial: str) -> None:
+    if not is_serial_valid(serial=serial):
+        raise ValueError(
+            f"Serial '{serial}' is not valid. Expected: {REGEX_SERIAL.pattern}"
+        )
+
+
+def assert_serialdelimtied_valid(serial_delimited: str) -> None:
+    if not is_serialdelimtied_valid(serial_delimited=serial_delimited):
+        raise ValueError(
+            f"Serial '{serial_delimited}' is not valid. Expected: {REGEX_SERIAL_DELIMITED.pattern}"
+        )
 
 
 # Specification of a raspberry pi pico soldered on to the tentacle
@@ -71,6 +106,12 @@ class UsbRp2:
     @property
     def application_mode(self) -> bool:
         return self.serial is not None
+
+    @property
+    def serial_delimited(self) -> str | None:
+        if self.serial is None:
+            return None
+        return serial_delimited(serial=self.serial)
 
     @staticmethod
     def factory_sysfs(
@@ -143,14 +184,14 @@ class UsbTentacle:
         assert isinstance(plug, UsbPlug)
         assert isinstance(on, bool)
 
-        plug_text = f"usbplug {plug.name} {self.hub4_location.short}"
+        hub_port = self.get_hub_port(plug=plug)
+        plug_text = f"usbplug {plug.name} {self.hub4_location.short} port {hub_port} ({self.tentacle_version.version})"
 
         if on == self.get_power(plug=plug):
             logger.debug(f"{plug_text} is allready {on}")
             return False
 
         self._cache_on[plug] = on
-        hub_port = self.get_hub_port(plug=plug)
         if hub_port is None:
             # TODO: Handle correctly
             return False
@@ -255,33 +296,46 @@ class UsbTentacle:
         return " ".join(words)
 
     @property
-    def serial(self) -> str:
+    def serial(self) -> str | None:
         rp2_infra = self.rp2_infra
-        assert rp2_infra is not None
+        if rp2_infra is None:
+            return None
         serial = rp2_infra.serial
-        assert serial is not None
+        if serial is None:
+            return None
         return serial
 
     @property
     def serial_short(self) -> str:
+        assert self.serial is not None
         return self.serial[-SERIALNUMBER_SHORT:]
+
+    @property
+    def serial_delimited(self) -> str:
+        assert self.serial is not None
+        return serial_delimited(serial=self.serial)
 
     @property
     def label_long(self) -> str:
         words = ["Tentacle"]
         if self.rp2_infra.serial is not None:
-            words.append(f"{self.serial_short}({self.serial})")
+            words.append(self.serial_delimited)
         else:
-            words.append(" in boot mode ")
+            words.append("in boot mode")
+        words.append(self.tentacle_version.version)
         words.append(f"on USB {self.hub4_location.short}")
+        if self.serial_port is not None:
+            words.append(self.serial_port)
         return " ".join(words)
 
     @property
-    def serial_port(self) -> str:
+    def serial_port(self) -> str | None:
         rp2_infra = self.rp2_infra
-        assert rp2_infra is not None
+        if rp2_infra is None:
+            return None
         serial_port = rp2_infra.serial_port
-        assert serial_port is not None
+        if serial_port is None:
+            return None
         return serial_port
 
 
