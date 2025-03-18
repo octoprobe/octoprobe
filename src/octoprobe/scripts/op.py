@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import pathlib
 import typing
 from typing import Optional
 
@@ -13,9 +14,10 @@ from ..usb_tentacle.usb_constants import (
 )
 from ..usb_tentacle.usb_tentacle import UsbTentacle, UsbTentacles
 from ..util_pyudev_monitor import do_udev_monitor
-from . import util_bootmode
+from . import op_bootmode, op_flash
 from .commissioning import do_commissioning
-from .install import URL_RELEASE_DEFAULT, do_install
+from .op_install import URL_RELEASE_DEFAULT, do_install
+from .op_logging import init_logging
 
 # 'typer' does not work correctly with typing.Annotated
 # Required is: typing_extensions.Annotated
@@ -46,6 +48,11 @@ _PicotoolCmdAnnotation = TyperAnnotated[
     typer.Option(help="Show the picotoolcommand."),
 ]
 
+# _FirmwareAnnotation = TyperAnnotated[
+#     typer.Fil,
+#     typer.Option(help="The firmware ending with '.uf2'."),
+# ]
+
 
 @app.command(help="Installs some binaries which require root rights.")
 def install(url: str = URL_RELEASE_DEFAULT) -> None:
@@ -73,11 +80,14 @@ def iter_usb_tentacles(
     Query and select tentacles.
     Verbose iterate
     """
+    init_logging()
+
     usb_tentacles = UsbTentacles.query(poweron=poweron)
     usb_tentacles = usb_tentacles.select(serials=serials)
     for usb_tentacle in usb_tentacles:
         print(usb_tentacle.label_long)
         yield usb_tentacle
+        print()
 
 
 @app.command(help="Power cycle usb ports.")
@@ -97,7 +107,7 @@ def bootmode_infra(
     picotool_cmd: _PicotoolCmdAnnotation = False,
 ) -> None:
     for usb_tentacle in iter_usb_tentacles(poweron=poweron, serials=serials):
-        util_bootmode.bootmode(
+        op_bootmode.do_bootmode(
             usb_tentacle=usb_tentacle, is_infra=True, picotool_cmd=picotool_cmd
         )
 
@@ -109,9 +119,29 @@ def bootmode_probe(
     picotool_cmd: _PicotoolCmdAnnotation = False,
 ) -> None:
     for usb_tentacle in iter_usb_tentacles(poweron=poweron, serials=serials):
-        util_bootmode.bootmode(
+        op_bootmode.do_bootmode(
             usb_tentacle=usb_tentacle, is_infra=False, picotool_cmd=picotool_cmd
         )
+
+
+@app.command(help="Flash firmware to PICO_INFRA.")
+def flash_infra(
+    firmware: pathlib.Path,
+    serials: _SerialsAnnotation = None,
+    poweron: _PoweronAnnotation = False,
+) -> None:
+    for usb_tentacle in iter_usb_tentacles(poweron=poweron, serials=serials):
+        op_flash.do_flash(usb_tentacle=usb_tentacle, is_infra=True, firmware=firmware)
+
+
+@app.command(help="Flash firmware to PICO_PROBE.")
+def flash_probe(
+    firmware: pathlib.Path,
+    serials: _SerialsAnnotation = None,
+    poweron: _PoweronAnnotation = False,
+) -> None:
+    for usb_tentacle in iter_usb_tentacles(poweron=poweron, serials=serials):
+        op_flash.do_flash(usb_tentacle=usb_tentacle, is_infra=False, firmware=firmware)
 
 
 @app.command(help="Power on/off usb ports.")
@@ -149,7 +179,7 @@ def power(
     for usb_tentacle in iter_usb_tentacles(poweron=poweron, serials=serials):
         usb_tentacle.set_plugs(plugs)
 
-        print(util_bootmode._DELIM + plugs.text)
+        print(op_bootmode.DELIM + plugs.text)
 
 
 @app.command(help="Query connected tentacles.")

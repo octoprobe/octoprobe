@@ -125,6 +125,38 @@
             "justMyCode": false,
         },
         {
+            "name": "op flash-infra",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "octoprobe.scripts.op",
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "flash-infra",
+                "${userHome}/octoprobe_downloads/cache_firmware/RPI_PICO-20240602-v1.23.0.uf2",
+            ],
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            },
+            "console": "integratedTerminal",
+            "justMyCode": false,
+        },
+        {
+            "name": "op flash-probe",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "octoprobe.scripts.op",
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "flash-probe",
+                "${userHome}/Downloads/debugprobe_on_pico.uf2",
+            ],
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            },
+            "console": "integratedTerminal",
+            "justMyCode": false,
+        },
+        {
             "name": "op cycle dut",
             "type": "debugpy",
             "request": "launch",

@@ -1,4 +1,3 @@
-import json
 import logging
 import logging.config
 import pathlib
@@ -15,9 +14,6 @@ from ..util_constants import (
 
 logger = logging.getLogger(__file__)
 
-DIRECTORY_OF_THIS_FILE = pathlib.Path(__file__).parent
-FILENAME_LOGGING_JSON = DIRECTORY_OF_THIS_FILE / "commissioning_logging.json"
-assert FILENAME_LOGGING_JSON.is_file()
 
 
 URL_RELEASE_DEFAULT = (
@@ -25,13 +21,8 @@ URL_RELEASE_DEFAULT = (
 )
 
 
-def init_logging() -> None:
-    logging.config.dictConfig(json.loads(FILENAME_LOGGING_JSON.read_text()))
-
 
 def do_install(url: str) -> None:
-    init_logging()
-
     logger.info(f"Binaries download from: {url}")
 
     tmp_filename, _headers = urlretrieve(url=url)

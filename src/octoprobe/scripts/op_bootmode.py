@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import time
+import typing
 
 from .. import util_mcu_pico
 from ..usb_tentacle.usb_constants import (
@@ -10,20 +11,34 @@ from ..usb_tentacle.usb_constants import (
 from ..usb_tentacle.usb_tentacle import UsbTentacle
 from ..util_pyudev import UdevPoller
 
-_DELIM = "  "
-_DELIM2 = "    "
+DELIM = "  "
+DELIM2 = "    "
 
 
-def bootmode(usb_tentacle: UsbTentacle, is_infra: bool, picotool_cmd: bool) -> None:
+def do_bootmode(
+    usb_tentacle: UsbTentacle,
+    is_infra: bool,
+    picotool_cmd: bool,
+    print_cb: typing.Callable[[str], None] = print,
+) -> util_mcu_pico.Rp2UdevBootModeEvent | None:
     if usb_tentacle.pico_infra.serial is None:
         print(
-            _DELIM
+            DELIM
             + "Tentacle is already in boot mode. Please unconnect and reconnect USB."
         )
-        return
+        return None
 
-    print(_DELIM + "Press Boot Button.")
-    print(_DELIM + "Power off PICO_INFRA and PICO_PROBE.")
+    if not is_infra:
+        if usb_tentacle.pico_probe is None:
+            # This is a v0.3 tentacle without a PICO_PROBE
+            print(
+                DELIM
+                + f"SKIPPED: Tentacle {usb_tentacle.tentacle_version.version} does not have a PICO_PROBE."
+            )
+            return None
+
+    print_cb(DELIM + "Press Boot Button.")
+    print_cb(DELIM + "Power off PICO_INFRA and PICO_PROBE.")
     usb_tentacle.set_plugs(
         plugs=UsbPlugs(
             {
@@ -38,7 +53,7 @@ def bootmode(usb_tentacle: UsbTentacle, is_infra: bool, picotool_cmd: bool) -> N
     time.sleep(0.1)
 
     with UdevPoller() as guard:
-        print(_DELIM + "Power on PICO_INFRA and PICO_PROBE.")
+        print_cb(DELIM + "Power on PICO_INFRA and PICO_PROBE.")
         usb_tentacle.set_plugs(
             plugs=UsbPlugs(
                 {
@@ -48,7 +63,7 @@ def bootmode(usb_tentacle: UsbTentacle, is_infra: bool, picotool_cmd: bool) -> N
             )
         )
         time.sleep(0.2)
-        print(_DELIM + "Release Boot Button.")
+        print_cb(DELIM + "Release Boot Button.")
         usb_tentacle.set_plugs(
             plugs=UsbPlugs(
                 {
@@ -77,7 +92,7 @@ def bootmode(usb_tentacle: UsbTentacle, is_infra: bool, picotool_cmd: bool) -> N
             text_expect=f"Expect {tag} in programming mode to become visible on udev after power on",
             timeout_s=10.0,
         )
-        print()
+        print_cb("")
         if picotool_cmd:
             assert isinstance(event, util_mcu_pico.Rp2UdevBootModeEvent)
             picotool = util_mcu_pico.picotool_cmd(
@@ -85,13 +100,15 @@ def bootmode(usb_tentacle: UsbTentacle, is_infra: bool, picotool_cmd: bool) -> N
                 filename_firmware="firmware.uf2",
             )
             picotool_text = " ".join(picotool)
-            print(
-                _DELIM + f"Detected {tag} on port {rp2.location.short}. Please flash:"
+            print_cb(
+                DELIM + f"Detected {tag} on port {rp2.location.short}. Please flash:"
             )
-            print(_DELIM2 + picotool_text)
+            print_cb(DELIM2 + picotool_text)
+            return event
         else:
             assert isinstance(event, util_mcu_pico.Rp2UdevBootModeEvent2)
-            print(
-                _DELIM + f"Detected {tag} on port {rp2.location.short}. Please flash:"
+            print_cb(
+                DELIM + f"Detected {tag} on port {rp2.location.short}. Please flash:"
             )
-            print(_DELIM2 + f"cp firmware.uf2 {event.mount_point}")
+            print_cb(DELIM2 + f"cp firmware.uf2 {event.mount_point}")
+            return None

@@ -221,7 +221,7 @@ class UsbTentacle:
         if hub_port is None:
             # TODO: Handle this error.
             msg = f"'{plug}' does not match any usb port"
-            if plug is UsbPlug.ERROR:
+            if plug in (UsbPlug.ERROR, UsbPlug.PICO_PROBE):
                 logger.debug(msg)
             else:
                 logger.error(msg)
