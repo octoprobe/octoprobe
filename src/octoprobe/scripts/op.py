@@ -48,15 +48,11 @@ _PicotoolCmdAnnotation = TyperAnnotated[
     typer.Option(help="Show the picotoolcommand."),
 ]
 
-# _FirmwareAnnotation = TyperAnnotated[
-#     typer.Fil,
-#     typer.Option(help="The firmware ending with '.uf2'."),
-# ]
-
 
 @app.command(help="Installs some binaries which require root rights.")
 def install(url: str = URL_RELEASE_DEFAULT) -> None:
     """ """
+    init_logging()
     do_install(url=url)
 
 
@@ -75,6 +71,7 @@ def commissioning() -> None:
 def iter_usb_tentacles(
     poweron: bool,
     serials: list[str] | None,
+    line_delimiter: str | None = "",
 ) -> typing.Iterator[UsbTentacle]:
     """
     Query and select tentacles.
@@ -87,7 +84,8 @@ def iter_usb_tentacles(
     for usb_tentacle in usb_tentacles:
         print(usb_tentacle.label_long)
         yield usb_tentacle
-        print()
+        if line_delimiter is not None:
+            print(line_delimiter)
 
 
 @app.command(help="Power cycle usb ports.")
@@ -176,15 +174,21 @@ def power(
         for __off in _off:
             plugs[__off] = False
 
-    for usb_tentacle in iter_usb_tentacles(poweron=poweron, serials=serials):
+    for usb_tentacle in iter_usb_tentacles(
+        poweron=poweron,
+        serials=serials,
+        line_delimiter=op_bootmode.DELIM + plugs.text,
+    ):
         usb_tentacle.set_plugs(plugs)
-
-        print(op_bootmode.DELIM + plugs.text)
 
 
 @app.command(help="Query connected tentacles.")
 def query(poweron: _PoweronAnnotation = False) -> None:
-    for _ in iter_usb_tentacles(poweron=poweron, serials=None):
+    for _ in iter_usb_tentacles(
+        poweron=poweron,
+        serials=None,
+        line_delimiter=None,
+    ):
         pass
 
 

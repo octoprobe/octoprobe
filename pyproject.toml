@@ -31,6 +31,7 @@ classifiers = [
 ]
 
 dependencies = [
+    "pyusb",
     "pyudev",
     # "mpremote@git+https://github.com/hmaerki/fork_micropython@master#egg=mpremote&subdirectory=tools/mpremote",
     "mpremote@git+https://github.com/micropython/micropython@master#egg=mpremote&subdirectory=tools/mpremote",
