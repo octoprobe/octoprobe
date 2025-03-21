@@ -12,7 +12,7 @@ from ..usb_tentacle.usb_constants import (
 )
 from ..usb_tentacle.usb_tentacle import UsbTentacle
 from ..util_mcu_pico import picotool_flash_micropython
-from .op_bootmode import DELIM, DELIM2, do_bootmode
+from .op_bootmode import DELIM, do_bootmode
 
 
 def do_flash(usb_tentacle: UsbTentacle, is_infra: bool, firmware: pathlib.Path) -> None:

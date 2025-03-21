@@ -1,8 +1,15 @@
+"""
+GIT CLONE / WORKTREES
+"""
+
 from __future__ import annotations
 
 import hashlib
 import logging
 import pathlib
+import shutil
+
+import slugify
 
 from .util_constants import relative_cwd
 from .util_subprocess import subprocess_run
@@ -40,41 +47,72 @@ class CachedGitRepo:
         # Example 'prefix': 'micropython_mpbuild_'
 
         self.prefix = prefix
-        self.directory_cache = directory_cache
+        self._directory_bare = directory_cache / "bare"
+        self._directory_worktree = directory_cache / "worktree"
         self.git_spec = git_spec
         self.url, _, self.branch = git_spec.partition("@")
 
-        self.directory.mkdir(parents=True, exist_ok=True)
+        self.directory_git_bare.parent.mkdir(parents=True, exist_ok=True)
         self.filename_git_url.write_text(self.url)
 
     @property
-    def hash(self) -> str:
+    def hash_obsolete(self) -> str:
         return hashlib.md5(self.url.encode("utf-8")).hexdigest()
 
     @property
-    def filename_git_url(self) -> pathlib.Path:
-        return self.directory_cache / f"{self.prefix}{self.hash}_url.txt"
+    def slugify(self) -> str:
+        return slugify.slugify(
+            self.url,
+            replacements=[
+                ["https://", ""],
+                ["http://", ""],
+                [
+                    ".git",
+                    "",
+                ],
+            ],
+        )
 
     @property
-    def directory(self) -> pathlib.Path:
-        return self.directory_cache / f"{self.prefix}{self.hash}"
+    def filename_git_url(self) -> pathlib.Path:
+        return self._directory_bare / f"{self.slugify}.git_url.txt"
+
+    @property
+    def directory_git_bare(self) -> pathlib.Path:
+        return self._directory_bare / f"{self.slugify}.git"
+
+    @property
+    def directory_git_worktree(self) -> pathlib.Path:
+        return self._directory_worktree / f"{self.prefix}{self.slugify}"
 
     def clone(self, git_clean: bool) -> None:
         """
         Clone or update the git repo.
         """
-        if self.directory.name in CachedGitRepo.singleton_cloned:
-            return
+        if self.directory_git_bare.name not in CachedGitRepo.singleton_cloned:
+            CachedGitRepo.singleton_cloned.add(self.directory_git_bare.name)
+            logger.info(
+                f"git clone {self.git_spec} -> {relative_cwd(self.directory_git_bare)}"
+            )
+            self._clone_bare()
 
-        logger.info(f"git clone {self.git_spec} -> {relative_cwd(self.directory)}")
-        self._clone(git_clean=git_clean)
-        CachedGitRepo.singleton_cloned.add(self.directory.name)
+        logger.info(
+            f"git worktree {self.git_spec} -> {relative_cwd(self.directory_git_worktree)}"
+        )
+        self._worktree_add(git_clean=git_clean)
 
-    def _clone(self, git_clean: bool) -> None:
-        if (self.directory / ".git").is_dir():
+    def _clone_bare(self) -> None:
+        #
+        # Clone or fetch bare repo
+        #
+        if self.directory_git_bare.is_dir():
             subprocess_run(
-                args=["git", "fetch", "--all"],
-                cwd=self.directory_cache,
+                args=[
+                    "git",
+                    "fetch",
+                    "--all",
+                ],
+                cwd=self.directory_git_bare,
                 timeout_s=GIT_CLONE_TIMEOUT_S,
             )
         else:
@@ -82,23 +120,43 @@ class CachedGitRepo:
                 args=[
                     "git",
                     "clone",
+                    "--bare",
                     "--filter=blob:none",
                     self.url,
-                    self.directory.name,
+                    self.directory_git_bare.name,
                 ],
-                cwd=self.directory.parent,
+                cwd=self.directory_git_bare.parent,
                 timeout_s=GIT_CLONE_TIMEOUT_S,
             )
+
+    def _worktree_add(self, git_clean: bool) -> None:
+        #
+        # Add worktree or checkout
+        #
         if git_clean:
-            args = ["git", "clean", "-fXd"]
-            logger.info(" ".join(args))
+            shutil.rmtree(self.directory_git_worktree, ignore_errors=True)
+
+        if self.directory_git_worktree.is_dir():
             subprocess_run(
-                args=args,
-                cwd=self.directory,
-                timeout_s=20.0,
+                args=[
+                    "git",
+                    "checkout",
+                    "--force",
+                    self.branch,
+                ],
+                cwd=self.directory_git_worktree,
+                timeout_s=5.0,
             )
-        subprocess_run(
-            args=["git", "checkout", "--force", self.branch],
-            cwd=self.directory,
-            timeout_s=20.0,
-        )
+        else:
+            subprocess_run(
+                args=[
+                    "git",
+                    "worktree",
+                    "add",
+                    "-f",
+                    str(self.directory_git_worktree),
+                    self.branch,
+                ],
+                cwd=self.directory_git_bare,
+                timeout_s=5.0,
+            )
