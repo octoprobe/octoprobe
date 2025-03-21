@@ -21,7 +21,7 @@ _DICT_STYLES = {
 }
 
 
-class ColorHandler(logging.StreamHandler):
+class ColorFormatter(logging.Formatter):
     RE_TAG = re.compile(r"^\[(?P<tag>COLOR_[A-Z]+)\](?P<msg>.*$)")
     """
     Example: [COLOR_INFO]This is a message
@@ -29,21 +29,22 @@ class ColorHandler(logging.StreamHandler):
     msg: This is a message
     """
 
-    # FORMATTER = logging.Formatter("%(levelname)-8s - %(message)s")
-    FORMATTER = logging.Formatter("%(message)s")
-
     @typing.override
     def format(self, record: logging.LogRecord) -> str:
         match = self.RE_TAG.match(record.msg)
         if match is None:
             return super().format(record)
-        if not self.stream.isatty():
-            return super().format(record)
+        # if not self.stream.isatty():
+        #     return super().format(record)
 
         tag = match.group("tag")
         msg = match.group("msg")
-        record.msg = msg
-        color = _DICT_STYLES.get(tag, _STYLE_FALLBACK)
+        try:
+            msg_before = record.msg
+            record.msg = msg
+            color = _DICT_STYLES.get(tag, _STYLE_FALLBACK)
 
-        message = self.FORMATTER.format(record)
-        return color.render(message)
+            message = super().format(record)
+            return color.render(message)
+        finally:
+            record.msg = msg_before

@@ -4,13 +4,17 @@
     "formatters": {
         "simple": {
             "format": "%(levelname)-8s - %(message)s"
+        },
+        "simple_color": {
+            "class": "octoprobe.util_pytest.util_logging_handler_color.ColorFormatter",
+            "format": "%(levelname)-8s - %(message)s"
         }
     },
     "handlers": {
         "stdout": {
-            "class": "octoprobe.util_pytest.util_logging_handler_color.ColorHandler",
+            "class": "logging.StreamHandler",
             "level": "INFO",
-            "formatter": "simple",
+            "formatter": "simple_color",
             "stream": "ext://sys.stdout"
         }
     },

@@ -10,6 +10,7 @@ FILENAME_LOGGING_JSON = DIRECTORY_OF_THIS_FILE / "util_logging_config.json"
 
 FORMATTER = logging.Formatter("%(levelname)-8s - %(message)s")
 ROOT_LOGGER = logging.getLogger()
+
 logger = logging.getLogger(__file__)
 
 
