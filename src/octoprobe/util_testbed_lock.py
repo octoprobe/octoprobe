@@ -9,6 +9,8 @@ import os
 import pathlib
 import time
 
+from octoprobe.util_baseclasses import OctoprobeAppExitException
+
 
 class TestbedLock:
     """
@@ -26,8 +28,19 @@ class TestbedLock:
         """
         Will throw an exception if the testbed is already locked.
         """
+        parent_directory = filename.parent
+        if not parent_directory.exists():
+            # The directory /lock and /run/lock are mounted and seem not to allow
+            # to give suffission rights to lock files...
+            # We therefor create a subfolder which gives rights to everyone.
+            parent_directory.mkdir(parents=True, exist_ok=True)
+            parent_directory.chmod(0o777)
+
         self._fd = os.open(filename, os.O_CREAT | os.O_RDWR | os.O_TRUNC)
-        os.fchmod(self._fd, 0o666)
+        try:
+            os.fchmod(self._fd, 0o666)
+        except PermissionError:
+            pass
 
         self._lockfile = filename
         for retry in range(100):
@@ -36,7 +49,7 @@ class TestbedLock:
             except OSError as exc:
                 max_retries = 5
                 if retry >= max_retries:
-                    raise ValueError(
+                    raise OctoprobeAppExitException(
                         f"Testbed is already used! See: {filename}"
                     ) from exc
                 time.sleep(1.0)
