@@ -41,6 +41,8 @@ class Log:
         Create a logfile.
         Add a logging handler and eventually remove it again.
         """
+        self.level = level
+        self.formatter = formatter
         self.filename = directory / f"logger_{level}_{name}.{file_extension}"
         self._handler: logging.FileHandler | None = logging.FileHandler(
             self.filename, mode="w"
@@ -70,7 +72,7 @@ class Logs:
         """
         assert isinstance(directory, pathlib.Path)
 
-        self._handlers = []
+        self._handlers: list[Log] = []
         for name, level in (
             ("error", logging.ERROR),
             ("info", logging.INFO),
@@ -80,19 +82,25 @@ class Logs:
                 (FORMATTER, "log"),
                 (COLOR_FORMATTER, "color"),
             ):
-                self._handlers.append(
-                    Log(
-                        directory,
-                        name=name,
-                        level=level,
-                        formatter=formatter,
-                        file_extension=file_extension,
-                    )
+                handler = Log(
+                    directory,
+                    name=name,
+                    level=level,
+                    formatter=formatter,
+                    file_extension=file_extension,
                 )
+                if name == "info":
+                    if formatter == "log":
+                        self._most_relevant_handler = handler
+                self._handlers.append(handler)
 
     @property
     def filename(self) -> pathlib.Path:
-        return self._handlers[1].filename
+        for h in self._handlers:
+            if h.level == logging.INFO:
+                if h.formatter == FORMATTER:
+                    return h.filename
+        raise ValueError("Failed to evaluate relevant logger!")
 
     def __enter__(self) -> Logs:
         return self
