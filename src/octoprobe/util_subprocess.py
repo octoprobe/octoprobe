@@ -33,6 +33,7 @@ def subprocess_run(
         if logfile is not None:
             logger.info(f"EXEC {args_text}")
             logger.info(f"EXEC     stdout: {logfile}")
+            logfile.parent.mkdir(parents=True, exist_ok=True)
             with logfile.open("w") as f:
                 f.write(f"{' '.join(args)}\n\n\n")
                 f.flush()
@@ -48,7 +49,7 @@ def subprocess_run(
                     stderr=subprocess.STDOUT,
                 )
                 f.write(f"\n\nreturncode={proc.returncode}\n")
-                f.write(f"duration={time.monotonic()-begin_s:0.3f}s\n")
+                f.write(f"duration={time.monotonic() - begin_s:0.3f}s\n")
         else:
             proc = subprocess.run(
                 # Common args
@@ -68,7 +69,7 @@ def subprocess_run(
     def log(f) -> None:
         f(f"EXEC {args_text}")
         f(f"  returncode: {proc.returncode}")
-        f(f"  duration: {time.monotonic()-begin_s:0.3f}s")
+        f(f"  duration: {time.monotonic() - begin_s:0.3f}s")
         if logfile is not None:
             f(f"  logfile: {logfile}")
         else:
