@@ -385,7 +385,7 @@ def _query_pico_serial() -> list[UsbPico]:
 def _combine_hubs_and_pico(
     hub4_locations: list[Location],
     list_pico: list[UsbPico],
-) -> UsbTentacles:
+) -> tuple[UsbTentacles, list[Location]]:
     """
     Now we combine 'hubs' and 'list_pico'
     """
@@ -430,11 +430,14 @@ def _combine_hubs_and_pico(
         )
 
     tentacles = UsbTentacles()
+    unresolved_hub4_locations: list[Location] = []
     for hub4_location in hub4_locations:
         usb_tentacle = get_tentacle_version(hub4_location)
-        if usb_tentacle is not None:
+        if usb_tentacle is None:
+            unresolved_hub4_locations.append(hub4_location)
+        else:
             tentacles.append(usb_tentacle)
-    return tentacles
+    return tentacles, unresolved_hub4_locations
 
 
 class UsbTentacles(list[UsbTentacle]):
@@ -540,16 +543,17 @@ class UsbTentacles(list[UsbTentacle]):
             #     list_pico.extend(_query_pico_boot_mode())
             list_pico.extend(_query_pico_boot_mode())
 
-            usb_tentacles = _combine_hubs_and_pico(
+            usb_tentacles, unresolved_hub4_locations = _combine_hubs_and_pico(
                 hub4_locations=hub4_locations,
                 list_pico=list_pico,
             )
             duration_s = time.monotonic() - begin_s
             if duration_s > timeout_poweron_s:
-                undetected_tentacles = len(hub4_locations) - len(usb_tentacles)
-                if undetected_tentacles > 0:
-                    logging.warning(
-                        f"WARNING: {len(hub4_locations)} hubs have been detected but only {len(usb_tentacles)} pico_infra! It seems that {undetected_tentacles} pico_infra are not powered/responding. This might fix the problem: op query --poweron"
+                if len(unresolved_hub4_locations) > 0:
+                    hubs_text = ", ".join([x.short for x in unresolved_hub4_locations])
+                    logging.info(
+                        f"These hubs could not be accociated with a tentacle: {hubs_text}! "
+                        "If there are tentacles with unpowered picos, this will fix the problem: op query --poweron"
                     )
                 return usb_tentacles
 
