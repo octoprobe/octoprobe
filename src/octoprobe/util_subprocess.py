@@ -63,7 +63,7 @@ def subprocess_run(
             )
     except subprocess.TimeoutExpired as e:
         logger.info(f"EXEC {e!r}")
-        logger.exception(e)
+        # logger.exception(e)
         raise
 
     def log(f) -> None:
