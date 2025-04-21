@@ -16,7 +16,7 @@ from .usb_tentacle.usb_tentacle import (
     TentaclePlugsPower,
     UsbTentacle,
 )
-from .util_baseclasses import TentacleSpecBase
+from .util_baseclasses import TentacleInstance, TentacleSpecBase
 from .util_firmware_spec import FirmwareSpecBase
 from .util_pyudev import UdevPoller
 
@@ -92,22 +92,19 @@ class TentacleBase(abc.ABC):
 
     def __init__(
         self,
+        tentacle_instance: TentacleInstance,
         tentacle_serial_number: str,
-        tentacle_spec_base: TentacleSpecBase,
-        hw_version: str,
         usb_tentacle: UsbTentacle,
     ) -> None:
+        assert isinstance(tentacle_instance, TentacleInstance)
         assert isinstance(tentacle_serial_number, str)
-        assert isinstance(tentacle_spec_base, TentacleSpecBase)
-        assert isinstance(hw_version, str)
         assert tentacle_serial_number == tentacle_serial_number.lower(), (
             f"Must not contain upper case letters: {tentacle_serial_number}"
         )
         assert isinstance(usb_tentacle, UsbTentacle)
-
         self.tentacle_state = TentacleState()
         self.tentacle_serial_number = tentacle_serial_number
-        self.tentacle_spec_base = tentacle_spec_base
+        self.tentacle_instance = tentacle_instance
 
         def _label(dut_or_infra: str) -> str:
             # return f"Tentacle {dut_or_infra}{tentacle_serial_number}({tentacle_spec.label})"
@@ -144,6 +141,10 @@ class TentacleBase(abc.ABC):
             directory_logs=directory_logs,
             firmware_spec=firmware_spec,
         )
+
+    @property
+    def tentacle_spec_base(self) -> TentacleSpecBase:
+        return self.tentacle_instance.tentacle_spec
 
     @property
     def dut(self) -> TentacleDut:

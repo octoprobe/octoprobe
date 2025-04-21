@@ -28,6 +28,13 @@ def init_logging() -> None:
     # sys.excepthook = excepthook
 
 
+LOGFILENAME_HACK = "logger_20_info.log"
+"""
+The 'Logs' class should be asked about the relevant logfile.
+But if this class is not in reach, we allow this hack.
+"""
+
+
 class Log:
     def __init__(
         self,
@@ -89,9 +96,9 @@ class Logs:
                     formatter=formatter,
                     file_extension=file_extension,
                 )
-                if name == "info":
-                    if formatter == "log":
-                        self._most_relevant_handler = handler
+                # if name == "info":
+                #     if formatter == "log":
+                #         self._most_relevant_handler = handler
                 self._handlers.append(handler)
 
     @property
