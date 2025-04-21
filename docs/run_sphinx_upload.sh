@@ -12,7 +12,7 @@ do
         echo "Directory upload: $html_dir"
         make -C $docs_dir clean
         make -C $docs_dir html
-        tar cf - -C $html_dir  --transform "s,^\.,${project}," . | ssh www-data@www.maerki.com tar xf - -C /home/www/htdocs/octoprobe
+        tar cf - -C $html_dir  --transform "s,^\.,${project}," . | ssh www-insecure@www.maerki.com tar xf - -C /home/www/htdocs_insecure/octoprobe
     else
         echo "Directory does not exist: $docs_dir"
     fi
