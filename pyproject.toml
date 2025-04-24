@@ -181,7 +181,7 @@ omit = [
 ]
 
 [tool.ruff]
-target-version = "py312"
+target-version = "py313"
 # All paths are relative to the project root, which is the directory containing the pyproject.toml.
 src = ["src"]
 exclude = ["assessments", "branding"]
