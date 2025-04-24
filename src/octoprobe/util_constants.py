@@ -65,6 +65,8 @@ class DirectoryTag(enum.StrEnum):
         """
         assert isinstance(top, pathlib.Path)
         assert isinstance(filename, pathlib.Path)
+        # Fallback to absolute pathnames
+        return str(filename)
         try:
             return self.render(filename.relative_to(top))
         except ValueError:
