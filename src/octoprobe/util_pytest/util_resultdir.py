@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import os
 import pathlib
+from octoprobe.util_constants import DirectoryTag
 
 logger = logging.getLogger(__file__)
 
@@ -140,6 +141,12 @@ class ResultsDir:
             resultsdir=self,
             filename=filename,
             sub_directory=sub_directory,
+        )
+
+    def render_relative(self, filename: pathlib.Path) -> str:
+        return DirectoryTag.R.render_relative_to(
+            top=self.directory_top,
+            filename=filename,
         )
 
     # def file(self, filename: str, sub_directory: str = None) -> ResultFile:

@@ -197,13 +197,14 @@ print('{VERSION_IMPLEMENTATION_SEPARATOR}'.join(l))
                 f"{self.label}: About to flash '{firmware_spec.board_variant.name_normalized}'!"
             )
             try:
-                self.dut_programmer.flash(
-                    tentacle=tentacle,
-                    udev=udev,
-                    directory_logs=directory_logs,
-                    firmware_spec=firmware_spec,
-                )
-                tentacle.tentacle_state.last_firmware_flashed = firmware_spec
+                if firmware_spec.do_flash:
+                    self.dut_programmer.flash(
+                        tentacle=tentacle,
+                        udev=udev,
+                        directory_logs=directory_logs,
+                        firmware_spec=firmware_spec,
+                    )
+                    tentacle.tentacle_state.last_firmware_flashed = firmware_spec
             except UdevTimoutException as e:
                 msg = f"Failed to flash the firmware. Is USB connected? {e!r}"
                 logger.warning(f"{self.label}: {msg}")
