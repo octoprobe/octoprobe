@@ -39,11 +39,25 @@ class DirectoryTag(enum.StrEnum):
     These tags will be used to reference the different directories.
     """
 
-    F = "Firmware Source Git Repo"
-    R = "Results"
-    T = "Tests Source Git Repo"
-    P = "Python venv directory"
-    W = "Working directory"
+    F = "F"
+    # Firmware Source Git Repo
+    R = "R"
+    # Results
+    T = "T"
+    # Tests Source Git Repo
+    P = "P"
+    # Python venv directory
+    W = "W"
+    # Working directory
+
+    def description(self) -> str:
+        return {
+            DirectoryTag.F: "Firmware Source Git Repo",
+            DirectoryTag.R: "Results",
+            DirectoryTag.T: "Tests Source Git Repo",
+            DirectoryTag.P: "Python venv directory",
+            DirectoryTag.W: "Working directory",
+        }[self]
 
     def render(self, filename: pathlib.Path) -> str:
         """
