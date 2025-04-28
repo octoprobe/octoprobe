@@ -112,7 +112,7 @@ class JournalctlObserver:
         self._f_write.flush()
         self._f_read = self._logfile.open("r")
         self._f_read.read()
-        self.proc = subprocess.Popen(
+        self.proc = subprocess.Popen(  # pylint: disable=consider-using-with
             args=args,
             executable=shutil.which(program),
             close_fds=True,

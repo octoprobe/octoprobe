@@ -39,8 +39,8 @@ class ColorFormatter(logging.Formatter):
 
         tag = match.group("tag")
         msg = match.group("msg")
+        msg_before = record.msg
         try:
-            msg_before = record.msg
             record.msg = msg
             color = _DICT_STYLES.get(tag, _STYLE_FALLBACK)
 

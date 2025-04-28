@@ -227,6 +227,7 @@ keep-runtime-typing = true
 [tool.pylint."MESSAGES CONTROL"]
 disable = '''
     broad-exception-caught,
+    cyclic-import,
     empty-docstring,
     invalid-name,
     line-too-long,

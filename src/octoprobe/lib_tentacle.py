@@ -201,7 +201,7 @@ class TentacleBase(abc.ABC):
 
     @property
     @contextlib.contextmanager
-    def active_led_on(self) -> typing.Generator[typing.Any, None, None]:
+    def active_led_on(self) -> typing.Iterator[typing.Any]:
         try:
             self.infra.mcu_infra.active_led(on=True)
             yield

@@ -138,7 +138,7 @@ def create_report(
     for label in labels:
         all_labels.append(layout.draw(label=label))
 
-    labels_rows = list(itertools.batched(all_labels, 2))
+    labels_rows = list(itertools.batched(all_labels, 2, strict=False))
     table = Table(
         labels_rows,
         colWidths=(layout.label.width, layout.label.width),

@@ -131,11 +131,11 @@ class UsbPlugs(dict[UsbPlug, bool]):
 
     @staticmethod
     def all_on() -> UsbPlugs:
-        return UsbPlugs({p: True for p in UsbPlug})
+        return UsbPlugs(dict.fromkeys(UsbPlug, True))
 
     @staticmethod
     def all_off() -> UsbPlugs:
-        return UsbPlugs({p: False for p in UsbPlug})
+        return UsbPlugs(dict.fromkeys(UsbPlug, False))
 
     @classmethod
     def default_off(cls) -> UsbPlugs:

@@ -105,10 +105,8 @@ def do_bootmode(
             )
             print_cb(DELIM2 + picotool_text)
             return event
-        else:
-            assert isinstance(event, util_mcu_pico.Rp2UdevBootModeEvent2)
-            print_cb(
-                DELIM + f"Detected {tag} on port {pico.location.short}. Please flash:"
-            )
-            print_cb(DELIM2 + f"cp firmware.uf2 {event.mount_point}")
-            return None
+
+        assert isinstance(event, util_mcu_pico.Rp2UdevBootModeEvent2)
+        print_cb(DELIM + f"Detected {tag} on port {pico.location.short}. Please flash:")
+        print_cb(DELIM2 + f"cp firmware.uf2 {event.mount_point}")
+        return None
