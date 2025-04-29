@@ -15,6 +15,7 @@ class SubprocessExitCodeException(Exception):
 def subprocess_run(
     args: list[str],
     cwd: pathlib.Path,
+    env: dict[str, str] | None = None,
     logfile: pathlib.Path | None = None,
     timeout_s: float = 10.0,
 ) -> None:
@@ -23,8 +24,13 @@ def subprocess_run(
     """
     assert isinstance(args, list)
     assert isinstance(cwd, pathlib.Path)
+    assert isinstance(env, dict | None)
     assert isinstance(logfile, pathlib.Path | None)
     assert isinstance(timeout_s, float | None)
+    if env is not None:
+        for key, value in env.items():
+            assert isinstance(key, str)
+            assert isinstance(value, str)
 
     args_text = " ".join(args)
 
@@ -43,6 +49,7 @@ def subprocess_run(
                     check=False,
                     text=True,
                     cwd=str(cwd),
+                    env=env,
                     timeout=timeout_s,
                     # Specific args
                     stdout=f,
@@ -57,6 +64,7 @@ def subprocess_run(
                 check=False,
                 text=True,
                 cwd=str(cwd),
+                env=env,
                 timeout=timeout_s,
                 # Specific args
                 capture_output=True,
