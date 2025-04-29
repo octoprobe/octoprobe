@@ -87,6 +87,19 @@ class DirectoryTag(enum.StrEnum):
             return str(filename)
 
 
+class ExitCode(enum.IntEnum):
+    """
+    Exit Codes similar to: https://docs.pytest.org/en/stable/reference/exit-codes.html
+    """
+
+    SUCCESS = 0
+    "All tests succeeded"
+    FAILURE = 1
+    "At least one test failed: Need to have a look at the reports."
+    ERROR = 2
+    "At least one test returned an error: Need to have a look at the reports."
+
+
 def relative_cwd(filename: pathlib.Path) -> str:
     """
     Return the path to the filename relative to the current working directory.

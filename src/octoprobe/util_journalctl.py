@@ -108,7 +108,7 @@ class JournalctlObserver:
 
         self._f_write.write(" ".join(args))
         self._f_write.write("\n\n")
-        self._f_write.write("USB warning will be appended below...\n")
+        self._f_write.write("USB warnings will be appended below...\n")
         self._f_write.flush()
         self._f_read = self._logfile.open("r")
         self._f_read.read()
