@@ -184,6 +184,7 @@ class CachedGitRepo:
                 "git",
                 "checkout",
                 "--force",
+                "--detach",  # https://github.com/octoprobe/testbed_micropython/issues/14
             ]
             if self.git_spec.branch is not None:
                 args.append(self.git_spec.branch)
@@ -218,6 +219,8 @@ class CachedGitRepo:
                 args=[
                     "git",
                     "checkout",
+                    "--force",
+                    "--detach",  # https://github.com/octoprobe/testbed_micropython/issues/14
                     f"pr-{self.git_spec.pr}",
                 ],
                 cwd=self.directory_git_worktree,
