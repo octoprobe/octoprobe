@@ -4,9 +4,11 @@ GIT CLONE / WORKTREES
 
 from __future__ import annotations
 
+import dataclasses
 import hashlib
 import logging
 import pathlib
+import re
 import shutil
 
 import slugify
@@ -15,9 +17,44 @@ from .util_constants import relative_cwd
 from .util_subprocess import subprocess_run
 
 logger = logging.getLogger(__file__)
-
-
 GIT_CLONE_TIMEOUT_S = 60.0
+
+RE_GIT_SPEC = re.compile(r"^(?P<url>(.+?://)?.+?)(\+(?P<pr>.+?))?(@(?P<branch>.+))?$")
+"""
+https://github.com/micropython/micropython.git
+https://github.com/micropython/micropython.git+17232
+https://github.com/micropython/micropython.git@1.25.0
+https://github.com/micropython/micropython.git+17232@1.25.0
+"""
+
+
+@dataclasses.dataclass(frozen=True, repr=True)
+class GitSpec:
+    """
+    https://github.com/micropython/micropython.git+17232@1.25.0
+    """
+
+    git_spec: str
+    "https://github.com/micropython/micropython.git+17232@1.25.0"
+    url: str
+    "https://github.com/micropython/micropython.git"
+    pr: str | None
+    "17232"
+    branch: str | None
+    "1.25.0"
+
+    @staticmethod
+    def parse(git_ref: str) -> GitSpec:
+        match = RE_GIT_SPEC.match(git_ref)
+        if match is None:
+            raise ValueError(f"Failed to parse git_spec '{git_ref}'!")
+
+        return GitSpec(
+            git_spec=git_ref,
+            url=match.group("url"),
+            pr=match.group("pr"),
+            branch=match.group("branch"),
+        )
 
 
 class CachedGitRepo:
@@ -49,20 +86,21 @@ class CachedGitRepo:
         self.prefix = prefix
         self._directory_bare = directory_cache / "bare"
         self._directory_worktree = directory_cache / "worktree"
-        self.git_spec = git_spec
-        self.url, _, self.branch = git_spec.partition("@")
+        self.git_spec = GitSpec.parse(git_ref=git_spec)
+
+        logger.debug(f"{self.git_spec.git_spec} -> {self.git_spec}")
 
         self.directory_git_bare.parent.mkdir(parents=True, exist_ok=True)
-        self.filename_git_url.write_text(self.url)
+        self.filename_git_url.write_text(self.git_spec.url)
 
     @property
     def hash_obsolete(self) -> str:
-        return hashlib.md5(self.url.encode("utf-8")).hexdigest()
+        return hashlib.md5(self.git_spec.url.encode("utf-8")).hexdigest()
 
     @property
     def slugify(self) -> str:
         return slugify.slugify(
-            self.url,
+            self.git_spec.url,
             replacements=[
                 ["https://", ""],
                 ["http://", ""],
@@ -92,12 +130,12 @@ class CachedGitRepo:
         if self.directory_git_bare.name not in CachedGitRepo.singleton_cloned:
             CachedGitRepo.singleton_cloned.add(self.directory_git_bare.name)
             logger.info(
-                f"git clone {self.git_spec} -> {relative_cwd(self.directory_git_bare)}"
+                f"git clone {self.git_spec.git_spec} -> {relative_cwd(self.directory_git_bare)}"
             )
             self._clone_bare()
 
         logger.info(
-            f"git worktree {self.git_spec} -> {relative_cwd(self.directory_git_worktree)}"
+            f"git worktree {self.git_spec.git_spec} -> {relative_cwd(self.directory_git_worktree)}"
         )
         self._worktree_add(git_clean=git_clean)
 
@@ -111,6 +149,8 @@ class CachedGitRepo:
                     "git",
                     "fetch",
                     "--all",
+                    "--prune",
+                    "--tags",
                 ],
                 cwd=self.directory_git_bare,
                 timeout_s=GIT_CLONE_TIMEOUT_S,
@@ -122,7 +162,7 @@ class CachedGitRepo:
                     "clone",
                     "--bare",
                     "--filter=blob:none",
-                    self.url,
+                    self.git_spec.url,
                     self.directory_git_bare.name,
                 ],
                 cwd=self.directory_git_bare.parent,
@@ -136,27 +176,63 @@ class CachedGitRepo:
         if git_clean:
             shutil.rmtree(self.directory_git_worktree, ignore_errors=True)
 
+        #
+        # Add worktree or checkout
+        #
         if self.directory_git_worktree.is_dir():
+            args = [
+                "git",
+                "checkout",
+                "--force",
+            ]
+            if self.git_spec.branch is not None:
+                args.append(self.git_spec.branch)
+            subprocess_run(args=args, cwd=self.directory_git_worktree, timeout_s=5.0)
+        else:
+            args = [
+                "git",
+                "worktree",
+                "add",
+                "-f",
+                str(self.directory_git_worktree),
+            ]
+            if self.git_spec.branch is not None:
+                args.append(self.git_spec.branch)
+            subprocess_run(args=args, cwd=self.directory_git_bare, timeout_s=5.0)
+
+        if self.git_spec.pr is not None:
+            #
+            # checkout the PR
+            #
             subprocess_run(
                 args=[
                     "git",
-                    "checkout",
-                    "--force",
-                    self.branch,
+                    "fetch",
+                    "origin",
+                    f"pull/{self.git_spec.pr}/head:pr-{self.git_spec.pr}",
                 ],
                 cwd=self.directory_git_worktree,
                 timeout_s=5.0,
             )
-        else:
             subprocess_run(
                 args=[
                     "git",
-                    "worktree",
-                    "add",
-                    "-f",
-                    str(self.directory_git_worktree),
-                    self.branch,
+                    "checkout",
+                    f"pr-{self.git_spec.pr}",
                 ],
-                cwd=self.directory_git_bare,
+                cwd=self.directory_git_worktree,
                 timeout_s=5.0,
             )
+            if self.git_spec.branch is not None:
+                #
+                # rebase the PR
+                #
+                subprocess_run(
+                    args=[
+                        "git",
+                        "rebase",
+                        self.git_spec.branch,
+                    ],
+                    cwd=self.directory_git_worktree,
+                    timeout_s=5.0,
+                )
