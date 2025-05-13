@@ -18,6 +18,7 @@ def subprocess_run(
     env: dict[str, str] | None = None,
     logfile: pathlib.Path | None = None,
     timeout_s: float = 10.0,
+    success_returncodes: list[int] | None = None,
 ) -> None:
     """
     Wrappsr around 'subprocess()'
@@ -27,6 +28,10 @@ def subprocess_run(
     assert isinstance(env, dict | None)
     assert isinstance(logfile, pathlib.Path | None)
     assert isinstance(timeout_s, float | None)
+    assert isinstance(success_returncodes, list | None)
+    if success_returncodes is None:
+        success_returncodes = [0]
+
     if env is not None:
         for key, value in env.items():
             assert isinstance(key, str)
@@ -77,6 +82,7 @@ def subprocess_run(
     def log(f) -> None:
         f(f"EXEC {args_text}")
         f(f"  returncode: {proc.returncode}")
+        f(f"  success_codes: {success_returncodes}")
         f(f"  duration: {time.monotonic() - begin_s:0.3f}s")
         if logfile is not None:
             f(f"  logfile: {logfile}")
@@ -86,7 +92,7 @@ def subprocess_run(
             f(f"  stdout: {stdout}")
             f(f"  stderr: {stderr}")
 
-    if proc.returncode != 0:
+    if proc.returncode not in success_returncodes:
         log(logger.warning)
         msg = f"EXEC failed with returncode={proc.returncode}: {args_text}"
         if logfile is not None:
