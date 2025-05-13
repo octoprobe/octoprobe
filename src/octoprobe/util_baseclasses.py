@@ -16,6 +16,12 @@ class OctoprobeTestException(Exception):
     """
 
 
+class OctoprobeTestSkipException(OctoprobeTestException):
+    """
+    This exception terminates a test.
+    """
+
+
 class OctoprobeAppExitException(Exception):
     """
     This exception terminates the application
@@ -235,9 +241,9 @@ class TentaclesCollector:
                 testbed_name=self.testbed_name,
                 testbed_instance=testbed_instance,
             )
-            assert (
-                tentacle_instance.serial not in self.inventory
-            ), f"Duplicated tentacle serial {tentacle_instance.serial}!"
+            assert tentacle_instance.serial not in self.inventory, (
+                f"Duplicated tentacle serial {tentacle_instance.serial}!"
+            )
             self.inventory[tentacle_instance.serial] = tentacle_instance
 
         return self
