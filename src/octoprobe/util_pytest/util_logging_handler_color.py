@@ -31,6 +31,10 @@ class ColorFormatter(logging.Formatter):
 
     @typing.override
     def format(self, record: logging.LogRecord) -> str:
+        if not isinstance(record.msg, str):
+            # 'record.msg' may be an exception...
+            return super().format(record)
+
         match = self.RE_TAG.match(record.msg)
         if match is None:
             return super().format(record)
