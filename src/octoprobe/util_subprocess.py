@@ -19,7 +19,7 @@ def subprocess_run(
     logfile: pathlib.Path | None = None,
     timeout_s: float = 10.0,
     success_returncodes: list[int] | None = None,
-) -> None:
+) -> str | None:
     """
     Wrappsr around 'subprocess()'
     """
@@ -41,8 +41,21 @@ def subprocess_run(
 
     begin_s = time.monotonic()
     try:
-        if logfile is not None:
+        if logfile is None:
+            proc = subprocess.run(
+                # Common args
+                args=args,
+                check=False,
+                text=True,
+                cwd=str(cwd),
+                env=env,
+                timeout=timeout_s,
+                # Specific args
+                capture_output=True,
+            )
+        else:
             logger.info(f"EXEC {args_text}")
+            logger.info(f"EXEC     cwd={cwd}")
             logger.info(f"EXEC     stdout: {logfile}")
             logfile.parent.mkdir(parents=True, exist_ok=True)
             with logfile.open("w") as f:
@@ -62,18 +75,7 @@ def subprocess_run(
                 )
                 f.write(f"\n\nreturncode={proc.returncode}\n")
                 f.write(f"duration={time.monotonic() - begin_s:0.3f}s\n")
-        else:
-            proc = subprocess.run(
-                # Common args
-                args=args,
-                check=False,
-                text=True,
-                cwd=str(cwd),
-                env=env,
-                timeout=timeout_s,
-                # Specific args
-                capture_output=True,
-            )
+
     except subprocess.TimeoutExpired as e:
         logger.info(f"EXEC {e!r}")
         # logger.exception(e)
@@ -81,16 +83,17 @@ def subprocess_run(
 
     def log(f) -> None:
         f(f"EXEC {args_text}")
+        f(f"  cwd={cwd}")
         f(f"  returncode: {proc.returncode}")
         f(f"  success_codes: {success_returncodes}")
         f(f"  duration: {time.monotonic() - begin_s:0.3f}s")
-        if logfile is not None:
-            f(f"  logfile: {logfile}")
-        else:
+        if logfile is None:
             stdout = proc.stdout.strip()
             stderr = proc.stderr.strip()
             f(f"  stdout: {stdout}")
             f(f"  stderr: {stderr}")
+        else:
+            f(f"  logfile: {logfile}")
 
     if proc.returncode not in success_returncodes:
         log(logger.warning)
@@ -100,3 +103,7 @@ def subprocess_run(
         raise SubprocessExitCodeException(msg)
 
     log(logger.debug)
+
+    if logfile is None:
+        return proc.stdout.strip()
+    return None

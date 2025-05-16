@@ -148,6 +148,16 @@ class CachedGitRepo:
                 args=[
                     "git",
                     "fetch",
+                    "origin",
+                    "+refs/heads/*:refs/remotes/origin/*",
+                ],
+                cwd=self.directory_git_bare,
+                timeout_s=GIT_CLONE_TIMEOUT_S,
+            )
+            subprocess_run(
+                args=[
+                    "git",
+                    "fetch",
                     "--all",
                     "--prune",
                     "--tags",
@@ -161,6 +171,7 @@ class CachedGitRepo:
                     "git",
                     "clone",
                     "--bare",
+                    "--depth=1",  # This is fast and will provoke if fetch does not work
                     "--filter=blob:none",
                     self.git_spec.url,
                     self.directory_git_bare.name,
@@ -176,6 +187,34 @@ class CachedGitRepo:
         if git_clean:
             shutil.rmtree(self.directory_git_worktree, ignore_errors=True)
 
+        if self.git_spec.branch is not None:
+            args = [
+                "git",
+                "fetch",
+                "origin",
+                "+refs/heads/*:refs/remotes/origin/*",
+            ]
+            subprocess_run(
+                args=args,
+                cwd=self.directory_git_bare,
+                timeout_s=GIT_CLONE_TIMEOUT_S,
+            )
+
+            # Force reset the branch to match the remote
+            args = [
+                "git",
+                "branch",
+                "-f",
+                self.git_spec.branch,
+                f"origin/{self.git_spec.branch}",
+            ]
+            subprocess_run(
+                args=args,
+                cwd=self.directory_git_bare,
+                timeout_s=GIT_CLONE_TIMEOUT_S,
+                success_returncodes=[0, 128],
+            )
+
         #
         # Add worktree or checkout
         #
@@ -189,6 +228,7 @@ class CachedGitRepo:
             if self.git_spec.branch is not None:
                 args.append(self.git_spec.branch)
             subprocess_run(args=args, cwd=self.directory_git_worktree, timeout_s=5.0)
+
         else:
             args = [
                 "git",
@@ -199,7 +239,9 @@ class CachedGitRepo:
             ]
             if self.git_spec.branch is not None:
                 args.append(self.git_spec.branch)
-            subprocess_run(args=args, cwd=self.directory_git_bare, timeout_s=5.0)
+            subprocess_run(
+                args=args, cwd=self.directory_git_bare, timeout_s=GIT_CLONE_TIMEOUT_S
+            )
 
         if self.git_spec.pr is not None:
             #
@@ -239,3 +281,24 @@ class CachedGitRepo:
                     cwd=self.directory_git_worktree,
                     timeout_s=5.0,
                 )
+
+    @staticmethod
+    def git_ref_describe(repo_directory: pathlib.Path) -> str:
+        """
+        Call 'git describe --dirty'
+        """
+        assert isinstance(repo_directory, str | pathlib.Path)
+
+        ref_describe = subprocess_run(
+            args=[
+                "git",
+                "describe",
+                "--all",
+                "--long",
+                "--dirty",
+            ],
+            cwd=repo_directory,
+            timeout_s=1.0,
+        )
+        assert ref_describe is not None
+        return ref_describe
