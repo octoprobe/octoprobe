@@ -19,29 +19,32 @@ from .util_subprocess import subprocess_run
 logger = logging.getLogger(__file__)
 GIT_CLONE_TIMEOUT_S = 60.0
 
-RE_GIT_SPEC = re.compile(r"^(?P<url>(.+?://)?.+?)(\+(?P<pr>.+?))?(@(?P<branch>.+))?$")
+# We use '~' as this is not allowed in branch names
+# See: https://git-scm.com/docs/git-check-ref-format
+RE_GIT_SPEC = re.compile(r"^(?P<url>(.+?://)?.+?)(\+(?P<pr>.~?))?(@(?P<branch>.+))?$")
+
 """
 https://github.com/micropython/micropython.git
-https://github.com/micropython/micropython.git+17232
+https://github.com/micropython/micropython.git~17232
 https://github.com/micropython/micropython.git@1.25.0
-https://github.com/micropython/micropython.git+17232@1.25.0
+https://github.com/micropython/micropython.git~17232@1.25.0
 """
 
 
 @dataclasses.dataclass(frozen=True, repr=True)
 class GitSpec:
     """
-    https://github.com/micropython/micropython.git+17232@1.25.0
+    https://github.com/micropython/micropython.git~17232@v1.25.0
     """
 
     git_spec: str
-    "https://github.com/micropython/micropython.git+17232@1.25.0"
+    "https://github.com/micropython/micropython.git~17232@v1.25.0"
     url: str
     "https://github.com/micropython/micropython.git"
     pr: str | None
     "17232"
     branch: str | None
-    "1.25.0"
+    "v1.25.0"
 
     @staticmethod
     def parse(git_ref: str) -> GitSpec:
