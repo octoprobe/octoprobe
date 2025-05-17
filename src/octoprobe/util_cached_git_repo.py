@@ -164,6 +164,7 @@ class CachedGitRepo:
                     "--all",
                     "--prune",
                     "--tags",
+                    # "--recurse-submodules=yes",
                 ],
                 cwd=self.directory_git_bare,
                 timeout_s=GIT_CLONE_TIMEOUT_S,
@@ -204,19 +205,19 @@ class CachedGitRepo:
             )
 
             # Force reset the branch to match the remote
-            args = [
-                "git",
-                "branch",
-                "-f",
-                self.git_spec.branch,
-                f"origin/{self.git_spec.branch}",
-            ]
-            subprocess_run(
-                args=args,
-                cwd=self.directory_git_bare,
-                timeout_s=GIT_CLONE_TIMEOUT_S,
-                success_returncodes=[0, 128],
-            )
+            # args = [
+            #     "git",
+            #     "branch",
+            #     "-f",
+            #     self.git_spec.branch,
+            #     f"origin/{self.git_spec.branch}",
+            # ]
+            # subprocess_run(
+            #     args=args,
+            #     cwd=self.directory_git_bare,
+            #     timeout_s=GIT_CLONE_TIMEOUT_S,
+            #     success_returncodes=[0, 128],
+            # )
 
         #
         # Add worktree or checkout
@@ -229,9 +230,12 @@ class CachedGitRepo:
                 "--detach",  # https://github.com/octoprobe/testbed_micropython/issues/14
             ]
             if self.git_spec.branch is not None:
-                args.append(self.git_spec.branch)
-            subprocess_run(args=args, cwd=self.directory_git_worktree, timeout_s=5.0)
-
+                args.append(f"origin/{self.git_spec.branch}")
+            subprocess_run(
+                args=args,
+                cwd=self.directory_git_worktree,
+                timeout_s=GIT_CLONE_TIMEOUT_S,
+            )
         else:
             args = [
                 "git",
