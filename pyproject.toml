@@ -241,6 +241,7 @@ disable = '''
     too-many-instance-attributes,
     too-many-positional-arguments,
     too-many-return-statements,
+    too-many-statements,
     unreachable,
     unspecified-encoding,
     unused-argument,

@@ -32,7 +32,6 @@ import re
 import time
 
 import usb.core
-import usb.util
 from serial.tools import list_ports, list_ports_linux
 from usb.legacy import CLASS_HUB
 

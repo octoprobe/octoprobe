@@ -244,6 +244,23 @@
             "justMyCode": false,
         },
         {
+            "name": "op exec-infra",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "octoprobe.scripts.op",
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "exec-infra",
+                "--serials=5425",
+                "set_relays([(5, True)])",
+            ],
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            },
+            "console": "integratedTerminal",
+            "justMyCode": false,
+        },
+        {
             "name": "op udev",
             "type": "debugpy",
             "request": "launch",

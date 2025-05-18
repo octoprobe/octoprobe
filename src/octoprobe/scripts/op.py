@@ -16,6 +16,7 @@ from ..usb_tentacle.usb_tentacle import UsbTentacle, UsbTentacles
 from ..util_pyudev_monitor import do_udev_monitor
 from . import op_bootmode, op_flash
 from .commissioning import do_commissioning
+from .op_exec_infra import do_exec_infra
 from .op_install import URL_RELEASE_DEFAULT, do_install
 from .op_logging import init_logging
 
@@ -140,6 +141,20 @@ def flash_probe(
 ) -> None:
     for usb_tentacle in iter_usb_tentacles(poweron=poweron, serials=serials):
         op_flash.do_flash(usb_tentacle=usb_tentacle, is_infra=False, firmware=firmware)
+
+
+@app.command(help="Execute micropython code on pico-infra.")
+def exec_infra(
+    code: TyperAnnotated[
+        str,
+        typer.Argument(help="Micropython code to execute on each pico-infra tentacle."),
+    ] = "set_relays([(1, True)])",
+    serials: _SerialsAnnotation = None,
+    poweron: _PoweronAnnotation = False,
+) -> None:
+    for usb_tentacle in iter_usb_tentacles(poweron=poweron, serials=serials):
+        ret = do_exec_infra(usb_tentacle=usb_tentacle, code=code)
+        print(f"  {usb_tentacle.serial_delimited} '{code}' ==> '{ret}'")
 
 
 @app.command(help="Power on/off usb ports.")
