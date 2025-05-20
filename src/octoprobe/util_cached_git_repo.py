@@ -245,7 +245,7 @@ class CachedGitRepo:
                 str(self.directory_git_worktree),
             ]
             if self.git_spec.branch is not None:
-                args.append(self.git_spec.branch)
+                args.append(f"origin/{self.git_spec.branch}")
             subprocess_run(
                 args=args, cwd=self.directory_git_bare, timeout_s=GIT_CLONE_TIMEOUT_S
             )
