@@ -59,8 +59,15 @@ def subprocess_run(
             logger.info(f"EXEC     stdout: {logfile}")
             logfile.parent.mkdir(parents=True, exist_ok=True)
             with logfile.open("w") as f:
-                f.write(f"{' '.join(args)}\n\n\n")
-                f.flush()
+                # Set file to line buffered mode
+                f.reconfigure(line_buffering=True, write_through=True)
+                f.write(f"cd {cwd}\n")
+                if env is not None:
+                    for k, v in env.items():
+                        f.write(f"export {k}={v}\n")
+                f.write("\n")
+                f.write(f"{' '.join(args)}\n")
+                f.write("\n\n")
                 proc = subprocess.run(
                     # Common args
                     args=args,
