@@ -6,7 +6,7 @@ set -euo pipefail
 # for project in octoprobe tentacle testbed_showcase usbhubctl
 for project in octoprobe tentacle testbed_showcase testbed_micropython
 do
-    docs_dir=~/work_octoprobe_${project}/docs
+    docs_dir=~/work_octoprobe/${project}/docs
     html_dir=${docs_dir}/_build/html
     if [ -d "$docs_dir" ]; then
         echo "Directory upload: $html_dir"
