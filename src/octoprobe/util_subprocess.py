@@ -61,6 +61,7 @@ def subprocess_run(
             with logfile.open("w") as f:
                 # Set file to line buffered mode
                 f.write(f"cd {cwd}\n")
+                f.write(f"{timeout_s=}\n")
                 if env is not None:
                     for k, v in env.items():
                         f.write(f"export {k}={v}\n")
@@ -68,20 +69,34 @@ def subprocess_run(
                 f.write(f"{' '.join(args)}\n")
                 f.write("\n\n")
                 f.flush()
-                proc = subprocess.run(
-                    # Common args
-                    args=args,
-                    check=False,
-                    text=True,
-                    cwd=str(cwd),
-                    env=env,
-                    timeout=timeout_s,
-                    # Specific args
-                    stdout=f,
-                    stderr=subprocess.STDOUT,
-                )
-                f.write(f"\n\nreturncode={proc.returncode}\n")
-                f.write(f"duration={time.monotonic() - begin_s:0.3f}s\n")
+                try:
+                    proc = subprocess.run(
+                        # Common args
+                        args=args,
+                        check=False,
+                        text=True,
+                        cwd=str(cwd),
+                        env=env,
+                        timeout=timeout_s,
+                        # Specific args
+                        stdout=f,
+                        stderr=subprocess.STDOUT,
+                    )
+                    f.write(f"\n\nreturncode={proc.returncode}\n")
+                    f.write(f"duration={time.monotonic() - begin_s:0.3f}s\n")
+                except subprocess.TimeoutExpired as e:
+                    f.write("\n\n")
+                    f.write(f"TimeoutExpired after {timeout_s=}: {e}\n")
+                    # Does it take some time for the subprocess to fully die?
+                    # To be sure, we wait some time.
+                    # This should avoid to unpower the tentacle before the subprocess really terminated.
+                    dying_gasp_timeout_s = 10.0
+                    f.write(f"Waiting for another {dying_gasp_timeout_s=}s\n")
+                    f.flush()
+                    time.sleep(dying_gasp_timeout_s)
+                    f.write("DONE\n")
+                    f.flush()
+                    raise
 
     except subprocess.TimeoutExpired as e:
         logger.info(f"EXEC {e!r}")
