@@ -19,6 +19,12 @@ systemctl status udisks2.service
 sudo journalctl UNIT=udisks2.service --follow
 
 udisksctl status
+
+
+New 2025-06-02: bossac is supported too!
+========================================
+See: https://learn.adafruit.com/introducing-itsy-bitsy-m0?view=all
+Chapter: Running bossac on the command line
 """
 
 import logging
@@ -33,8 +39,13 @@ from .lib_tentacle import TentacleBase
 from .util_baseclasses import BootApplicationUsbID, UsbID
 from .util_dut_programmer_abc import DutProgrammerABC, IDX1_RELAYS_DUT_BOOT
 from .util_firmware_spec import FirmwareBuildSpec, FirmwareSpecBase
-from .util_mcu import udev_filter_application_mode
+from .util_mcu import (
+    FILENAME_FLASHING,
+    UdevApplicationModeEvent,
+    udev_filter_application_mode,
+)
 from .util_pyudev import UdevEventBase, UdevFilter, UdevPoller
+from .util_subprocess import subprocess_run
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +63,97 @@ class SamdUdevBootModeEvent(UdevEventBase):
         return f"{self.__class__.__name__}(mount_point={self.mount_point})"
 
 
-def samd_udev_filter_boot_mode(usb_id: UsbID, usb_location: str) -> UdevFilter:
+class DutProgrammerSamdBossac(DutProgrammerABC):
+    LABEL = "samd_bossac"
+
+    @typing.override
+    def enter_boot_mode(
+        self, tentacle: TentacleBase, udev: UdevPoller
+    ) -> UdevEventBase:
+        assert tentacle.tentacle_spec_base.mcu_usb_id is not None
+
+        # Initial condition: Power and RESET pressed
+        logger.debug("Close relay and power DUT")
+        tentacle.power.dut = False
+        # This pause is required to make sure that a previous mount is removed
+        # Try to lower 'duration_on_s' but make sure that the DUT is previously powered and a drive is mounted.
+        time.sleep(0.1)
+        tentacle.infra.mcu_infra.relays(relays_close=[IDX1_RELAYS_DUT_BOOT])
+        tentacle.power.dut = True
+        logger.debug("Enter boot pulse section")
+
+        with udev.guard as guard:
+            # send 'double tab' pulse
+            duration_pulse_ms = 200  # Ok: 100, 200, 500. Failed: 50
+
+            tentacle.infra.mcu_infra.relays_pulse(
+                relays=IDX1_RELAYS_DUT_BOOT,
+                initial_closed=True,
+                durations_ms=[
+                    duration_pulse_ms,  # Unpress, wait for booting. Ok: 200, 500, 1000
+                    duration_pulse_ms,  # First tab
+                    duration_pulse_ms,
+                    duration_pulse_ms,  # Second tab
+                    duration_pulse_ms,
+                ],
+            )
+
+            # udev_filter = samd_udev_filter_boot_mode2(
+            #     usb_id=tentacle.tentacle_spec_base.mcu_usb_id.boot,
+            #     usb_location=tentacle.infra.usb_location_dut,
+            # )
+            udev_filter = udev_filter_application_mode(
+                usb_id=tentacle.tentacle_spec_base.mcu_usb_id.boot,
+                usb_location=tentacle.infra.usb_location_dut,
+            )
+
+            return guard.expect_event(
+                udev_filter=udev_filter,
+                text_where=tentacle.dut.label,
+                text_expect="Expect mcu to become visible on udev after power on",
+                timeout_s=10.0,
+            )
+
+    def flash(
+        self,
+        tentacle: TentacleBase,
+        udev: UdevPoller,
+        directory_logs: pathlib.Path,
+        firmware_spec: FirmwareSpecBase,
+    ) -> None:
+        """ """
+        assert isinstance(tentacle, TentacleBase)
+        assert isinstance(directory_logs, pathlib.Path)
+        assert isinstance(firmware_spec, FirmwareBuildSpec)
+        assert tentacle.dut is not None
+
+        event = self.enter_boot_mode(tentacle=tentacle, udev=udev)
+        assert isinstance(event, UdevApplicationModeEvent)
+        filename_bin = firmware_spec.filename
+        # See: https://micropython.org/download/ARDUINO_NANO_33_BLE_SENSE/
+        args = [
+            "bossac",
+            "--erase",
+            "--write",
+            "--port",
+            event.tty,
+            "--info",
+            "--verify",
+            # "--debug",
+            # "--usb-port",
+            "--reset",
+            *tentacle.tentacle_spec_base.programmer_args,
+            str(filename_bin),
+        ]
+        subprocess_run(
+            args=args,
+            cwd=directory_logs,
+            logfile=directory_logs / FILENAME_FLASHING,
+            timeout_s=60.0,
+        )
+
+
+def samd_udev_filter_boot_mode_obsolete(usb_id: UsbID, usb_location: str) -> UdevFilter:
     assert isinstance(usb_id, UsbID)
     assert isinstance(usb_location, str)
 
@@ -68,7 +169,7 @@ def samd_udev_filter_boot_mode(usb_id: UsbID, usb_location: str) -> UdevFilter:
     )
 
 
-class DutProgrammerSamdMountPoint(DutProgrammerABC):
+class DutProgrammerSamdMountPointObsolete(DutProgrammerABC):
     LABEL = "samd_mount_point"
 
     @typing.override
@@ -103,7 +204,7 @@ class DutProgrammerSamdMountPoint(DutProgrammerABC):
                 ],
             )
 
-            udev_filter = samd_udev_filter_boot_mode(
+            udev_filter = samd_udev_filter_boot_mode_obsolete(
                 usb_id=tentacle.tentacle_spec_base.mcu_usb_id.boot,
                 usb_location=tentacle.infra.usb_location_dut,
             )

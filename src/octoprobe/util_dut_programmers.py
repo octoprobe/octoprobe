@@ -21,14 +21,18 @@ def _get_programmers() -> list[type[DutProgrammerABC]]:
     from .util_mcu_nrf import DutProgrammerBossac
     from .util_mcu_pico import DutProgrammerPicotool
     from .util_mcu_pyboard import DutProgrammerDfuUtil
-    from .util_mcu_samd import DutProgrammerSamdMountPoint
+    from .util_mcu_samd import (
+        DutProgrammerSamdBossac,
+        DutProgrammerSamdMountPointObsolete,
+    )
 
     return [
         DutProgrammerBossac,
         DutProgrammerDfuUtil,
         DutProgrammerEsptool,
         DutProgrammerPicotool,
-        DutProgrammerSamdMountPoint,
+        DutProgrammerSamdMountPointObsolete,
+        DutProgrammerSamdBossac,
         DutProgrammerTeensyLoaderCli,
     ]
 

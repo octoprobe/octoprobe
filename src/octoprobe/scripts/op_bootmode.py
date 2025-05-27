@@ -24,7 +24,11 @@ def do_bootmode(
     if usb_tentacle.pico_infra.serial is None:
         print(
             DELIM
-            + "Tentacle is already in boot mode. Please unconnect and reconnect USB."
+            + "Tentacle is already in boot mode.\n"
+            + DELIM
+            + "Please unconnect and reconnect USB.\n"
+            + DELIM
+            + "Or add the command line parameter: --poweron"
         )
         return None
 
