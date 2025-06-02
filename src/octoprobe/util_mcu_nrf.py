@@ -96,7 +96,7 @@ class DutProgrammerBossac(DutProgrammerABC):
             "--port",
             event.tty,
             "--info",
-            "--debug",
+            # "--debug",
             "--usb-port",
             "--reset",
             str(filename_dfu),
