@@ -42,7 +42,7 @@ class DirectoryTag(enum.StrEnum):
     F = "F"
     # Firmware Source Git Repo
     R = "R"
-    # Results
+    # Results (Testresults direcory)
     T = "T"
     # Tests Source Git Repo
     P = "P"

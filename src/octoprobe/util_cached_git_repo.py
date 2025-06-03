@@ -28,12 +28,23 @@ GIT_REF_TAG_PR = "~"
 RE_GIT_SPEC = re.compile(
     rf"^(?P<url>(.+?://)?.+?)({GIT_REF_TAG_PR}(?P<pr>.+?))?({GIT_REF_TAG_BRANCH}(?P<branch>.+))?$"
 )
-
 """
 https://github.com/micropython/micropython.git
 https://github.com/micropython/micropython.git~17232
 https://github.com/micropython/micropython.git@1.25.0
 https://github.com/micropython/micropython.git~17232@1.25.0
+"""
+
+RE_GITHUB_URL = re.compile(
+    r"^(?P<url>(.+?://)?.+?)(?P<trash>/|.git|.git/)?(/pull/(?P<pr>\d+?))?(/tree/(?P<branch>.+))?$"
+)
+"""
+https://github.com/micropython/micropython
+https://github.com/micropython/micropython/
+https://github.com/micropython/micropython.git
+https://github.com/micropython/micropython.git/
+https://github.com/micropython/micropython/pull/17419
+https://github.com/micropython/micropython/tree/v1.22-release
 """
 
 
@@ -58,6 +69,28 @@ class GitSpec:
             return self.url[: -len(GIT_REF_SUFFIX_GIT)]
         return self.url
 
+    @property
+    def url_link(self) -> str:
+        """
+        Example:
+        https://github.com/micropython/micropython/tree/master
+        https://github.com/micropython/micropython/pull/17419
+        """
+        if self.pr is not None:
+            return f"{self.url_without_git}/pull/{self.pr}"
+        if self.branch is not None:
+            return f"{self.url_without_git}/tree/{self.branch}"
+        return self.url_without_git
+
+    @property
+    def render_git_spec(self) -> str:
+        spec = self.url
+        if self.pr is not None:
+            spec += f"{GIT_REF_TAG_PR}{self.pr}"
+        if self.branch is not None:
+            spec += f"{GIT_REF_TAG_BRANCH}{self.branch}"
+        return spec
+
     @staticmethod
     def parse(git_ref: str) -> GitSpec:
         match = RE_GIT_SPEC.match(git_ref)
@@ -70,6 +103,24 @@ class GitSpec:
             pr=match.group("pr"),
             branch=match.group("branch"),
         )
+
+    @staticmethod
+    def parse_github(github_url: str) -> GitSpec:
+        match = RE_GITHUB_URL.match(github_url)
+        if match is None:
+            raise ValueError(f"Failed to parse github_url '{github_url}'!")
+
+        url = match.group("url")
+        assert not url.endswith(GIT_REF_SUFFIX_GIT)
+        url += GIT_REF_SUFFIX_GIT
+
+        git_spec = GitSpec(
+            git_spec="-",
+            url=url,
+            pr=match.group("pr"),
+            branch=match.group("branch"),
+        )
+        return dataclasses.replace(git_spec, git_spec=git_spec.render_git_spec)
 
 
 class CachedGitRepo:
