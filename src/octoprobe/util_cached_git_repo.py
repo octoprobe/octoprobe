@@ -19,9 +19,15 @@ from .util_subprocess import subprocess_run
 logger = logging.getLogger(__file__)
 GIT_CLONE_TIMEOUT_S = 60.0
 
+GIT_REF_TAG_GIT = ".git"
+GIT_REF_TAG_BRANCH = "@"
+GIT_REF_TAG_PR = "~"
+
 # We use '~' as this is not allowed in branch names
 # See: https://git-scm.com/docs/git-check-ref-format
-RE_GIT_SPEC = re.compile(r"^(?P<url>(.+?://)?.+?)(\+(?P<pr>.~?))?(@(?P<branch>.+))?$")
+RE_GIT_SPEC = re.compile(
+    rf"^(?P<url>(.+?://)?.+?)(\+(?P<pr>.{GIT_REF_TAG_PR}?))?({GIT_REF_TAG_BRANCH}(?P<branch>.+))?$"
+)
 
 """
 https://github.com/micropython/micropython.git
