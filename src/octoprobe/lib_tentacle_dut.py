@@ -167,11 +167,11 @@ print('{VERSION_IMPLEMENTATION_SEPARATOR}'.join(l))
         assert isinstance(directory_logs, pathlib.Path)
         assert isinstance(firmware_spec, FirmwareSpecBase)
 
-        try:
-            self.boot_and_init_mp_remote_dut(tentacle=tentacle, udev=udev)
-            if not firmware_spec.do_flash:
-                return
+        self.boot_and_init_mp_remote_dut(tentacle=tentacle, udev=udev)
+        if not firmware_spec.do_flash:
+            return
 
+        try:
             if tentacle.tentacle_state.flash_force:
                 tentacle.tentacle_state.flash_force = False
                 logger.info(

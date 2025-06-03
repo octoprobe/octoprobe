@@ -146,6 +146,11 @@ class TentacleSpecBase(abc.ABC):
     """
     Special argumets...
     """
+    power_on_delay_s: float | None = None
+    """
+    Some boards have a USB-serial-converter-chip. The udev event of this chip might arrive before the MCU has powerered up.
+    These boards should define 'power_on_delay_s=1.0'
+    """
 
     def __post_init__(self) -> None:
         assert isinstance(self.tentacle_type, enum.StrEnum)

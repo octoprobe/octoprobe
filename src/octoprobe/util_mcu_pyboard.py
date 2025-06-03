@@ -50,11 +50,11 @@ class DutProgrammerDfuUtil(DutProgrammerABC):
         # Press Boot Button
         tentacle.infra.mcu_infra.relays(relays_close=[IDX1_RELAYS_DUT_BOOT])
 
-        tentacle.power.dut = False
+        tentacle.power_dut = False
         tentacle.power_dut_off_and_wait()
 
         with udev.guard as guard:
-            tentacle.power.dut = True
+            tentacle.power_dut = True
 
             assert tentacle.tentacle_spec_base.mcu_usb_id is not None
             udev_filter = pyboard_udev_filter_boot_mode(
@@ -80,9 +80,9 @@ class DutProgrammerDfuUtil(DutProgrammerABC):
         """ """
         assert isinstance(tentacle, TentacleBase)
         assert isinstance(firmware_spec, FirmwareSpecBase)
-        assert (
-            len(tentacle.tentacle_spec_base.programmer_args) == 0
-        ), "Not yet supported"
+        assert len(tentacle.tentacle_spec_base.programmer_args) == 0, (
+            "Not yet supported"
+        )
         assert tentacle.dut is not None
 
         event = self.enter_boot_mode(tentacle=tentacle, udev=udev)

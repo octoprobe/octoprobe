@@ -135,9 +135,9 @@ class DutProgrammerPicotool(DutProgrammerABC):
         """ """
         assert isinstance(tentacle, TentacleBase)
         assert isinstance(firmware_spec, FirmwareSpecBase)
-        assert (
-            len(tentacle.tentacle_spec_base.programmer_args) == 0
-        ), "Not yet supported"
+        assert len(tentacle.tentacle_spec_base.programmer_args) == 0, (
+            "Not yet supported"
+        )
         assert tentacle.dut is not None
 
         tentacle.infra.power_dut_off_and_wait()
@@ -146,7 +146,7 @@ class DutProgrammerPicotool(DutProgrammerABC):
         tentacle.infra.mcu_infra.relays(relays_close=[IDX1_RELAYS_DUT_BOOT])
 
         with udev.guard as guard:
-            tentacle.power.dut = True
+            tentacle.power_dut = True
 
             assert tentacle.tentacle_spec_base.mcu_usb_id is not None
             udev_filter = pico_udev_filter_boot_mode(
