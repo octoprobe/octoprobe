@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+import logging
 import pathlib
 import typing
 from typing import Optional
 
 import typer
 import typing_extensions
+
+from octoprobe.util_cached_git_repo import CachedGitRepo
+from octoprobe.util_constants import DIRECTORY_OCTOPROBE_GIT_CACHE
 
 from ..usb_tentacle.usb_constants import (
     TyperPowerCycle,
@@ -36,6 +40,10 @@ _SerialsAnnotation = TyperAnnotated[
     Optional[list[str]],  # noqa: UP007
     typer.Option(help="Apply only to the selected tentacles"),
 ]
+_ReposAnnotation = TyperAnnotated[
+    Optional[list[str]],  # noqa: UP007
+    typer.Option(help="Repos to be cloned"),
+]
 
 _PoweronAnnotation = TyperAnnotated[
     bool,
@@ -48,6 +56,35 @@ _PicotoolCmdAnnotation = TyperAnnotated[
     bool,
     typer.Option(help="Show the picotoolcommand."),
 ]
+
+
+@app.command(help="Tests git clone/checkout functionality.")
+def debug_git_checkout(
+    repos: _ReposAnnotation = None, submodules: bool = False, debug: bool = False
+) -> None:
+    """ """
+    init_logging(logging.DEBUG if debug else None)
+
+    if repos is None:
+        print("No repos specified...")
+        return
+
+    CachedGitRepo.clean_directory_work_repo(
+        directory_cache=DIRECTORY_OCTOPROBE_GIT_CACHE
+    )
+    for idx, git_spec in enumerate(repos):
+        repo_name = chr(idx + ord("A"))
+        print(f"{repo_name} -> {git_spec}")
+        git_repo = CachedGitRepo(
+            directory_cache=DIRECTORY_OCTOPROBE_GIT_CACHE,
+            git_spec=git_spec,
+            prefix=f"{repo_name}_",
+        )
+        git_repo.clone(git_clean=True, submodules=submodules)
+        repo_directory = git_repo.directory_git_work_repo
+        print(f"{repo_directory}\n  {git_spec}\n")
+
+    print("Done")
 
 
 @app.command(help="Installs some binaries which require root rights.")

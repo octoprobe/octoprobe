@@ -8,5 +8,7 @@ FILENAME_LOGGING_JSON = DIRECTORY_OF_THIS_FILE / "commissioning_logging.json"
 assert FILENAME_LOGGING_JSON.is_file()
 
 
-def init_logging() -> None:
+def init_logging(level: int | None = None) -> None:
     logging.config.dictConfig(json.loads(FILENAME_LOGGING_JSON.read_text()))
+    if level is not None:
+        logging.getLogger().setLevel(level=level)

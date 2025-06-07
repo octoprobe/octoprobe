@@ -1,11 +1,33 @@
 """
-GIT CLONE / WORKTREES
+GIT CLONE / CHECKOUT
+
+git clone/checkoug strategy
+===========================
+
+git-cache/work
+--------------
+
+Repos are cloned into work folder
+
+Directory
+  ~/octoprobe_downloads/git-cache/work/<use>_<repo>
+
+  use: 'firmware' or 'test'
+  This allows to have different versions checked out for 'firmware' and 'test'!
+
+For example
+  ~/octoprobe_downloads/git-cache/work/firmware_github-com-micropython-micropython.git
+  ~/octoprobe_downloads/git-cache/work/firmware_github-com-dpgeorge-micropython.git
+
+commands
+  * rm -rf ~/octoprobe_downloads/git-cache/work/<use>_<repo>
+  * git clone ...
 """
 
 from __future__ import annotations
 
 import dataclasses
-import hashlib
+import json
 import logging
 import pathlib
 import re
@@ -17,11 +39,13 @@ from .util_constants import relative_cwd
 from .util_subprocess import subprocess_run
 
 logger = logging.getLogger(__file__)
-GIT_CLONE_TIMEOUT_S = 60.0
+GIT_CLONE_TIMEOUT_S = 240.0
 
 GIT_REF_SUFFIX_GIT = ".git"
 GIT_REF_TAG_BRANCH = "@"
 GIT_REF_TAG_PR = "~"
+
+DIRECTORY_WORK = "work"
 
 # We use '~' as this is not allowed in branch names
 # See: https://git-scm.com/docs/git-check-ref-format
@@ -46,6 +70,23 @@ https://github.com/micropython/micropython.git/
 https://github.com/micropython/micropython/pull/17419
 https://github.com/micropython/micropython/tree/v1.22-release
 """
+
+
+@dataclasses.dataclass(frozen=True)
+class MetadataGitCommand:
+    command: str
+    stdout: str
+
+
+@dataclasses.dataclass(frozen=True)
+class Metadata:
+    git_spec: str
+    url_link: str
+    command_describe: MetadataGitCommand
+    command_log: MetadataGitCommand
+
+
+METADATA_SUFFIX = ".metadata.json"
 
 
 @dataclasses.dataclass(frozen=True, repr=True)
@@ -131,10 +172,8 @@ class CachedGitRepo:
     If the url changed, the whole repo will be cloned again.
     """
 
-    singleton_cloned: set[str] = set()
-    """
-    A set of all directory names which have been cloned and updated.
-    """
+    GIT_DEPTH_DEEP = 1000
+    GIT_DEPTH_SHALLOW = 2
 
     def __init__(
         self,
@@ -150,18 +189,10 @@ class CachedGitRepo:
         # Example 'prefix': 'micropython_mpbuild_'
 
         self.prefix = prefix
-        self._directory_bare = directory_cache / "bare"
-        self._directory_worktree = directory_cache / "worktree"
+        self._directory_work = directory_cache / DIRECTORY_WORK
         self.git_spec = GitSpec.parse(git_ref=git_spec)
 
         logger.debug(f"{self.git_spec.git_spec} -> {self.git_spec}")
-
-        self.directory_git_bare.parent.mkdir(parents=True, exist_ok=True)
-        self.filename_git_url.write_text(self.git_spec.url)
-
-    @property
-    def hash_obsolete(self) -> str:
-        return hashlib.md5(self.git_spec.url.encode("utf-8")).hexdigest()
 
     @property
     def slugify(self) -> str:
@@ -178,145 +209,55 @@ class CachedGitRepo:
         )
 
     @property
-    def filename_git_url(self) -> pathlib.Path:
-        return self._directory_bare / f"{self.slugify}.git_url.txt"
+    def filename_metadata(self) -> pathlib.Path:
+        return self.directory_git_work_repo.with_suffix(METADATA_SUFFIX)
 
     @property
-    def directory_git_bare(self) -> pathlib.Path:
-        return self._directory_bare / f"{self.slugify}.git"
+    def directory_git_work_repo(self) -> pathlib.Path:
+        return self._directory_work / f"{self.prefix}{self.slugify}"
 
-    @property
-    def directory_git_worktree(self) -> pathlib.Path:
-        return self._directory_worktree / f"{self.prefix}{self.slugify}"
-
-    def clone(self, git_clean: bool) -> None:
+    def clone(self, git_clean: bool, submodules=False) -> None:
         """
         Clone or update the git repo.
         """
-        if self.directory_git_bare.name not in CachedGitRepo.singleton_cloned:
-            CachedGitRepo.singleton_cloned.add(self.directory_git_bare.name)
-            logger.info(
-                f"git clone {self.git_spec.git_spec} -> {relative_cwd(self.directory_git_bare)}"
-            )
-            self._clone_bare()
+        #
+        # Clone repo
+        #
+        self._directory_work.mkdir(exist_ok=True)
 
-        logger.info(
-            f"git worktree {self.git_spec.git_spec} -> {relative_cwd(self.directory_git_worktree)}"
+        assert not self.directory_git_work_repo.is_dir(), self.directory_git_work_repo
+        # logger.debug(f"Remove directory: {self.directory_git_work_repo}")
+        # shutil.rmtree(self.directory_git_work_repo)
+
+        require_rebase = (self.git_spec.branch is not None) and (
+            self.git_spec.pr is not None
         )
-        self._worktree_add(git_clean=git_clean)
-
-    def _clone_bare(self) -> None:
-        #
-        # Clone or fetch bare repo
-        #
-        if self.directory_git_bare.is_dir():
-            subprocess_run(
-                args=[
-                    "git",
-                    "fetch",
-                    "origin",
-                    "+refs/heads/*:refs/remotes/origin/*",
-                ],
-                cwd=self.directory_git_bare,
-                timeout_s=GIT_CLONE_TIMEOUT_S,
-            )
-            subprocess_run(
-                args=[
-                    "git",
-                    "fetch",
-                    "--all",
-                    "--prune",
-                    "--tags",
-                    # "--recurse-submodules=yes",
-                ],
-                cwd=self.directory_git_bare,
-                timeout_s=GIT_CLONE_TIMEOUT_S,
-            )
-        else:
-            subprocess_run(
-                args=[
-                    "git",
-                    "clone",
-                    "--bare",
-                    "--depth=1",  # This is fast and will provoke if fetch does not work
-                    "--filter=blob:none",
-                    self.git_spec.url,
-                    self.directory_git_bare.name,
-                ],
-                cwd=self.directory_git_bare.parent,
-                timeout_s=GIT_CLONE_TIMEOUT_S,
-            )
-
-    def _worktree_add(self, git_clean: bool) -> None:
-        #
-        # Add worktree or checkout
-        #
-        if git_clean:
-            shutil.rmtree(self.directory_git_worktree, ignore_errors=True)
-
+        depth = self.GIT_DEPTH_DEEP if require_rebase else self.GIT_DEPTH_SHALLOW
+        args = [
+            "git",
+            "clone",
+            f"--depth={depth}",
+            "--filter=blob:none",
+            "--jobs=8",
+            self.git_spec.url,
+            self.directory_git_work_repo.name,
+        ]
         if self.git_spec.branch is not None:
-            args = [
-                "git",
-                "fetch",
-                "origin",
-                "+refs/heads/*:refs/remotes/origin/*",
-            ]
-            subprocess_run(
-                args=args,
-                cwd=self.directory_git_bare,
-                timeout_s=GIT_CLONE_TIMEOUT_S,
+            args.append(f"--branch={self.git_spec.branch}")
+        if submodules:
+            args.extend(
+                [
+                    "--recurse-submodules",
+                    "--shallow-submodules",  # All submodules which are cloned will be shallow with a depth of 1.
+                ]
             )
-
-            # Force reset the branch to match the remote
-            # args = [
-            #     "git",
-            #     "branch",
-            #     "-f",
-            #     self.git_spec.branch,
-            #     f"origin/{self.git_spec.branch}",
-            # ]
-            # subprocess_run(
-            #     args=args,
-            #     cwd=self.directory_git_bare,
-            #     timeout_s=GIT_CLONE_TIMEOUT_S,
-            #     success_returncodes=[0, 128],
-            # )
-
-        #
-        # Add worktree or checkout
-        #
-        if self.directory_git_worktree.is_dir():
-            args = [
-                "git",
-                "checkout",
-                "--force",
-                "--detach",  # https://github.com/octoprobe/testbed_micropython/issues/14
-            ]
-            if self.git_spec.branch is not None:
-                args.append(f"origin/{self.git_spec.branch}")
-            subprocess_run(
-                args=args,
-                cwd=self.directory_git_worktree,
-                timeout_s=GIT_CLONE_TIMEOUT_S,
-            )
-        else:
-            args = [
-                "git",
-                "worktree",
-                "add",
-                "-f",
-                str(self.directory_git_worktree),
-            ]
-            if self.git_spec.branch is not None:
-                args.append(f"origin/{self.git_spec.branch}")
-            subprocess_run(
-                args=args, cwd=self.directory_git_bare, timeout_s=GIT_CLONE_TIMEOUT_S
-            )
+        subprocess_run(
+            args=args,
+            cwd=self.directory_git_work_repo.parent,
+            timeout_s=GIT_CLONE_TIMEOUT_S,
+        )
 
         if self.git_spec.pr is not None:
-            #
-            # checkout the PR
-            #
             subprocess_run(
                 args=[
                     "git",
@@ -324,51 +265,139 @@ class CachedGitRepo:
                     "origin",
                     f"pull/{self.git_spec.pr}/head:pr-{self.git_spec.pr}",
                 ],
-                cwd=self.directory_git_worktree,
-                timeout_s=5.0,
+                cwd=self.directory_git_work_repo,
+                timeout_s=GIT_CLONE_TIMEOUT_S,
             )
             subprocess_run(
                 args=[
                     "git",
                     "checkout",
-                    "--force",
-                    "--detach",  # https://github.com/octoprobe/testbed_micropython/issues/14
                     f"pr-{self.git_spec.pr}",
                 ],
-                cwd=self.directory_git_worktree,
-                timeout_s=5.0,
+                cwd=self.directory_git_work_repo,
+                timeout_s=GIT_CLONE_TIMEOUT_S,
             )
-            if self.git_spec.branch is not None:
-                #
-                # rebase the PR
-                #
+
+            if require_rebase:
+                assert self.git_spec.branch is not None
                 subprocess_run(
                     args=[
                         "git",
                         "rebase",
                         self.git_spec.branch,
                     ],
-                    cwd=self.directory_git_worktree,
-                    timeout_s=5.0,
+                    cwd=self.directory_git_work_repo,
+                    timeout_s=GIT_CLONE_TIMEOUT_S,
                 )
 
-    @staticmethod
-    def git_ref_describe(repo_directory: pathlib.Path) -> str:
-        """
-        Call 'git describe --dirty'
-        """
-        assert isinstance(repo_directory, str | pathlib.Path)
+        metadata = self.get_metadata()
+        with self.filename_metadata.open("w") as f:
+            json.dump(dataclasses.asdict(metadata), fp=f, indent=4, sort_keys=True)
 
-        ref_describe = subprocess_run(
-            args=[
-                "git",
-                "describe",
-                "--all",
-                "--long",
-                "--dirty",
-            ],
-            cwd=repo_directory,
-            timeout_s=1.0,
+        logger.info(
+            f"git clone {self.git_spec.git_spec} -> {relative_cwd(self.directory_git_work_repo)}"
         )
-        assert ref_describe is not None
-        return ref_describe
+
+    def get_metadata(self) -> Metadata:
+        command_describe = self.get_git_describe()
+        command_log = self.get_git_log()
+        return Metadata(
+            git_spec=self.git_spec.git_spec,
+            url_link=self.git_spec.url_link,
+            command_describe=command_describe,
+            command_log=command_log,
+        )
+
+    def get_git_describe(self) -> MetadataGitCommand:
+        args = [
+            "git",
+            "describe",
+            "--all",
+            "--long",
+            "--dirty",
+        ]
+
+        git_describe = subprocess_run(
+            args=args,
+            cwd=self.directory_git_work_repo,
+            timeout_s=GIT_CLONE_TIMEOUT_S,
+        )
+        assert git_describe is not None
+
+        return MetadataGitCommand(
+            command=" ".join(args),
+            stdout=git_describe,
+        )
+
+    def get_git_log(self) -> MetadataGitCommand:
+        """
+        call 'git log' and concatinate the output.
+        Example:
+            436b067 (HEAD -> pr-17418) pyproject.toml: Enforce trailing newline on python files.
+            5f058e9 (origin/master, origin/HEAD, master) esp32: Update ADC driver update to the new esp_adc API.
+            2c2f0b2 esp32: Re-use allocated timer interrupts and simplify UART timer code.
+        Concatenations is triggered by ' (origin/'
+        """
+        args = [
+            "git",
+            "log",
+            "--oneline",
+            "--decorate",
+            f"-n {self.GIT_DEPTH_DEEP}",
+        ]
+        git_log = subprocess_run(
+            args=args,
+            cwd=self.directory_git_work_repo,
+            timeout_s=GIT_CLONE_TIMEOUT_S,
+        )
+        assert git_log is not None
+
+        def head() -> str:
+            "return all relevant lines plus one"
+            lines: list[str] = []
+            done = False
+            end_trigger = f" (origin/{self.git_spec.branch}"
+            if (self.git_spec.pr is not None) and (self.git_spec.branch is None):
+                end_trigger = f" (HEAD -> pr-{self.git_spec.pr})"
+            for line in git_log.splitlines():
+                lines.append(line)
+                if done:
+                    break
+                if line.find(end_trigger) >= 0:
+                    # Example:
+                    # 5f058e9 (origin/master, origin/HEAD, master) esp32: Update ADC driver update
+                    done = True
+            return "\n".join(lines)
+
+        return MetadataGitCommand(
+            command=" ".join(args),
+            stdout=head(),
+        )
+
+    @staticmethod
+    def clean_directory_work_repo(directory_cache=pathlib.Path) -> None:
+        """
+        Before we start cloning/checkout: Remove all git-cache/work directories!
+        """
+        assert isinstance(directory_cache, pathlib.Path)
+        directory_work = directory_cache / DIRECTORY_WORK
+        for subdirectory in directory_work.iterdir():
+            if subdirectory.is_dir():
+                shutil.rmtree(subdirectory)
+            else:
+                subdirectory.unlink()
+
+    @staticmethod
+    def git_metadata(directory: pathlib.Path) -> dict:
+        if not directory.is_dir():
+            return {}
+        filename_metadata = directory.with_suffix(METADATA_SUFFIX)
+
+        try:
+            metadata_text = filename_metadata.read_text()
+            metadata_dict = json.loads(metadata_text)
+            assert isinstance(metadata_dict, dict)
+            return metadata_dict
+        except Exception as e:
+            logger.error(f"{filename_metadata}: {e}")
+            return {}

@@ -276,6 +276,26 @@
             "justMyCode": false,
         },
         {
+            "name": "op debug-git-checkout",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "octoprobe.scripts.op",
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "debug-git-checkout",
+                "--repos=https://github.com/micropython/micropython.git@master",
+                "--repos=https://github.com/micropython/micropython.git@v1.25.0",
+                "--repos=https://github.com/dpgeorge/micropython.git@qemu-sparc",
+                "--repos=https://github.com/micropython/micropython.git~17418",
+                "--repos=https://github.com/micropython/micropython.git~17384@master",
+            ],
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            },
+            "console": "integratedTerminal",
+            "justMyCode": false,
+        },
+        {
             "name": "pytest",
             "type": "debugpy",
             "request": "launch",
