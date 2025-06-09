@@ -59,16 +59,30 @@ https://github.com/micropython/micropython.git@1.25.0
 https://github.com/micropython/micropython.git~17232@1.25.0
 """
 
+RE_IS_GITHUB_URL = re.compile(r"/(tree|pull|commit)/")
+"""
+It is a github url if it contains '/tree/' or '/pull/'
+"""
+
 RE_GITHUB_URL = re.compile(
-    r"^(?P<url>(.+?://)?.+?)(?P<trash>/|.git|.git/)?(/pull/(?P<pr>\d+?))?(/tree/(?P<branch>.+))?$"
+    r"^(?P<url>(.+?://)?.+?)(?P<trash>/|.git|.git/)?(|(/pull/(?P<pr>\d+).*)|(/tree/(?P<branch>.+))|(/commit/(?P<commit>[a-f0-9]+).*))$"
 )
 """
 https://github.com/micropython/micropython
 https://github.com/micropython/micropython/
 https://github.com/micropython/micropython.git
 https://github.com/micropython/micropython.git/
-https://github.com/micropython/micropython/pull/17419
-https://github.com/micropython/micropython/tree/v1.22-release
+https://github.com/micropython/micropython/commit/f498a16c7db6d4b2de200b3e0856528dfe0613c3
+https://github.com/micropython/micropython/commit/f498a16c7db6d4b2de200b3e0856528dfe0613c3#diff-69528cf7
+https://github.com/micropython/micropython/pull/17232
+https://github.com/micropython/micropython/pull/17232/commits
+https://github.com/micropython/micropython/tree/master
+https://github.com/micropython/micropython/tree/docs/library/bluetooth
+"""
+
+RE_COMMIT_HASH = re.compile(r"^[a-f0-9]+$")
+"""
+This pattern is used to distinquish a branch from a commit hash.
 """
 
 
@@ -79,7 +93,7 @@ class MetadataGitCommand:
 
 
 @dataclasses.dataclass(frozen=True)
-class Metadata:
+class GitMetadata:
     git_spec: str
     url_link: str
     command_describe: MetadataGitCommand
@@ -103,6 +117,26 @@ class GitSpec:
     "17232"
     branch: str | None
     "v1.25.0"
+
+    @property
+    def is_commit_hash(self) -> bool:
+        """
+        Returns True if 'self.branch' is a commit hash.
+        """
+        if self.branch is None:
+            return False
+        match_commit_hash = RE_COMMIT_HASH.match(self.branch)
+        return match_commit_hash is not None
+
+    @property
+    def is_branch(self) -> bool:
+        """
+        Returns True if 'self.branch' is a branch and not a commit hash.
+        """
+        if self.branch is None:
+            return False
+        match_commit_hash = RE_COMMIT_HASH.match(self.branch)
+        return match_commit_hash is None
 
     @property
     def url_without_git(self) -> str:
@@ -132,8 +166,8 @@ class GitSpec:
             spec += f"{GIT_REF_TAG_BRANCH}{self.branch}"
         return spec
 
-    @staticmethod
-    def parse(git_ref: str) -> GitSpec:
+    @classmethod
+    def parse(cls, git_ref: str) -> GitSpec:
         match = RE_GIT_SPEC.match(git_ref)
         if match is None:
             raise ValueError(f"Failed to parse git_spec '{git_ref}'!")
@@ -145,8 +179,8 @@ class GitSpec:
             branch=match.group("branch"),
         )
 
-    @staticmethod
-    def parse_github(github_url: str) -> GitSpec:
+    @classmethod
+    def parse_github(cls, github_url: str) -> GitSpec:
         match = RE_GITHUB_URL.match(github_url)
         if match is None:
             raise ValueError(f"Failed to parse github_url '{github_url}'!")
@@ -155,13 +189,24 @@ class GitSpec:
         assert not url.endswith(GIT_REF_SUFFIX_GIT)
         url += GIT_REF_SUFFIX_GIT
 
+        branch = match.group("branch")
+        if branch is None:
+            branch = match.group("commit")
         git_spec = GitSpec(
             git_spec="-",
             url=url,
             pr=match.group("pr"),
-            branch=match.group("branch"),
+            branch=branch,
         )
         return dataclasses.replace(git_spec, git_spec=git_spec.render_git_spec)
+
+    @classmethod
+    def parse_tolerant(cls, git_ref: str) -> GitSpec:
+        match_is_github_url = RE_IS_GITHUB_URL.search(git_ref)
+        if match_is_github_url:
+            return cls.parse_github(github_url=git_ref)
+
+        return cls.parse(git_ref=git_ref)
 
 
 class CachedGitRepo:
@@ -216,14 +261,14 @@ class CachedGitRepo:
     def directory_git_work_repo(self) -> pathlib.Path:
         return self._directory_work / f"{self.prefix}{self.slugify}"
 
-    def clone(self, git_clean: bool, submodules=False) -> None:
+    def clone(self, git_clean: bool, submodules=False) -> GitMetadata:
         """
         Clone or update the git repo.
         """
         #
         # Clone repo
         #
-        self._directory_work.mkdir(exist_ok=True)
+        self._directory_work.mkdir(parents=True, exist_ok=True)
 
         assert not self.directory_git_work_repo.is_dir(), self.directory_git_work_repo
         # logger.debug(f"Remove directory: {self.directory_git_work_repo}")
@@ -242,7 +287,8 @@ class CachedGitRepo:
             self.git_spec.url,
             self.directory_git_work_repo.name,
         ]
-        if self.git_spec.branch is not None:
+        if self.git_spec.is_branch:
+            assert self.git_spec.branch is not None
             args.append(f"--branch={self.git_spec.branch}")
         if submodules:
             args.extend(
@@ -256,6 +302,18 @@ class CachedGitRepo:
             cwd=self.directory_git_work_repo.parent,
             timeout_s=GIT_CLONE_TIMEOUT_S,
         )
+
+        if self.git_spec.is_commit_hash:
+            assert self.git_spec.branch is not None
+            subprocess_run(
+                args=[
+                    "git",
+                    "checkout",
+                    self.git_spec.branch,
+                ],
+                cwd=self.directory_git_work_repo,
+                timeout_s=GIT_CLONE_TIMEOUT_S,
+            )
 
         if self.git_spec.pr is not None:
             subprocess_run(
@@ -290,18 +348,19 @@ class CachedGitRepo:
                     timeout_s=GIT_CLONE_TIMEOUT_S,
                 )
 
-        metadata = self.get_metadata()
+        metadata = self.get_metadata(depth)
         with self.filename_metadata.open("w") as f:
             json.dump(dataclasses.asdict(metadata), fp=f, indent=4, sort_keys=True)
 
         logger.info(
             f"git clone {self.git_spec.git_spec} -> {relative_cwd(self.directory_git_work_repo)}"
         )
+        return metadata
 
-    def get_metadata(self) -> Metadata:
+    def get_metadata(self, depth: int) -> GitMetadata:
         command_describe = self.get_git_describe()
-        command_log = self.get_git_log()
-        return Metadata(
+        command_log = self.get_git_log(depth=depth)
+        return GitMetadata(
             git_spec=self.git_spec.git_spec,
             url_link=self.git_spec.url_link,
             command_describe=command_describe,
@@ -315,6 +374,7 @@ class CachedGitRepo:
             "--all",
             "--long",
             "--dirty",
+            "--always",
         ]
 
         git_describe = subprocess_run(
@@ -329,7 +389,7 @@ class CachedGitRepo:
             stdout=git_describe,
         )
 
-    def get_git_log(self) -> MetadataGitCommand:
+    def get_git_log(self, depth: int) -> MetadataGitCommand:
         """
         call 'git log' and concatinate the output.
         Example:
@@ -343,7 +403,7 @@ class CachedGitRepo:
             "log",
             "--oneline",
             "--decorate",
-            f"-n {self.GIT_DEPTH_DEEP}",
+            f"-n {depth}",
         ]
         git_log = subprocess_run(
             args=args,
@@ -381,11 +441,12 @@ class CachedGitRepo:
         """
         assert isinstance(directory_cache, pathlib.Path)
         directory_work = directory_cache / DIRECTORY_WORK
-        for subdirectory in directory_work.iterdir():
-            if subdirectory.is_dir():
-                shutil.rmtree(subdirectory)
-            else:
-                subdirectory.unlink()
+        if directory_work.is_dir():
+            for subdirectory in directory_work.iterdir():
+                if subdirectory.is_dir():
+                    shutil.rmtree(subdirectory)
+                else:
+                    subdirectory.unlink()
 
     @staticmethod
     def git_metadata(directory: pathlib.Path) -> dict:

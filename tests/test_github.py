@@ -43,8 +43,24 @@ _TESTPARAMS = [
         expected_gitspec="https://github.com/micropython/micropython.git~17419",
     ),
     Ttestparam(
+        github="https://github.com/micropython/micropython/pull/17419/commits",
+        expected_gitspec="https://github.com/micropython/micropython.git~17419",
+    ),
+    Ttestparam(
         github="https://github.com/micropython/micropython/tree/v1.22-release",
         expected_gitspec="https://github.com/micropython/micropython.git@v1.22-release",
+    ),
+    Ttestparam(
+        github="https://github.com/micropython/micropython/tree/docs/library/bluetooth",
+        expected_gitspec="https://github.com/micropython/micropython.git@docs/library/bluetooth",
+    ),
+    Ttestparam(
+        github="https://github.com/micropython/micropython/commit/f498a16c7db6d4b2de200b3e0856528dfe0613c3",
+        expected_gitspec="https://github.com/micropython/micropython.git@f498a16c7db6d4b2de200b3e0856528dfe0613c3",
+    ),
+    Ttestparam(
+        github="https://github.com/micropython/micropython/commit/f498a16c7db6d4b2de200b3e0856528dfe0613c3#diff-69528cf7",
+        expected_gitspec="https://github.com/micropython/micropython.git@f498a16c7db6d4b2de200b3e0856528dfe0613c3",
     ),
 ]
 
