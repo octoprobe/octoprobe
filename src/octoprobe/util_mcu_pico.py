@@ -4,6 +4,7 @@ This file implements generic logic for all boards with a Pico040/Pico350 mcu or 
 
 import logging
 import pathlib
+import typing
 
 import pyudev  # type: ignore
 
@@ -125,21 +126,10 @@ def picotool_flash_micropython(
 class DutProgrammerPicotool(DutProgrammerABC):
     LABEL = "picotool"
 
-    def flash(
-        self,
-        tentacle: TentacleBase,
-        udev: UdevPoller,
-        directory_logs: pathlib.Path,
-        firmware_spec: FirmwareSpecBase,
-    ) -> None:
-        """ """
-        assert isinstance(tentacle, TentacleBase)
-        assert isinstance(firmware_spec, FirmwareSpecBase)
-        assert len(tentacle.tentacle_spec_base.programmer_args) == 0, (
-            "Not yet supported"
-        )
-        assert tentacle.dut is not None
-
+    @typing.override
+    def enter_boot_mode(
+        self, tentacle: TentacleBase, udev: UdevPoller
+    ) -> UdevEventBase:
         tentacle.infra.power_dut_off_and_wait()
 
         # Press Boot Button
@@ -161,10 +151,28 @@ class DutProgrammerPicotool(DutProgrammerABC):
                 timeout_s=2.0,
             )
 
-        assert isinstance(event, Rp2UdevBootModeEvent)
+            # Release Boot Button
+            tentacle.infra.mcu_infra.relays(relays_open=[IDX1_RELAYS_DUT_BOOT])
 
-        # Release Boot Button
-        tentacle.infra.mcu_infra.relays(relays_open=[IDX1_RELAYS_DUT_BOOT])
+            return event
+
+    def flash(
+        self,
+        tentacle: TentacleBase,
+        udev: UdevPoller,
+        directory_logs: pathlib.Path,
+        firmware_spec: FirmwareSpecBase,
+    ) -> None:
+        """ """
+        assert isinstance(tentacle, TentacleBase)
+        assert isinstance(firmware_spec, FirmwareSpecBase)
+        assert len(tentacle.tentacle_spec_base.programmer_args) == 0, (
+            "Not yet supported"
+        )
+        assert tentacle.dut is not None
+
+        event = self.enter_boot_mode(tentacle=tentacle, udev=udev)
+        assert isinstance(event, Rp2UdevBootModeEvent)
 
         picotool_flash_micropython(
             event=event,
