@@ -45,6 +45,9 @@ GIT_REF_SUFFIX_GIT = ".git"
 GIT_REF_TAG_BRANCH = "@"
 GIT_REF_TAG_PR = "~"
 
+LEN_COMMIT_HASH_SHORT = 7
+"9bde125"
+
 DIRECTORY_WORK = "work"
 
 # We use '~' as this is not allowed in branch names
@@ -53,10 +56,22 @@ RE_GIT_SPEC = re.compile(
     rf"^(?P<url>(.+?://)?.+?)({GIT_REF_TAG_PR}(?P<pr>.+?))?({GIT_REF_TAG_BRANCH}(?P<branch>.+))?$"
 )
 """
+# Git specs to be used for manual testing
 https://github.com/micropython/micropython.git
-https://github.com/micropython/micropython.git~17232
+# tag:
 https://github.com/micropython/micropython.git@1.25.0
-https://github.com/micropython/micropython.git~17232@1.25.0
+# branch:
+https://github.com/micropython/micropython.git@v1.24-release
+# commit hash:
+https://github.com/micropython/micropython.git@7118942a8c03413e0e85b9b42fc9e1b167966d57
+# PR
+https://github.com/micropython/micropython.git~17468
+# rebase PR on tag (edit meaningful values)
+https://github.com/micropython/micropython.git~17468@1.25.0
+# rebase PR on branch (edit meaningful values)
+https://github.com/micropython/micropython.git~17468@v1.24-release
+# rebase PR on commit hash (edit meaningful values)
+https://github.com/micropython/micropython.git~17468@7118942a8c03413e0e85b9b42fc9e1b167966d57
 """
 
 RE_IS_GITHUB_URL = re.compile(r"/(tree|pull|commit)/")
@@ -74,8 +89,8 @@ https://github.com/micropython/micropython.git
 https://github.com/micropython/micropython.git/
 https://github.com/micropython/micropython/commit/f498a16c7db6d4b2de200b3e0856528dfe0613c3
 https://github.com/micropython/micropython/commit/f498a16c7db6d4b2de200b3e0856528dfe0613c3#diff-69528cf7
-https://github.com/micropython/micropython/pull/17232
-https://github.com/micropython/micropython/pull/17232/commits
+https://github.com/micropython/micropython/pull/17468
+https://github.com/micropython/micropython/pull/17468/commits
 https://github.com/micropython/micropython/tree/master
 https://github.com/micropython/micropython/tree/docs/library/bluetooth
 """
@@ -96,8 +111,34 @@ class MetadataGitCommand:
 class GitMetadata:
     git_spec: str
     url_link: str
+    commit_hash: str
+    "0a98f3a91130d127c937d6865ead24b6693182eb"
+    rebased: bool
     command_describe: MetadataGitCommand
     command_log: MetadataGitCommand
+
+    @property
+    def commit_hash_short(self) -> str:
+        "0a98f3a"
+        return self.commit_hash[0:LEN_COMMIT_HASH_SHORT]
+
+    @property
+    def commit_comment(self) -> str:
+        """
+        '0a98f3a' or 'rebased on 0a98f3a'
+        """
+        if self.rebased:
+            return f"rebased on {self.commit_hash_short}"
+        return self.commit_hash_short
+
+    @property
+    def url_commit_hash(self) -> str:
+        """
+        Example:
+        https://github.com/micropython/micropython/commit/0a98f3a91130d127c937d6865ead24b6693182eb
+        """
+        git_spec = GitSpec.parse(self.git_spec)
+        return f"{git_spec.url_without_git}/commit/{self.commit_hash}"
 
 
 METADATA_SUFFIX = ".metadata.json"
@@ -106,15 +147,15 @@ METADATA_SUFFIX = ".metadata.json"
 @dataclasses.dataclass(frozen=True, repr=True)
 class GitSpec:
     """
-    https://github.com/micropython/micropython.git~17232@v1.25.0
+    https://github.com/micropython/micropython.git~17468@v1.25.0
     """
 
     git_spec: str
-    "https://github.com/micropython/micropython.git~17232@v1.25.0"
+    "https://github.com/micropython/micropython.git~17468@v1.25.0"
     url: str
     "https://github.com/micropython/micropython.git"
     pr: str | None
-    "17232"
+    "17468"
     branch: str | None
     "v1.25.0"
 
@@ -315,6 +356,17 @@ class CachedGitRepo:
                 timeout_s=GIT_CLONE_TIMEOUT_S,
             )
 
+        commit_base = subprocess_run(
+            args=[
+                "git",
+                "rev-parse",
+                "HEAD",
+            ],
+            cwd=self.directory_git_work_repo,
+            timeout_s=GIT_CLONE_TIMEOUT_S,
+        )
+        assert commit_base is not None
+
         if self.git_spec.pr is not None:
             subprocess_run(
                 args=[
@@ -348,7 +400,9 @@ class CachedGitRepo:
                     timeout_s=GIT_CLONE_TIMEOUT_S,
                 )
 
-        metadata = self.get_metadata(depth)
+        metadata = self.get_metadata(
+            depth=depth, rebased=require_rebase, commit_hash=commit_base
+        )
         with self.filename_metadata.open("w") as f:
             json.dump(dataclasses.asdict(metadata), fp=f, indent=4, sort_keys=True)
 
@@ -357,12 +411,15 @@ class CachedGitRepo:
         )
         return metadata
 
-    def get_metadata(self, depth: int) -> GitMetadata:
+    def get_metadata(self, depth: int, rebased: bool, commit_hash: str) -> GitMetadata:
         command_describe = self.get_git_describe()
-        command_log = self.get_git_log(depth=depth)
+        command_log = self.get_git_log(depth=depth, commit_base=commit_hash)
+
         return GitMetadata(
             git_spec=self.git_spec.git_spec,
             url_link=self.git_spec.url_link,
+            commit_hash=commit_hash,
+            rebased=rebased,
             command_describe=command_describe,
             command_log=command_log,
         )
@@ -389,7 +446,7 @@ class CachedGitRepo:
             stdout=git_describe,
         )
 
-    def get_git_log(self, depth: int) -> MetadataGitCommand:
+    def get_git_log(self, depth: int, commit_base: str) -> MetadataGitCommand:
         """
         call 'git log' and concatinate the output.
         Example:
@@ -415,18 +472,23 @@ class CachedGitRepo:
         def head() -> str:
             "return all relevant lines plus one"
             lines: list[str] = []
-            done = False
-            end_trigger = f" (origin/{self.git_spec.branch}"
-            if (self.git_spec.pr is not None) and (self.git_spec.branch is None):
-                end_trigger = f" (HEAD -> pr-{self.git_spec.pr})"
+            remaining_lines = 1_000_000
+            # end_trigger = f" (origin/{self.git_spec.branch}"
+            end_trigger = f"{commit_base[0:LEN_COMMIT_HASH_SHORT]} "
+            # if (self.git_spec.pr is not None) and (self.git_spec.branch is None):
+            #     end_trigger = f" (HEAD -> pr-{self.git_spec.pr})"
             for line in git_log.splitlines():
+                if line.find(end_trigger) == 0:
+                    line = (
+                        line[0:LEN_COMMIT_HASH_SHORT]
+                        + " (BASE)"
+                        + line[LEN_COMMIT_HASH_SHORT:]
+                    )
+                    remaining_lines = 1
                 lines.append(line)
-                if done:
+                if remaining_lines <= 0:
                     break
-                if line.find(end_trigger) >= 0:
-                    # Example:
-                    # 5f058e9 (origin/master, origin/HEAD, master) esp32: Update ADC driver update
-                    done = True
+                remaining_lines -= 1
             return "\n".join(lines)
 
         return MetadataGitCommand(

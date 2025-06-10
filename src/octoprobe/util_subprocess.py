@@ -122,6 +122,8 @@ def subprocess_run(
         msg = f"EXEC failed with returncode={proc.returncode}: {args_text}"
         if logfile is not None:
             msg += f"\nlogfile={logfile}"
+        else:
+            msg += f"\n{proc.stdout.strip()}\n{proc.stderr.strip()}"
         raise SubprocessExitCodeException(msg)
 
     log(logger.debug)
