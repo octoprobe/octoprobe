@@ -16,7 +16,7 @@ from serial.tools import list_ports_linux
 
 from .usb_constants import UsbPlug
 
-logger = logging.Logger(__file__)
+logger = logging.getLogger(__file__)
 
 
 class HubPortNumber(enum.IntEnum):

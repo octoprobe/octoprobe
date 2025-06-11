@@ -44,7 +44,7 @@ from ..usb_tentacle.usb_baseclasses import (
 )
 from ..usb_tentacle.usb_constants import TyperPowerCycle, UsbPlug, UsbPlugs
 
-logger = logging.Logger(__file__)
+logger = logging.getLogger(__file__)
 
 SERIALNUMBER_SHORT = 4
 SERIALNUMBER_DELIMITER = "-"
