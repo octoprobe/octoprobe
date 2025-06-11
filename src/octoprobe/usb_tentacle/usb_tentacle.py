@@ -187,7 +187,7 @@ class UsbTentacle:
         plug_text = f"usbplug {plug.name} {self.hub4_location.short} port {hub_port} ({self.tentacle_version.version})"
 
         if on == self.get_power(plug=plug):
-            logger.debug(f"{plug_text} is allready {on}")
+            logger.debug(f"{plug_text} is already {on}")
             return False
 
         self._cache_on[plug] = on

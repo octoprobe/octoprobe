@@ -140,6 +140,12 @@ class GitMetadata:
         git_spec = GitSpec.parse(self.git_spec)
         return f"{git_spec.url_without_git}/commit/{self.commit_hash}"
 
+    @classmethod
+    def from_dict(cls, json_dict: dict) -> GitMetadata:
+        for key in ("command_describe", "command_log"):
+            json_dict[key] = MetadataGitCommand(**json_dict[key])
+        return GitMetadata(**json_dict)
+
 
 METADATA_SUFFIX = ".metadata.json"
 
@@ -520,7 +526,7 @@ class CachedGitRepo:
             metadata_text = filename_metadata.read_text()
             metadata_dict = json.loads(metadata_text)
             assert isinstance(metadata_dict, dict)
-            return GitMetadata(**metadata_dict)
+            return GitMetadata.from_dict(metadata_dict)
         except Exception as e:
             logger.error(f"{filename_metadata}: {e}")
             return None
