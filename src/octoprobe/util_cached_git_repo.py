@@ -511,16 +511,16 @@ class CachedGitRepo:
                     subdirectory.unlink()
 
     @staticmethod
-    def git_metadata(directory: pathlib.Path) -> dict:
+    def git_metadata(directory: pathlib.Path) -> GitMetadata | None:
         if not directory.is_dir():
-            return {}
+            return None
         filename_metadata = directory.with_suffix(METADATA_SUFFIX)
 
         try:
             metadata_text = filename_metadata.read_text()
             metadata_dict = json.loads(metadata_text)
             assert isinstance(metadata_dict, dict)
-            return metadata_dict
+            return GitMetadata(**metadata_dict)
         except Exception as e:
             logger.error(f"{filename_metadata}: {e}")
-            return {}
+            return None
