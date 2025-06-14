@@ -153,8 +153,6 @@ class UsbPico:
 class UsbTentacle:
     """
     This class allows to set_power()/get_power() of on tentacle board.
-    The state is cached - set_power()/get_power() will first check
-    the _cache_on before accesing /sys/bus.
     """
 
     hub4_location: Location
@@ -172,9 +170,6 @@ class UsbTentacle:
     """
     pico_probe: UsbPico | None = None
 
-    # TODO: Obsolete?
-    _cache_on: dict[UsbPlug, bool] = dataclasses.field(default_factory=dict)
-
     def set_power(self, plug: UsbPlug, on: bool) -> bool:
         """
         return True: If the power changed
@@ -190,7 +185,6 @@ class UsbTentacle:
             logger.debug(f"{plug_text} is already {on}")
             return False
 
-        self._cache_on[plug] = on
         if hub_port is None:
             # TODO: Handle correctly
             return False
@@ -203,16 +197,11 @@ class UsbTentacle:
     def get_power(self, plug: UsbPlug) -> bool:
         assert isinstance(plug, UsbPlug)
 
-        on = self._cache_on.get(plug, None)
-        if on is not None:
-            return on
-
         hub_port = self.get_hub_port(plug=plug)
         if hub_port is None:
             # TODO: Handle correctly
             return False
         on = self.hub4_location.get_power(hub_port=hub_port)
-        self._cache_on[plug] = on
         return on
 
     def get_hub_port(self, plug: UsbPlug) -> HubPortNumber | None:
