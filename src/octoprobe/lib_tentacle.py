@@ -7,7 +7,6 @@ import io
 import logging
 import pathlib
 import textwrap
-import time
 import typing
 
 from .lib_tentacle_dut import TentacleDut
@@ -159,23 +158,6 @@ class TentacleBase(abc.ABC):
     @property
     def power(self) -> TentaclePlugsPower:
         return self.infra.power
-
-    @property
-    def power_dut(self) -> bool:
-        return self.power.dut
-
-    @power_dut.setter
-    def power_dut(self, on: bool) -> None:
-        """
-        Wrapper which introduces a delay for some boards.
-        Should be used instead of 'tentacle.power.dut=True/False)'
-        """
-        self.power.dut = on
-        if on:
-            power_on_delay_s = self.tentacle_spec_base.power_on_delay_s
-            if power_on_delay_s is not None:
-                logger.debug(f"time.sleep({power_on_delay_s=})")
-                time.sleep(power_on_delay_s)
 
     @property
     def description_short(self) -> str:

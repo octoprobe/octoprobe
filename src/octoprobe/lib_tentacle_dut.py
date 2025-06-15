@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import os
 import pathlib
+import time
 import typing
 
 from mpremote.transport_serial import TransportError  # type: ignore
@@ -94,6 +95,7 @@ class TentacleDut:
         assert isinstance(tentacle, TentacleBase)
         assert self._mp_remote is None
         tty = self.dut_mcu.application_mode_power_up(tentacle=tentacle, udev=udev)
+        self.application_mode_power_up_delay()
         self._mp_remote = MpRemote(tty=tty)
 
     def dut_installed_firmware_full_version_text(self) -> str:
@@ -146,6 +148,14 @@ print('{VERSION_IMPLEMENTATION_SEPARATOR}'.join(l))
                     version_installed=installed_full_version,
                 )
         return versions_equal
+
+    def application_mode_power_up_delay(self) -> None:
+        power_on_delay_s = self._tentacle.tentacle_spec_base.power_on_delay_s
+        if power_on_delay_s is not None:
+            logger.debug(
+                f"application_mode_power_up_delay(): time.sleep({power_on_delay_s=})"
+            )
+            time.sleep(power_on_delay_s)
 
     def flash_dut(
         self,
@@ -214,6 +224,7 @@ print('{VERSION_IMPLEMENTATION_SEPARATOR}'.join(l))
                 tentacle=tentacle,
                 udev=udev,
             )
+            self.application_mode_power_up_delay()
             self._mp_remote = MpRemote(tty=tty)
             self.is_dut_required_firmware_already_installed(
                 firmware_spec=firmware_spec,

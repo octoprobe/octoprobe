@@ -77,7 +77,7 @@ class CtxTestRun:
             )
 
     def function_prepare_dut(self, tentacle: TentacleBase) -> None:
-        tentacle.power_dut = False
+        tentacle.power.dut = False
         tentacle.infra.mp_remote_close()
         if tentacle.is_mcu:
             tentacle.dut.mp_remote_close()

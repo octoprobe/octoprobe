@@ -50,11 +50,11 @@ class DutProgrammerDfuUtil(DutProgrammerABC):
         # Press Boot Button
         tentacle.infra.mcu_infra.relays(relays_close=[IDX1_RELAYS_DUT_BOOT])
 
-        tentacle.power_dut = False
+        tentacle.power.dut = False
         tentacle.power_dut_off_and_wait()
 
         with udev.guard as guard:
-            tentacle.power_dut = True
+            tentacle.power.dut = True
 
             assert tentacle.tentacle_spec_base.mcu_usb_id is not None
             udev_filter = pyboard_udev_filter_boot_mode(

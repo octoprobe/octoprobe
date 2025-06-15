@@ -71,7 +71,7 @@ class DutProgrammerTeensyLoaderCli(DutProgrammerABC):
 
         # Press Program Button
         tentacle.infra.mcu_infra.relays(relays_close=[IDX1_RELAYS_DUT_BOOT])
-        tentacle.power_dut = True
+        tentacle.power.dut = True
         time.sleep(0.5)
 
         with udev.guard as guard:

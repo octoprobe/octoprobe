@@ -40,7 +40,7 @@ class DutProgrammerBossac(DutProgrammerABC):
 
         time.sleep(0.5)  # Ok: 5.0, 1.0, 0.5, 0.2 Wrong: 0.1
         tentacle.infra.mcu_infra.relays(relays_close=[IDX1_RELAYS_DUT_BOOT])
-        tentacle.power_dut = True
+        tentacle.power.dut = True
 
         with udev.guard as guard:
             # Now double tab. If the device is in application mode, this will bring it into boot mode.
