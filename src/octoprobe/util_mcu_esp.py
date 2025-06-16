@@ -5,6 +5,7 @@ This file implements generic logic for all esp boards
 import logging
 import pathlib
 import sys
+import time
 
 from .lib_tentacle import TentacleBase
 from .util_dut_programmer_abc import DutProgrammerABC
@@ -41,6 +42,9 @@ def esptool_flash_micropython(
         logfile=directory_test / FILENAME_FLASHING,
         timeout_s=120.0,
     )
+    # TODO: Remove the following line ...
+    logger.debug("After esptool: time.sleep(2.0)")
+    time.sleep(2.0)
 
 
 class DutProgrammerEsptool(DutProgrammerABC):
