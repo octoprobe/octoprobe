@@ -272,6 +272,7 @@ class CachedGitRepo:
         directory_cache: pathlib.Path,
         git_spec: str,
         prefix: str = "",
+        subdir: str = DIRECTORY_WORK,
     ) -> None:
         assert isinstance(directory_cache, pathlib.Path)
         assert isinstance(git_spec, str)
@@ -281,7 +282,7 @@ class CachedGitRepo:
         # Example 'prefix': 'micropython_mpbuild_'
 
         self.prefix = prefix
-        self._directory_work = directory_cache / DIRECTORY_WORK
+        self._directory_work = directory_cache / subdir
         self.git_spec = GitSpec.parse(git_ref=git_spec)
 
         logger.debug(f"{self.git_spec.git_spec} -> {self.git_spec}")
@@ -331,6 +332,7 @@ class CachedGitRepo:
             f"--depth={depth}",
             "--filter=blob:none",
             "--jobs=8",
+            "--quiet",
             self.git_spec.url,
             self.directory_git_work_repo.name,
         ]
