@@ -51,6 +51,14 @@ _TESTPARAMS = [
         expected_gitspec="https://github.com/micropython/micropython.git@v1.22-release",
     ),
     Ttestparam(
+        github="https://github.com/micropython/micropython/tree/v1.24-release/",
+        expected_gitspec="https://github.com/micropython/micropython.git@v1.24-release",
+    ),
+    Ttestparam(
+        github="https://github.com/micropython/micropython/commits/v1.24-release/",
+        expected_gitspec="https://github.com/micropython/micropython.git@v1.24-release",
+    ),
+    Ttestparam(
         github="https://github.com/micropython/micropython/tree/docs/library/bluetooth",
         expected_gitspec="https://github.com/micropython/micropython.git@docs/library/bluetooth",
     ),

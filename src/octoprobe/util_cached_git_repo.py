@@ -74,13 +74,13 @@ https://github.com/micropython/micropython.git~17468@v1.24-release
 https://github.com/micropython/micropython.git~17468@7118942a8c03413e0e85b9b42fc9e1b167966d57
 """
 
-RE_IS_GITHUB_URL = re.compile(r"/(tree|pull|commit)/")
+RE_IS_GITHUB_URL = re.compile(r"/(tree|pull|commit|commits)/")
 """
 It is a github url if it contains '/tree/' or '/pull/'
 """
 
 RE_GITHUB_URL = re.compile(
-    r"^(?P<url>(.+?://)?.+?)(?P<trash>/|.git|.git/)?(|(/pull/(?P<pr>\d+).*)|(/tree/(?P<branch>.+))|(/commit/(?P<commit>[a-f0-9]+).*))$"
+    r"^(?P<url>(.+?://)?.+?)(?P<trash>/|.git|.git/)?(|(/pull/(?P<pr>\d+).*)|(/(tree|commits)/(?P<branch>.+?)/?)|(/commit/(?P<commit>[a-f0-9]+).*))$"
 )
 """
 https://github.com/micropython/micropython
