@@ -530,5 +530,5 @@ class CachedGitRepo:
             assert isinstance(metadata_dict, dict)
             return GitMetadata.from_dict(metadata_dict)
         except Exception as e:
-            logger.error(f"{filename_metadata}: {e}")
+            logger.debug(f"{filename_metadata}: {e}")
             return None

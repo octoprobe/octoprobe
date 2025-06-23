@@ -55,6 +55,17 @@ class TentacleState:
         If None: Use firmware already on the DUT.
         """
 
+        self.variants_required: list[str] | None = None
+        """
+        If None: All variants have to be build and tested.
+        If, in case of RPI_PICO2, variants_required=["RISCV"]: Only "RISCV" will be build and tested.
+        """
+
+    def set_variants_required(self, variants: list[str]) -> None:
+        assert isinstance(variants, list)
+        assert self.variants_required is None
+        self.variants_required = variants
+
     @property
     def firmware_spec(self) -> FirmwareSpecBase:
         """
