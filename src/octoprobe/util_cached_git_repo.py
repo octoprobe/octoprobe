@@ -265,7 +265,7 @@ class CachedGitRepo:
     """
 
     GIT_DEPTH_DEEP = 1000
-    GIT_DEPTH_SHALLOW = 2
+    GIT_DEPTH_SHALLOW = 20
 
     def __init__(
         self,
@@ -364,7 +364,7 @@ class CachedGitRepo:
                 timeout_s=GIT_CLONE_TIMEOUT_S,
             )
 
-        commit_base = subprocess_run(
+        commit_log_begin = commit_hash = subprocess_run(
             args=[
                 "git",
                 "rev-parse",
@@ -373,7 +373,6 @@ class CachedGitRepo:
             cwd=self.directory_git_work_repo,
             timeout_s=GIT_CLONE_TIMEOUT_S,
         )
-        assert commit_base is not None
 
         if self.git_spec.pr is not None:
             subprocess_run(
@@ -395,6 +394,15 @@ class CachedGitRepo:
                 cwd=self.directory_git_work_repo,
                 timeout_s=GIT_CLONE_TIMEOUT_S,
             )
+            commit_hash = subprocess_run(
+                args=[
+                    "git",
+                    "rev-parse",
+                    "HEAD",
+                ],
+                cwd=self.directory_git_work_repo,
+                timeout_s=GIT_CLONE_TIMEOUT_S,
+            )
 
             if require_rebase:
                 assert self.git_spec.branch is not None
@@ -409,7 +417,10 @@ class CachedGitRepo:
                 )
 
         metadata = self.get_metadata(
-            depth=depth, rebased=require_rebase, commit_hash=commit_base
+            depth=depth,
+            rebased=require_rebase,
+            commit_log_begin=commit_log_begin,
+            commit_hash=commit_hash,
         )
         with self.filename_metadata.open("w") as f:
             json.dump(dataclasses.asdict(metadata), fp=f, indent=4, sort_keys=True)
@@ -419,9 +430,17 @@ class CachedGitRepo:
         )
         return metadata
 
-    def get_metadata(self, depth: int, rebased: bool, commit_hash: str) -> GitMetadata:
+    def get_metadata(
+        self,
+        depth: int,
+        rebased: bool,
+        commit_log_begin: str | None,
+        commit_hash: str | None,
+    ) -> GitMetadata:
+        assert isinstance(commit_log_begin, str)
+        assert isinstance(commit_hash, str)
         command_describe = self.get_git_describe()
-        command_log = self.get_git_log(depth=depth, commit_base=commit_hash)
+        command_log = self.get_git_log(depth=depth, commit_log_begin=commit_log_begin)
 
         return GitMetadata(
             git_spec=self.git_spec.git_spec,
@@ -454,7 +473,7 @@ class CachedGitRepo:
             stdout=git_describe,
         )
 
-    def get_git_log(self, depth: int, commit_base: str) -> MetadataGitCommand:
+    def get_git_log(self, depth: int, commit_log_begin: str) -> MetadataGitCommand:
         """
         call 'git log' and concatinate the output.
         Example:
@@ -482,11 +501,11 @@ class CachedGitRepo:
             lines: list[str] = []
             remaining_lines = 1_000_000
             # end_trigger = f" (origin/{self.git_spec.branch}"
-            end_trigger = f"{commit_base[0:LEN_COMMIT_HASH_SHORT]} "
+            end_trigger = f"{commit_log_begin[0:LEN_COMMIT_HASH_SHORT]} "
             # if (self.git_spec.pr is not None) and (self.git_spec.branch is None):
             #     end_trigger = f" (HEAD -> pr-{self.git_spec.pr})"
             for line in git_log.splitlines():
-                if line.find(end_trigger) == 0:
+                if line.startswith(end_trigger):
                     line = (
                         line[0:LEN_COMMIT_HASH_SHORT]
                         + " (BASE)"
