@@ -17,6 +17,7 @@ from .usb_tentacle.usb_tentacle import (
     UsbTentacle,
 )
 from .util_baseclasses import TentacleInstance, TentacleSpecBase
+from .util_constants import DELIMITER_SERIAL_BOARD
 from .util_firmware_spec import FirmwareSpecBase
 from .util_pyudev import UdevPoller
 
@@ -192,7 +193,7 @@ class TentacleBase(abc.ABC):
         """
         return (
             self.tentacle_serial_number[-SERIALNUMBER_SHORT:]
-            + "-"
+            + DELIMITER_SERIAL_BOARD
             + self.tentacle_spec_base.tentacle_tag
         )
 

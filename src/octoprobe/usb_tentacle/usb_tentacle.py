@@ -47,10 +47,18 @@ from ..usb_tentacle.usb_constants import TyperPowerCycle, UsbPlug, UsbPlugs
 logger = logging.getLogger(__file__)
 
 SERIALNUMBER_SHORT = 4
+"""
+Example: 2731
+"""
 SERIALNUMBER_DELIMITER = "-"
-
+"""
+Example: e46340474b4c-2731
+"""
 REGEX_SERIAL_DELIMITED = re.compile(r"^\w{12}-\w{4}$")
 REGEX_SERIAL = re.compile(r"^\w{16}$")
+"""
+Example: e46340474b4c2731
+"""
 
 
 def serial_delimited(serial: str) -> str:

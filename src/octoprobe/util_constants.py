@@ -2,6 +2,11 @@ import enum
 import os
 import pathlib
 
+DELIMITER_SERIAL_BOARD = "-"
+"""
+Example: 1831-RPI_PICO
+"""
+
 TAG_PROGRAMMER = "programmer"
 
 TAG_BOARDS = "boards"
