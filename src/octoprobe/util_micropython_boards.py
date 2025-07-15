@@ -34,6 +34,8 @@ board: PYBV11
 variant: DP_THREAD
 """
 
+VARIANT_UNKNOWN = "unknown"
+
 
 @dataclasses.dataclass(frozen=True, repr=True, eq=True)
 class BoardVariant:
