@@ -37,11 +37,11 @@ app = typer.Typer()
 
 
 _SerialsAnnotation = TyperAnnotated[
-    Optional[list[str]],  # noqa: UP007
+    Optional[list[str]],  # noqa: UP045
     typer.Option(help="Apply only to the selected tentacles"),
 ]
 _ReposAnnotation = TyperAnnotated[
-    Optional[list[str]],  # noqa: UP007
+    Optional[list[str]],  # noqa: UP045
     typer.Option(help="Repos to be cloned"),
 ]
 
@@ -197,11 +197,11 @@ def exec_infra(
 @app.command(help="Power on/off usb ports.")
 def power(
     on: TyperAnnotated[
-        Optional[list[TyperUsbPlug]],  # noqa: UP007
+        list[TyperUsbPlug] | None,  # noqa: UP007
         typer.Option(help="Power ON given usb hub port on all tentacles"),
     ] = None,
     off: TyperAnnotated[
-        Optional[list[TyperUsbPlug]],  # noqa: UP007
+        list[TyperUsbPlug] | None,  # noqa: UP007
         typer.Option(help="Power OFF given usb hub port on all tentacles"),
     ] = None,
     serials: _SerialsAnnotation = None,

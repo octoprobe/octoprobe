@@ -5,7 +5,6 @@ This file implements generic logic for all esp boards
 import logging
 import pathlib
 import sys
-import time
 
 from .lib_tentacle import TentacleBase
 from .util_dut_programmer_abc import DutProgrammerABC

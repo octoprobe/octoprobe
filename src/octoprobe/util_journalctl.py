@@ -59,7 +59,26 @@ class JournalctlObserver:
             #     PRIORITY=3
             #     SYSLOG_FACILITY=0
             #     SYSLOG_IDENTIFIER=kernel
+            r"MESSAGE=TODO...",
+            # 2025-07-17: provoked by the ARDUINO_NANO_33_BLE_SENSE
+            # Thu 2025-07-17 21:48:27.298561 CEST [s=4ede5dd1820f435db5f6a683258a4ba2;i=bb1c29;b=3f0a46b15471433b89b4b500f965ca1f;m=38db83f3d;t=63a254b084701;x=ecf2c6215f79e9aa]
+            #     _MACHINE_ID=7eb3b265d30d4b448a1afd26defdf766
+            #     _HOSTNAME=maerki-ideapad-320
+            #     _RUNTIME_SCOPE=system
+            #     _TRANSPORT=kernel
+            #     SYSLOG_FACILITY=0
+            #     SYSLOG_IDENTIFIER=kernel
+            #     PRIORITY=3
+            #     _KERNEL_SUBSYSTEM=usb
+            #     _KERNEL_DEVICE=c189:301
+            #     _UDEV_DEVNODE=/dev/bus/usb/003/046
+            #     _UDEV_SYSNAME=3-7.3.1.3
+            #     MESSAGE=usb 3-7.3.1.3: can't set config #1, error -32
+            #     _BOOT_ID=3f0a46b15471433b89b4b500f965ca1f
+            #     _SOURCE_BOOTTIME_TIMESTAMP=15262594760
+            #     _SOURCE_MONOTONIC_TIMESTAMP=15262594760
             r"MESSAGE=usb .*?: reset high-speed USB device number",
+            r"MESSAGE=usb .*?: attempt power cycle",
             # Fri 2025-01-31 19:05:29.974116 CET [s=4ede5dd1820f435db5f6a683258a4ba2;i=820253;b=0c3168bbe06541a5a92be924dde8ae39;m=70c5d2d19;t=62d0463562964;x=8cc213e2058364b2]
             #     _TRANSPORT=kernel
             #     PRIORITY=6

@@ -138,6 +138,19 @@ class TentacleBase(abc.ABC):
     def __repr__(self) -> str:
         return self.label
 
+    def __lt__(self, other: object) -> bool:
+        if not isinstance(other, TentacleBase):
+            return NotImplemented
+        return self.tentacle_serial_number < other.tentacle_serial_number
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, TentacleBase):
+            return NotImplemented
+        return self.tentacle_serial_number == other.tentacle_serial_number
+
+    def __hash__(self) -> int:
+        return hash(self.tentacle_serial_number)
+
     def flash_dut(
         self,
         udev_poller: UdevPoller,
