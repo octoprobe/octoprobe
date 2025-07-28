@@ -1,4 +1,4 @@
-Octoprobe license information
+License
 =============================
 
 The MIT License (MIT)

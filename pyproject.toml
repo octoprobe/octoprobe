@@ -63,10 +63,10 @@ all = [
 doc = [
     "esbonio",
     "myst-parser",
-    "pallets-sphinx-themes",
     "sphinx",
     "sphinx-code-include",
     "sphinx-mermaid",
+    "sphinx_rtd_theme",
     "sphinxcontrib.jquery",
 ]
 

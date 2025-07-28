@@ -1,19 +1,14 @@
-Octoprobe: Octoprobe
-====================
+Octoprobe
+======================
 
-.. automodule:: octoprobe
-    :members:
 
 .. toctree::
-    :maxdepth: 2
-    :caption: Contents:
 
-    README.rst
-    license.rst
-    sphinx_implementation.rst
-    sphinx_intersphinx.rst
+    big_picture.rst
     design/terms.rst
-
+    sphinx/index
+    rst_sandbox/index
+    license.rst
 
 API Reference
 -------------
@@ -25,10 +20,3 @@ method, this part of the documentation is for you.
    :maxdepth: 2
 
    api
-
-Indices and tables
-------------------
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`

@@ -1,21 +1,19 @@
-Octoprobe entry page
-====================
+Big Picture
+=====================
 
-
-
-`Octoprobe`_
-
-.. _Octoprobe: https://raw.githubusercontent.com/hmaerki/experiment_microoctopus/main/branding/octoprobe/octoprobe_logo_v3_inkscape.png
 
 HIL (Hardware in the Loop) testinfrastructure
 ---------------------------------------------
 
-:download:`2024-07-27_melbourne_micropython_meetup.pdf <README_images/2024-07-27_melbourne_micropython_meetup.pdf>`
+:download:`2024-07-27_melbourne_micropython_meetup.pdf </README_images/2024-07-27_melbourne_micropython_meetup.pdf>`
+
+TODO: Add link from second meeting
+TODO: change download to link. Move pdf to static pages. Create folder 'resources' and add this folder to the static folders in config.py.
 
 Terms
 -----
 
-See :doc:`Terms </design/terms>`
+See :doc:`Terms <design/terms>`
 
 Goal
 ----
@@ -68,16 +66,16 @@ A *testbed* describes how test using a set of tentacles.
 
 **4 tentacles - ribbon cable**
 
-.. image:: README_images/testbed_showcase_4-ribbon.jpg
+.. image:: /README_images/testbed_showcase_4-ribbon.jpg
 
 
 **4 tentacles - stacked**
 
-.. image:: README_images/testbed_showcase_4-stacked.jpg
+.. image:: /README_images/testbed_showcase_4-stacked.jpg
 
 **MCU tentacle**
 
-.. image:: README_images/testbed_showcase_mcu_pico.jpg
+.. image:: /README_images/testbed_showcase_mcu_pico.jpg
 
 Test flow
 ---------

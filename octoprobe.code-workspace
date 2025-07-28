@@ -8,6 +8,9 @@
 		},
 		{
 			"path": "../testbed_showcase"
+		},
+		{
+			"path": "../tentacle"
 		}
 	],
 	"settings": {
