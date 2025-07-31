@@ -106,6 +106,52 @@ class JournalctlObserver:
             #     _RUNTIME_SCOPE=system
             #     MESSAGE=usb 3-1.1.4-port1: attempt power cycle
             #     _SOURCE_MONOTONIC_TIMESTAMP=30272395116
+            r"MESSAGE=usb .*?: Device not responding to setup address",
+            # Thu 2025-07-31 17:23:29.058559 CEST [s=8ca2d1a6b87a4d658f8567191da29032;i=6e65d;b=e9a786d373074cd596e34111d418158a;m=10bef5afc;t=63b3b3933a2ff;x=6dd2e53b6c498237]
+            #     _BOOT_ID=e9a786d373074cd596e34111d418158a
+            #     _MACHINE_ID=6583cc5d952746ceb81e83ad68eb11ff
+            #     _HOSTNAME=octoprobe3
+            #     _RUNTIME_SCOPE=system
+            #     _TRANSPORT=kernel
+            #     SYSLOG_FACILITY=0
+            #     SYSLOG_IDENTIFIER=kernel
+            #     _KERNEL_SUBSYSTEM=usb
+            #     PRIORITY=4
+            #     _KERNEL_DEVICE=+usb:4-1.2.4
+            #     MESSAGE=usb 4-1.2.4: Device not responding to setup address.
+            #     _SOURCE_BOOTTIME_TIMESTAMP=4494888560
+            #     _SOURCE_MONOTONIC_TIMESTAMP=4494888560
+            r"MESSAGE=usb .*?: config failed",
+            # Thu 2025-07-31 17:23:24.710195 CEST [s=8ca2d1a6b87a4d658f8567191da29032;i=6e5eb;b=e9a786d373074cd596e34111d418158a;m=10bad012f;t=63b3b38f14933;x=952186423792b6a6]
+            #     _BOOT_ID=e9a786d373074cd596e34111d418158a
+            #     _MACHINE_ID=6583cc5d952746ceb81e83ad68eb11ff
+            #     _HOSTNAME=octoprobe3
+            #     _RUNTIME_SCOPE=system
+            #     _TRANSPORT=kernel
+            #     SYSLOG_FACILITY=0
+            #     SYSLOG_IDENTIFIER=kernel
+            #     _KERNEL_SUBSYSTEM=usb
+            #     PRIORITY=3
+            #     _KERNEL_DEVICE=+usb:4-1.2.4.1:1.0
+            #     _UDEV_SYSNAME=4-1.2.4.1:1.0
+            #     MESSAGE=hub 4-1.2.4.1:1.0: config failed, can't get hub status (err -5)
+            #     _SOURCE_BOOTTIME_TIMESTAMP=4490539804
+            #     _SOURCE_MONOTONIC_TIMESTAMP=4490539804
+            r"MESSAGE=usb .*?: device not accepting address",
+            # Thu 2025-07-31 17:23:14.347536 CEST [s=8ca2d1a6b87a4d658f8567191da29032;i=6e4e3;b=e9a786d373074cd596e34111d418158a;m=10b0ee20d;t=63b3b38532a10;x=8d1685bd4a236831]
+            #     _BOOT_ID=e9a786d373074cd596e34111d418158a
+            #     _MACHINE_ID=6583cc5d952746ceb81e83ad68eb11ff
+            #     _HOSTNAME=octoprobe3
+            #     _RUNTIME_SCOPE=system
+            #     _TRANSPORT=kernel
+            #     SYSLOG_FACILITY=0
+            #     SYSLOG_IDENTIFIER=kernel
+            #     _KERNEL_SUBSYSTEM=usb
+            #     PRIORITY=3
+            #     _KERNEL_DEVICE=+usb:4-1.4
+            #     _SOURCE_BOOTTIME_TIMESTAMP=4480177501
+            #     _SOURCE_MONOTONIC_TIMESTAMP=4480177501
+            #     MESSAGE=usb 4-1.4: device not accepting address 10, error -71
         ]
     ]
 
