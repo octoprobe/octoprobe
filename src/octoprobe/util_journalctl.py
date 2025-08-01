@@ -137,7 +137,7 @@ class JournalctlObserver:
             #     MESSAGE=hub 4-1.2.4.1:1.0: config failed, can't get hub status (err -5)
             #     _SOURCE_BOOTTIME_TIMESTAMP=4490539804
             #     _SOURCE_MONOTONIC_TIMESTAMP=4490539804
-            r"MESSAGE=usb .*?: device not accepting address",
+            # r"MESSAGE=usb .*?: device not accepting address",
             # Thu 2025-07-31 17:23:14.347536 CEST [s=8ca2d1a6b87a4d658f8567191da29032;i=6e4e3;b=e9a786d373074cd596e34111d418158a;m=10b0ee20d;t=63b3b38532a10;x=8d1685bd4a236831]
             #     _BOOT_ID=e9a786d373074cd596e34111d418158a
             #     _MACHINE_ID=6583cc5d952746ceb81e83ad68eb11ff
