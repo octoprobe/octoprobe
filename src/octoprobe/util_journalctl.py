@@ -106,7 +106,7 @@ class JournalctlObserver:
             #     _RUNTIME_SCOPE=system
             #     MESSAGE=usb 3-1.1.4-port1: attempt power cycle
             #     _SOURCE_MONOTONIC_TIMESTAMP=30272395116
-            r"MESSAGE=usb .*?: Device not responding to setup address",
+            # r"MESSAGE=usb .*?: Device not responding to setup address",
             # Thu 2025-07-31 17:23:29.058559 CEST [s=8ca2d1a6b87a4d658f8567191da29032;i=6e65d;b=e9a786d373074cd596e34111d418158a;m=10bef5afc;t=63b3b3933a2ff;x=6dd2e53b6c498237]
             #     _BOOT_ID=e9a786d373074cd596e34111d418158a
             #     _MACHINE_ID=6583cc5d952746ceb81e83ad68eb11ff
