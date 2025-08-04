@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import contextlib
 import logging
 import pathlib
 import time
+import typing
 
 from .lib_mpremote import MpRemote
 from .usb_tentacle.usb_tentacle import TentaclePlugsPower, UsbTentacle
@@ -206,3 +208,9 @@ class TentacleInfra:
 
         assert isinstance(event, UdevApplicationModeEvent)
         self._mp_remote = MpRemote(tty=event.tty)
+
+    @contextlib.contextmanager
+    def borrow_tty(self) -> typing.Generator[str]:
+        assert self._mp_remote is not None
+        with self._mp_remote.borrow_tty() as tty:
+            yield tty

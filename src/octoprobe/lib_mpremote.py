@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import contextlib
 import datetime
 import logging
 import pathlib
+from collections.abc import Generator
 from typing import Any, Self
 
 from mpremote import mip  # type: ignore
@@ -42,12 +44,20 @@ class MpRemote:
         wait_s: int = 5,
         timeout_s: float | None = 2.0,
     ) -> None:
+        self._tty = tty
+        self._baudrate = baudrate
+        self._wait_s = wait_s
+        self._timeout_s = timeout_s
+        self.state: State
+        self._init()
+
+    def _init(self) -> None:
         self.state = State()
         self.state.transport = SerialTransport(
-            tty,
-            baudrate=baudrate,
-            wait=wait_s,
-            timeout=timeout_s,
+            self._tty,
+            baudrate=self._baudrate,
+            wait=self._wait_s,
+            timeout=self._timeout_s,
         )
         # TODO: It would be beneficial to add a timeout parameter to mpremote
         # Rationale. The timeout is required as 'mp_remote.exec_raw()' may block forever as
@@ -60,6 +70,31 @@ class MpRemote:
 
     def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         self.close()
+
+    def close(self) -> str | None:
+        """
+        Return the serial port which was closed.
+        """
+        if self.state.transport is not None:
+            self.state.transport.close()
+            self.state.transport = None
+
+        return self._tty
+
+    @contextlib.contextmanager
+    def borrow_tty(self) -> Generator[str]:
+        """
+        Context manager that yields the tty (/dev/ttyACM1).
+        After use, mpremote will reattach to the tty!
+        """
+        self.close()
+        try:
+            yield self._tty
+        finally:
+            self._init()
+            # Make sure we still can communicate
+            # self.exec_raw(cmd="print('hello pico')", soft_reset=True)
+            self.state.ensure_raw_repl(soft_reset=True)
 
     def set_rtc(self, now: datetime.datetime | None = None) -> None:
         assert isinstance(now, datetime.datetime | None)
@@ -128,6 +163,7 @@ class MpRemote:
         cmd: str,
         follow: bool = True,
         timeout: int | None = 2,
+        soft_reset: bool | None = None,
     ) -> str:
         """
         Derived from mpremote.commands.do_exec / do_execbuffer
@@ -136,7 +172,7 @@ class MpRemote:
         assert isinstance(follow, bool)
         assert isinstance(timeout, int | None)
 
-        self.state.ensure_raw_repl()
+        self.state.ensure_raw_repl(soft_reset=soft_reset)
         self.state.did_action()
 
         ret = None
@@ -192,14 +228,3 @@ class MpRemote:
         v = self._read_var(name)
         assert isinstance(v, list | tuple)
         return list(v)
-
-    def close(self) -> str | None:
-        """
-        Return the serial port which was closed.
-        """
-        serial_port = None
-        if self.state.transport is not None:
-            self.state.transport.close()
-            serial_port = self.state.transport.serial.port
-            self.state.transport = None
-        return serial_port
