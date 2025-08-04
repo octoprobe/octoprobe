@@ -43,7 +43,7 @@ def do_commissioning() -> None:
         c = Commissioning()
         try:
             with UdevPoller() as udev:
-                c.do_program_pici(udev=udev, firmware_spec=firmware_spec)
+                c.do_flash_pico(udev=udev, firmware_spec=firmware_spec)
                 while True:
                     c.do_commissioning()
         except Exception as e:
@@ -99,7 +99,7 @@ class Commissioning:
                 continue
             return usb_tentacles[0]
 
-    def do_program_pici(
+    def do_flash_pico(
         self,
         udev: UdevPoller,
         firmware_spec: FirmwareDownloadSpec,

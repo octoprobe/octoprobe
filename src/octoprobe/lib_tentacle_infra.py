@@ -108,7 +108,17 @@ class TentacleInfra:
 
     def setup_infra(self, udev: UdevPoller) -> None:
         self.connect_mpremote_if_needed()
-        self.pico_test_mp_remote()
+        try:
+            self.pico_test_mp_remote()
+        except VersionMismatchException as e:
+            logger.info(f"Flashing MicroPython due to VersionMismatchException: {e}")
+            self.flash(
+                udev=udev,
+                filename_firmware=self.get_firmware_spec().filename,
+                directory_test=pathlib.Path("/tmp"),
+                usb_location=self.usb_location_infra,
+            )
+            self.pico_test_mp_remote()
 
     def verify_micropython_version(self, firmware_spec: FirmwareSpecBase) -> None:
         assert isinstance(firmware_spec, FirmwareSpecBase)
