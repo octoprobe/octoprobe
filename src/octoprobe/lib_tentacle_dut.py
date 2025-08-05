@@ -234,6 +234,10 @@ print('{VERSION_IMPLEMENTATION_SEPARATOR}'.join(l))
                 firmware_spec.board_variant.name_normalized
             )
 
+    def dut_power_cycle(self, udev: UdevPoller) -> None:
+        self._tentacle.power_dut_off_and_wait()
+        self._tentacle.dut_boot_and_init_mp_remote(udev=udev)
+
     def inspection_exit(self) -> typing.NoReturn:
         msg = "Exiting without cleanup. "
         if (self._mp_remote is None) or (self._mp_remote.state.transport is None):
