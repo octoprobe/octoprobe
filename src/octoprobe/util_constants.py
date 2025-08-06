@@ -21,7 +21,12 @@ For micropython, this corresponds to a 'port',
 eg. a subdirectory of https://github.com/micropython/micropython/tree/master/ports
 """
 
-DIRECTORY_OCTOPROBE_DOWNLOADS = pathlib.Path.home() / "octoprobe_downloads"
+ENV_OCTOPROBE_DOWNLOADS = "OCTOPROBE_DOWNLOADS"
+try:
+    DIRECTORY_OCTOPROBE_DOWNLOADS = pathlib.Path(os.environ[ENV_OCTOPROBE_DOWNLOADS])
+except KeyError:
+    DIRECTORY_OCTOPROBE_DOWNLOADS = pathlib.Path.home() / "octoprobe_downloads"
+
 DIRECTORY_OCTOPROBE_DOWNLOADS.mkdir(parents=True, exist_ok=True)
 assert DIRECTORY_OCTOPROBE_DOWNLOADS.is_dir()
 
