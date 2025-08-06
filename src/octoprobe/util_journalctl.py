@@ -24,6 +24,8 @@ logger = logging.getLogger(__file__)
 
 
 class JournalctlObserver:
+    MSG_NOT_ABORTING = "Not aborting the test as --debug-skip-usb-error"
+
     RE_ERRORS = [
         re.compile(r)
         for r in [
@@ -155,9 +157,10 @@ class JournalctlObserver:
         ]
     ]
 
-    def __init__(self, logfile: pathlib.Path) -> None:
+    def __init__(self, logfile: pathlib.Path, debug_skip_usb_error: bool) -> None:
         self._logfile = logfile
         self._f_write = self._logfile.open("w")
+        self._debug_skip_usb_error = debug_skip_usb_error
 
         program = "journalctl"
         args = [
@@ -203,6 +206,11 @@ class JournalctlObserver:
                     continue
 
                 logger.error(warning)
+
+                if self._debug_skip_usb_error:
+                    logger.info(self.MSG_NOT_ABORTING)
+                    continue
+
                 os.kill(os.getpid(), signal.SIGTERM)
 
         observer_thread = threading.Thread(target=observer)
@@ -234,4 +242,7 @@ class JournalctlObserver:
         if warning is None:
             return
         logger.error(warning)
+        if self._debug_skip_usb_error:
+            logger.info(self.MSG_NOT_ABORTING)
+            return
         raise OctoprobeAppExitException(warning)
