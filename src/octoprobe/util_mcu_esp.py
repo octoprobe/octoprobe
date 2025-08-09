@@ -82,7 +82,7 @@ class DutProgrammerEsptool(DutProgrammerABC):
                     udev_filter=udev_filter,
                     text_where=tentacle.dut.label,
                     text_expect="Expect mcu to become visible on udev after power on",
-                    timeout_s=3.0,
+                    timeout_s=6.0,
                 )
 
         finally:

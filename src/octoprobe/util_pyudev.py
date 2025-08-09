@@ -242,8 +242,9 @@ class UdevPoller:
                     f"{text_where}: {text_expect}: duration_s {duration_s:0.3f}s of {timeout_s:0.3f}s."
                 )
             events = self.epoll.poll(timeout=0.5)
+            duration_text = f"{duration_s:0.2f}s of {timeout_s:0.2f}s"
             if len(events) == 0:
-                logger.debug(f"Timeout {duration_s:0.2f}s of {timeout_s:0.2f}s")
+                logger.debug(duration_text)
                 continue
 
             for fileno, _ in events:
@@ -253,14 +254,15 @@ class UdevPoller:
                 for udev_filter in udev_filters:
                     if udev_filter.matches(device_event=device_event):
                         logger.debug(
-                            f"matched:\n{get_device_debug(device_event=device_event, subsystem_filtered=udev_filter.subsystem)}"
+                            f"{duration_text}: matched:\n{get_device_debug(device_event=device_event, subsystem_filtered=udev_filter.subsystem)}"
                         )
-                        yield udev_filter, udev_filter.udev_event_class(
-                            device=device_event
+                        yield (
+                            udev_filter,
+                            udev_filter.udev_event_class(device=device_event),
                         )
                         continue
                     logger.debug(
-                        f"not matched:\n{get_device_debug(device_event=device_event, subsystem_filtered=udev_filter.subsystem)}"
+                        f"{duration_text}: not matched:\n{get_device_debug(device_event=device_event, subsystem_filtered=udev_filter.subsystem)}"
                     )
 
                 if fail_filters is None:

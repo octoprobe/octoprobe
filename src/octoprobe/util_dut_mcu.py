@@ -158,7 +158,7 @@ class DutMicropythonEsp32(DutMcu):
                 udev_filter=udev_filter,
                 text_where=tentacle.dut.label,
                 text_expect="Expect ESP32/ESP32_C3/ESP32_S3 to become visible",
-                timeout_s=3.0,
+                timeout_s=6.0,
             )
 
         assert isinstance(event, UdevApplicationModeEvent)
