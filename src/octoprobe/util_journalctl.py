@@ -29,6 +29,7 @@ class JournalctlObserver:
     RE_ERRORS = [
         re.compile(r)
         for r in [
+            ##############################################################
             r"MESSAGE=usb .*?: Not enough bandwidth for new device state",
             # Mon 2025-01-20 15:05:58.411543 CET [s=3c16c64ddc5e47d3860baf61bd03cdcb;i=f293a2;b=5431e12877f64e10b32eae46c739923e;m=2321b29f4;t=62c23c2786517;x=fbb7f5b297371ab4]
             #     _BOOT_ID=5431e12877f64e10b32eae46c739923e
@@ -45,7 +46,9 @@ class JournalctlObserver:
             #     PRIORITY=4
             #     SYSLOG_FACILITY=0
             #     SYSLOG_IDENTIFIER=kernel
-            r"MESSAGE=usb .*?: can't set config",
+            ##############################################################
+            # r"MESSAGE=usb .*?: can't set config",
+            # Caused by ESP32_S3_DEVKIT. See https://reports.octoprobe.org/github_selfhosted_testrun_231/journalctl.txt
             # Mon 2025-01-20 15:05:58.411820 CET [s=3c16c64ddc5e47d3860baf61bd03cdcb;i=f293a3;b=5431e12877f64e10b32eae46c739923e;m=2321b2b09;t=62c23c278662c;x=2f39069dda9f5cb2]
             #     _BOOT_ID=5431e12877f64e10b32eae46c739923e
             #     _HOSTNAME=hans-Yoga-260
@@ -61,7 +64,9 @@ class JournalctlObserver:
             #     PRIORITY=3
             #     SYSLOG_FACILITY=0
             #     SYSLOG_IDENTIFIER=kernel
-            r"MESSAGE=TODO...",
+            #
+            ##############################################################
+            # r"MESSAGE=TODO...",
             # 2025-07-17: provoked by the ARDUINO_NANO_33_BLE_SENSE
             # Thu 2025-07-17 21:48:27.298561 CEST [s=4ede5dd1820f435db5f6a683258a4ba2;i=bb1c29;b=3f0a46b15471433b89b4b500f965ca1f;m=38db83f3d;t=63a254b084701;x=ecf2c6215f79e9aa]
             #     _MACHINE_ID=7eb3b265d30d4b448a1afd26defdf766
@@ -79,7 +84,9 @@ class JournalctlObserver:
             #     _BOOT_ID=3f0a46b15471433b89b4b500f965ca1f
             #     _SOURCE_BOOTTIME_TIMESTAMP=15262594760
             #     _SOURCE_MONOTONIC_TIMESTAMP=15262594760
+            ##############################################################
             r"MESSAGE=usb .*?: reset high-speed USB device number",
+            ##############################################################
             r"MESSAGE=usb .*?: attempt power cycle",
             # Fri 2025-01-31 19:05:29.974116 CET [s=4ede5dd1820f435db5f6a683258a4ba2;i=820253;b=0c3168bbe06541a5a92be924dde8ae39;m=70c5d2d19;t=62d0463562964;x=8cc213e2058364b2]
             #     _TRANSPORT=kernel
@@ -108,7 +115,9 @@ class JournalctlObserver:
             #     _RUNTIME_SCOPE=system
             #     MESSAGE=usb 3-1.1.4-port1: attempt power cycle
             #     _SOURCE_MONOTONIC_TIMESTAMP=30272395116
-            r"MESSAGE=usb .*?: Device not responding to setup address",
+            ##############################################################
+            # r"MESSAGE=usb .*?: Device not responding to setup address",
+            # Caused by ESP32_S3_DEVKIT. See https://reports.octoprobe.org/github_selfhosted_testrun_231/journalctl.txt
             # Thu 2025-07-31 17:23:29.058559 CEST [s=8ca2d1a6b87a4d658f8567191da29032;i=6e65d;b=e9a786d373074cd596e34111d418158a;m=10bef5afc;t=63b3b3933a2ff;x=6dd2e53b6c498237]
             #     _BOOT_ID=e9a786d373074cd596e34111d418158a
             #     _MACHINE_ID=6583cc5d952746ceb81e83ad68eb11ff
@@ -123,6 +132,7 @@ class JournalctlObserver:
             #     MESSAGE=usb 4-1.2.4: Device not responding to setup address.
             #     _SOURCE_BOOTTIME_TIMESTAMP=4494888560
             #     _SOURCE_MONOTONIC_TIMESTAMP=4494888560
+            ##############################################################
             r"MESSAGE=usb .*?: config failed",
             # Thu 2025-07-31 17:23:24.710195 CEST [s=8ca2d1a6b87a4d658f8567191da29032;i=6e5eb;b=e9a786d373074cd596e34111d418158a;m=10bad012f;t=63b3b38f14933;x=952186423792b6a6]
             #     _BOOT_ID=e9a786d373074cd596e34111d418158a
@@ -139,7 +149,9 @@ class JournalctlObserver:
             #     MESSAGE=hub 4-1.2.4.1:1.0: config failed, can't get hub status (err -5)
             #     _SOURCE_BOOTTIME_TIMESTAMP=4490539804
             #     _SOURCE_MONOTONIC_TIMESTAMP=4490539804
-            r"MESSAGE=usb .*?: device not accepting address",
+            ##############################################################
+            # r"MESSAGE=usb .*?: device not accepting address",
+            # Caused by ESP32_S3_DEVKIT. See https://reports.octoprobe.org/github_selfhosted_testrun_231/journalctl.txt
             # Thu 2025-07-31 17:23:14.347536 CEST [s=8ca2d1a6b87a4d658f8567191da29032;i=6e4e3;b=e9a786d373074cd596e34111d418158a;m=10b0ee20d;t=63b3b38532a10;x=8d1685bd4a236831]
             #     _BOOT_ID=e9a786d373074cd596e34111d418158a
             #     _MACHINE_ID=6583cc5d952746ceb81e83ad68eb11ff
@@ -225,7 +237,7 @@ class JournalctlObserver:
         journal = self._f_read.read()
         if len(journal) == 0:
             return None
-        logger.debug(f"journalctl: {journal}")
+        logger.warning(f"journalctl: {journal}")
         for re_error in self.RE_ERRORS:
             for match in re_error.finditer(journal):
                 return f"USB error '{match.group(0)}': See {self._logfile}"
