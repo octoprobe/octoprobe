@@ -89,6 +89,7 @@ class TentacleInfra:
         Use this instead of 'self.power.dut = False'
         """
         if self.power.dut:
+            logger.debug("self.power.dut = False")
             self.power.dut = False
             time.sleep(0.5)
 

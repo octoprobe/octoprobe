@@ -50,7 +50,7 @@ class TestbedLock:
                 max_retries = 5
                 if retry >= max_retries:
                     raise OctoprobeAppExitException(
-                        f"Testbed is already used! See: {filename}"
+                        f"Testbed is already in use! See: {filename}"
                     ) from exc
                 time.sleep(1.0)
         os.write(self._fd, f"Testinfrastructure locked by pid {os.getpid()}\n".encode())

@@ -130,7 +130,7 @@ class DutMicropythonEsp8266(DutMcu):
         return tty
 
 
-class DutMicropythonEsp32C3(DutMcu):
+class DutMicropythonEsp32(DutMcu):
     def application_mode_power_up(
         self,
         tentacle: TentacleBase,
@@ -148,15 +148,16 @@ class DutMicropythonEsp32C3(DutMcu):
         with udev.guard as guard:
             tentacle.power.dut = True
 
-            assert tentacle.tentacle_spec_base.mcu_usb_id is None
+            mcu_usb_id = tentacle.tentacle_spec_base.mcu_usb_id
             udev_filter = udev_filter_application_mode(
-                usb_location=tentacle.infra.usb_location_dut
+                usb_location=tentacle.infra.usb_location_dut,
+                usb_id=None if mcu_usb_id is None else mcu_usb_id.application,
             )
 
             event = guard.expect_event(
                 udev_filter=udev_filter,
                 text_where=tentacle.dut.label,
-                text_expect="Expect ESP32C3 to become visible",
+                text_expect="Expect ESP32/ESP32_C3/ESP32_S3 to become visible",
                 timeout_s=3.0,
             )
 
@@ -289,7 +290,7 @@ def dut_mcu_factory(tags: str) -> DutMcu:
     if mcu == "esp8266":
         return DutMicropythonEsp8266()
     if mcu == "esp32":
-        return DutMicropythonEsp32C3()
+        return DutMicropythonEsp32()
     if mcu == "nrf":
         return DutMicropythonNrf()
     if mcu == "mimxrt":
