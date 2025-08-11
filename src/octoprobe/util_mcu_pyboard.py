@@ -47,10 +47,11 @@ class DutProgrammerDfuUtil(DutProgrammerABC):
     def enter_boot_mode(
         self, tentacle: TentacleBase, udev: UdevPoller
     ) -> UdevEventBase:
-        with tentacle.infra.mcu_infra.relays_ctx("Press boot button", relays_close=[IDX1_RELAYS_DUT_BOOT]):
-            tentacle.power.dut = False
-            tentacle.power_dut_off_and_wait()
+        tentacle.power_dut_off_and_wait()
 
+        with tentacle.infra.mcu_infra.relays_ctx(
+            "Press boot button", relays_close=[IDX1_RELAYS_DUT_BOOT]
+        ):
             with udev.guard as guard:
                 tentacle.power.dut = True
 

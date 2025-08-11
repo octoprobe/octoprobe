@@ -214,7 +214,6 @@ print('{VERSION_IMPLEMENTATION_SEPARATOR}'.join(l))
                         directory_logs=directory_logs,
                         firmware_spec=firmware_spec,
                     )
-                    tentacle.tentacle_state.last_firmware_flashed = firmware_spec
             except UdevTimoutException as e:
                 msg = f"Failed to flash the firmware. Is USB connected? {e!r}"
                 logger.warning(f"{self.label}: {msg}")
@@ -224,12 +223,14 @@ print('{VERSION_IMPLEMENTATION_SEPARATOR}'.join(l))
                 tentacle=tentacle,
                 udev=udev,
             )
+
             self.application_mode_power_up_delay()
             self._mp_remote = MpRemote(tty=tty)
             self.is_dut_required_firmware_already_installed(
                 firmware_spec=firmware_spec,
                 exception_text=f"{self.label}: After installing {firmware_spec.filename}",
             )
+            tentacle.tentacle_state.last_firmware_flashed = firmware_spec
             self.dut_flashed_variant_normalized = (
                 firmware_spec.board_variant.name_normalized
             )
