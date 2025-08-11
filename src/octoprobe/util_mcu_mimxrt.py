@@ -69,25 +69,21 @@ class DutProgrammerTeensyLoaderCli(DutProgrammerABC):
 
         # tentacle.infra.power_dut_off_and_wait()
 
-        # Press Program Button
-        tentacle.infra.mcu_infra.relays(relays_close=[IDX1_RELAYS_DUT_BOOT])
-        tentacle.power.dut = True
-        time.sleep(0.5)
+        with tentacle.infra.mcu_infra.relays_ctx("Press boot button", relays_close=[IDX1_RELAYS_DUT_BOOT]):
+            tentacle.power.dut = True
+            time.sleep(0.5)
 
-        with udev.guard as guard:
-            # Release Program Button
-            tentacle.infra.mcu_infra.relays(relays_open=[IDX1_RELAYS_DUT_BOOT])
+            with udev.guard as guard:
+                udev_filter = mimxrt_udev_filter_boot_mode(
+                    usb_location=tentacle.infra.usb_location_dut
+                )
 
-            udev_filter = mimxrt_udev_filter_boot_mode(
-                usb_location=tentacle.infra.usb_location_dut
-            )
-
-            event = guard.expect_event(
-                udev_filter=udev_filter,
-                text_where=tentacle.dut.label,
-                text_expect="Expect mcu to become visible on udev after power on",
-                timeout_s=3.0,
-            )
+                event = guard.expect_event(
+                    udev_filter=udev_filter,
+                    text_where=tentacle.dut.label,
+                    text_expect="Expect mcu to become visible on udev after power on",
+                    timeout_s=3.0,
+                )
 
         assert isinstance(event, MimxrtUdevBootModeEvent)
         filename_dfu = firmware_spec.filename

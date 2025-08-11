@@ -62,10 +62,7 @@ class DutProgrammerEsptool(DutProgrammerABC):
         udev: UdevPoller,
     ) -> UdevEventBase:
         # Press Boot Button
-        logger.debug("relais close: IDX1_RELAYS_DUT_BOOT")
-        tentacle.infra.mcu_infra.relays(relays_close=[IDX1_RELAYS_DUT_BOOT])
-
-        try:
+        with tentacle.infra.mcu_infra.relays_ctx("Press boot button", relays_close=[IDX1_RELAYS_DUT_BOOT]):
             tentacle.power.dut = False
             tentacle.power_dut_off_and_wait()
 
@@ -84,11 +81,6 @@ class DutProgrammerEsptool(DutProgrammerABC):
                     text_expect="Expect mcu to become visible on udev after power on",
                     timeout_s=6.0,
                 )
-
-        finally:
-            # Release Boot Button
-            logger.debug("relais open: IDX1_RELAYS_DUT_BOOT")
-            tentacle.infra.mcu_infra.relays(relays_open=[IDX1_RELAYS_DUT_BOOT])
 
     @typing.override
     def flash(

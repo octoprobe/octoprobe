@@ -47,27 +47,25 @@ class DutProgrammerDfuUtil(DutProgrammerABC):
     def enter_boot_mode(
         self, tentacle: TentacleBase, udev: UdevPoller
     ) -> UdevEventBase:
-        # Press Boot Button
-        tentacle.infra.mcu_infra.relays(relays_close=[IDX1_RELAYS_DUT_BOOT])
+        with tentacle.infra.mcu_infra.relays_ctx("Press boot button", relays_close=[IDX1_RELAYS_DUT_BOOT]):
+            tentacle.power.dut = False
+            tentacle.power_dut_off_and_wait()
 
-        tentacle.power.dut = False
-        tentacle.power_dut_off_and_wait()
+            with udev.guard as guard:
+                tentacle.power.dut = True
 
-        with udev.guard as guard:
-            tentacle.power.dut = True
+                assert tentacle.tentacle_spec_base.mcu_usb_id is not None
+                udev_filter = pyboard_udev_filter_boot_mode(
+                    usb_id=tentacle.tentacle_spec_base.mcu_usb_id.boot,
+                    usb_location=tentacle.infra.usb_location_dut,
+                )
 
-            assert tentacle.tentacle_spec_base.mcu_usb_id is not None
-            udev_filter = pyboard_udev_filter_boot_mode(
-                usb_id=tentacle.tentacle_spec_base.mcu_usb_id.boot,
-                usb_location=tentacle.infra.usb_location_dut,
-            )
-
-            return guard.expect_event(
-                udev_filter=udev_filter,
-                text_where=tentacle.dut.label,
-                text_expect="Expect mcu to become visible on udev after power on",
-                timeout_s=3.0,
-            )
+                return guard.expect_event(
+                    udev_filter=udev_filter,
+                    text_where=tentacle.dut.label,
+                    text_expect="Expect mcu to become visible on udev after power on",
+                    timeout_s=6.0,
+                )
 
     @typing.override
     def flash(
@@ -102,6 +100,3 @@ class DutProgrammerDfuUtil(DutProgrammerABC):
             logfile=directory_logs / FILENAME_FLASHING,
             timeout_s=60.0,
         )
-
-        # Release Boot Button
-        tentacle.infra.mcu_infra.relays(relays_open=[IDX1_RELAYS_DUT_BOOT])

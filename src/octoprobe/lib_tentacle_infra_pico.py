@@ -1,7 +1,13 @@
 from __future__ import annotations
 
+import contextlib
+import logging
+import typing
+
 from .lib_tentacle import TentacleInfra
 from .util_jinja2 import render
+
+logger = logging.getLogger(__name__)
 
 
 class InfraPico:
@@ -109,6 +115,25 @@ def set_relays_pulse(relays, initial_closed, durations_ms):
         list_relays = list(dict_relays.items())
 
         self._infra.mp_remote.exec_raw(cmd=f"set_relays({list_relays})")
+
+    @contextlib.contextmanager
+    def relays_ctx(
+        self,
+        description: str,
+        relays_close: list[int] | None = None,
+        relays_open: list[int] | None = None,
+    ) -> typing.Generator[None]:
+        """
+        closes/opens relays and finally to the inverted state.
+        Important: The relais will not be set to the state it had prior. The will be set to the inverted state given by the parameters.
+        """
+        try:
+            logger.info(f"CTX enter: {description}")
+            self.relays(relays_close=relays_close, relays_open=relays_open)
+            yield None
+        finally:
+            logger.info(f"CTX leave: {description}")
+            self.relays(relays_close=relays_open, relays_open=relays_close)
 
     def relays_pulse(
         self,

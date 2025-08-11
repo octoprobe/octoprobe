@@ -39,37 +39,38 @@ class DutProgrammerBossac(DutProgrammerABC):
         tentacle.dut.mp_remote_close()
 
         time.sleep(0.5)  # Ok: 5.0, 1.0, 0.5, 0.2 Wrong: 0.1
-        tentacle.infra.mcu_infra.relays(relays_close=[IDX1_RELAYS_DUT_BOOT])
-        tentacle.power.dut = True
 
-        with udev.guard as guard:
-            # Now double tab. If the device is in application mode, this will bring it into boot mode.
-            wait_ms = 500
-            pulse_ms = 100
-            tentacle.infra.mcu_infra.relays_pulse(
-                relays=IDX1_RELAYS_DUT_BOOT,
-                initial_closed=True,
-                durations_ms=[
-                    wait_ms,
-                    pulse_ms,
-                    pulse_ms,
-                    # pulse_ms,
-                    # pulse_ms,
-                ],
-            )
+        with tentacle.infra.mcu_infra.relays_ctx("Press boot button", relays_close=[IDX1_RELAYS_DUT_BOOT]):
+            tentacle.power.dut = True
 
-            assert tentacle.tentacle_spec_base.mcu_usb_id is not None
-            udev_filter = udev_filter_application_mode(
-                usb_id=tentacle.tentacle_spec_base.mcu_usb_id.boot,
-                usb_location=tentacle.infra.usb_location_dut,
-            )
+            with udev.guard as guard:
+                # Now double tab. If the device is in application mode, this will bring it into boot mode.
+                wait_ms = 500
+                pulse_ms = 100
+                tentacle.infra.mcu_infra.relays_pulse(
+                    relays=IDX1_RELAYS_DUT_BOOT,
+                    initial_closed=True,
+                    durations_ms=[
+                        wait_ms,
+                        pulse_ms,
+                        pulse_ms,
+                        # pulse_ms,
+                        # pulse_ms,
+                    ],
+                )
 
-            return guard.expect_event(
-                udev_filter=udev_filter,
-                text_where=tentacle.dut.label,
-                text_expect="Expect mcu to become visible on udev after power on",
-                timeout_s=3.0,
-            )
+                assert tentacle.tentacle_spec_base.mcu_usb_id is not None
+                udev_filter = udev_filter_application_mode(
+                    usb_id=tentacle.tentacle_spec_base.mcu_usb_id.boot,
+                    usb_location=tentacle.infra.usb_location_dut,
+                )
+
+                return guard.expect_event(
+                    udev_filter=udev_filter,
+                    text_where=tentacle.dut.label,
+                    text_expect="Expect mcu to become visible on udev after power on",
+                    timeout_s=3.0,
+                )
 
     def flash(
         self,

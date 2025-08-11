@@ -133,28 +133,24 @@ class DutProgrammerPicotool(DutProgrammerABC):
         tentacle.infra.power_dut_off_and_wait()
 
         # Press Boot Button
-        tentacle.infra.mcu_infra.relays(relays_close=[IDX1_RELAYS_DUT_BOOT])
+        with tentacle.infra.mcu_infra.relays_ctx(
+            "Press boot button", relays_close=[IDX1_RELAYS_DUT_BOOT]
+        ):
+            with udev.guard as guard:
+                tentacle.power.dut = True
 
-        with udev.guard as guard:
-            tentacle.power.dut = True
+                assert tentacle.tentacle_spec_base.mcu_usb_id is not None
+                udev_filter = pico_udev_filter_boot_mode(
+                    tentacle.tentacle_spec_base.mcu_usb_id.boot,
+                    usb_location=tentacle.infra.usb_location_dut,
+                )
 
-            assert tentacle.tentacle_spec_base.mcu_usb_id is not None
-            udev_filter = pico_udev_filter_boot_mode(
-                tentacle.tentacle_spec_base.mcu_usb_id.boot,
-                usb_location=tentacle.infra.usb_location_dut,
-            )
-
-            event = guard.expect_event(
-                udev_filter=udev_filter,
-                text_where=tentacle.dut.label,
-                text_expect="Expect  to become visible on udev after power on",
-                timeout_s=2.0,
-            )
-
-            # Release Boot Button
-            tentacle.infra.mcu_infra.relays(relays_open=[IDX1_RELAYS_DUT_BOOT])
-
-            return event
+                return guard.expect_event(
+                    udev_filter=udev_filter,
+                    text_where=tentacle.dut.label,
+                    text_expect="Expect  to become visible on udev after power on",
+                    timeout_s=2.0,
+                )
 
     def flash(
         self,
