@@ -8,6 +8,8 @@ import typing
 
 from mpremote.transport_serial import TransportError  # type: ignore
 
+from octoprobe.lib_mpremote import ExceptionCmdFailed
+
 from .lib_mpremote import MpRemote
 from .util_baseclasses import OctoprobeTestException, VersionMismatchException
 from .util_constants import TAG_PROGRAMMER
@@ -251,3 +253,15 @@ print('{VERSION_IMPLEMENTATION_SEPARATOR}'.join(l))
 
         logger.warning(msg)
         os._exit(42)
+
+    def mpremote_success(self, cmd: str) -> bool:
+        """
+        Return True if 'cmd' succeeds
+        """
+        try:
+            _ret = self.mp_remote.exec_raw(cmd)
+            return True
+        except ExceptionCmdFailed as e:
+            msg = f"{self.label}: '{cmd}: {e}"
+            logger.debug(msg)
+            return False
