@@ -128,11 +128,11 @@ def set_relays_pulse(relays, initial_closed, durations_ms):
         Important: The relais will not be set to the state it had prior. The will be set to the inverted state given by the parameters.
         """
         try:
-            logger.info(f"CTX enter: {description}")
+            logger.debug(f"CTX enter: {description}")
             self.relays(relays_close=relays_close, relays_open=relays_open)
             yield None
         finally:
-            logger.info(f"CTX leave: {description}")
+            logger.debug(f"CTX leave: {description}")
             self.relays(relays_close=relays_open, relays_open=relays_close)
 
     def relays_pulse(

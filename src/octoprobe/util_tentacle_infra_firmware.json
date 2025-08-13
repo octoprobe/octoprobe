@@ -1,5 +1,5 @@
 {
     "board_variant": "RPI_PICO",
-    "url": "https://micropython.org/resources/firmware/RPI_PICO-20250415-v1.25.0.uf2",
-    "micropython_full_version_text": "3.4.0; MicroPython v1.25.0 on 2025-04-15,Raspberry Pi Pico with RP2040"
+    "url": "https://micropython.org/resources/firmware/RPI_PICO-20250809-v1.26.0.uf2",
+    "micropython_full_version_text": "3.4.0; MicroPython v1.26.0 on 2025-08-09,Raspberry Pi Pico with RP2040"
 }
