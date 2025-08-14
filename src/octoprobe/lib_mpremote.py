@@ -197,9 +197,58 @@ class MpRemote:
         assert isinstance(ret, bytes)
         return ret.decode("utf-8")
 
+    def _exec(self, cmd: str) -> Any:
+        "last statment in 'cmd' must be print(xxx)"
+        value_text = self.exec_raw(cmd)
+        return eval(value_text)
+
+    def exec_bool(self, cmd: str) -> int:
+        "last statment in 'cmd' must be print(xxx)"
+        v = self._exec(cmd)
+        assert isinstance(v, bool)
+        return v
+
+    def exec_int(self, cmd: str) -> int:
+        "last statment in 'cmd' must be print(xxx)"
+        v = self._exec(cmd)
+        assert isinstance(v, int)
+        return v
+
+    def exec_float(self, cmd: str) -> float:
+        "last statment in 'cmd' must be print(xxx)"
+        v = self._exec(cmd)
+        assert isinstance(v, float)
+        return v
+
+    def exec_str(self, cmd: str) -> str:
+        "last statment in 'cmd' must be print(xxx)"
+        v = self._exec(cmd)
+        assert isinstance(v, str)
+        # Remove '\n\r' at the end of the string
+        assert v.endswith("\r\n")
+        v = v[:-2]
+        return v
+
+    def exec_bytes(self, cmd: str) -> bytes:
+        "last statment in 'cmd' must be print(xxx)"
+        v = self._exec(cmd)
+        assert isinstance(v, bytes)
+        return v
+
+    def exec_list(self, cmd: str) -> list:
+        "last statment in 'cmd' must be print(xxx)"
+        v = self._exec(cmd)
+        assert isinstance(v, list | tuple)
+        return list(v)
+
     def _read_var(self, name: str) -> Any:
         value_text = self.exec_raw(f"print({name})")
         return eval(value_text)
+
+    def read_bool(self, name: str) -> int:
+        v = self._read_var(name)
+        assert isinstance(v, bool)
+        return v
 
     def read_int(self, name: str) -> int:
         v = self._read_var(name)

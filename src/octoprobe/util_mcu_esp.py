@@ -62,11 +62,13 @@ class DutProgrammerEsptool(DutProgrammerABC):
         udev: UdevPoller,
     ) -> UdevEventBase:
         # Press Boot Button
-        with tentacle.infra.mcu_infra.relays_ctx("Press boot button", relays_close=[IDX1_RELAYS_DUT_BOOT]):
-            tentacle.power.dut = False
-            tentacle.power_dut_off_and_wait()
+        tentacle.power.dut = False
+        tentacle.power_dut_off_and_wait()
 
-            with udev.guard as guard:
+        with udev.guard as guard:
+            with tentacle.infra.mcu_infra.relays_ctx(
+                "Press boot button", relays_close=[IDX1_RELAYS_DUT_BOOT]
+            ):
                 tentacle.power.dut = True
 
                 assert tentacle.tentacle_spec_base.mcu_usb_id is not None
