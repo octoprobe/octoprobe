@@ -3,11 +3,14 @@ from __future__ import annotations
 import enum
 import pathlib
 import typing
+import logging
 
 from .lib_tentacle import TentacleBase
 from .usb_tentacle.usb_tentacle import UsbTentacles
 from .util_baseclasses import OctoprobeAppExitException
 from .util_pyudev import UdevPoller
+
+logger = logging.getLogger(__file__)
 
 FULL_POWERCYCLE_ALL_TENTACLES = False
 
@@ -105,17 +108,31 @@ class CtxTestRun:
             for tentacle in active_tentacles:
                 tentacle.power_dut_off_and_wait()
 
+        def ping_tentacle_infra(tentacle: TentacleBase, tag: str):
+            try:
+                tentacle.infra.mp_remote.read_bool("True")
+                logger.debug(f"{tentacle.label_short}: {tag}: Ping succeeded")
+            except Exception as e:
+                logger.warning(
+                    f"{tentacle.label_short}: {tag}: Ping failed!", exc_info=e
+                )
+
         for tentacle in active_tentacles:
+            ping_tentacle_infra(tentacle=tentacle, tag="a")
             tentacle.power.dut = False
+            ping_tentacle_infra(tentacle=tentacle, tag="b")
             tentacle.power.error = False
+            ping_tentacle_infra(tentacle=tentacle, tag="c")
 
             # Free mp_remote
             if not tentacle.is_mcu:
                 continue
             tentacle.dut.mp_remote_close()
+            ping_tentacle_infra(tentacle=tentacle, tag="d")
 
             # Before we can switch the relays: Connect to infra, power off and free mp_remote
             tentacle.infra.connect_mpremote_if_needed()
+            ping_tentacle_infra(tentacle=tentacle, tag="e")
             try:
                 tentacle.infra.mcu_infra.relays(
                     relays_open=tentacle.infra.list_all_relays
@@ -124,6 +141,7 @@ class CtxTestRun:
                 raise OctoprobeAppExitException(
                     f"{tentacle.infra.label}: Failed to control relays: {e!r}"
                 ) from e
+            ping_tentacle_infra(tentacle=tentacle, tag="f")
             tentacle.infra.mp_remote_close()
 
     def setup_relays(
