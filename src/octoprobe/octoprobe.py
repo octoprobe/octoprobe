@@ -106,10 +106,14 @@ class CtxTestRun:
                 tentacle.power_dut_off_and_wait()
 
         for tentacle in active_tentacles:
-            # Before we power off the DUT: free mp_remote
+            tentacle.power.dut = False
+            tentacle.power.error = False
+
+            # Free mp_remote
             if not tentacle.is_mcu:
                 continue
             tentacle.dut.mp_remote_close()
+
             # Before we can switch the relays: Connect to infra, power off and free mp_remote
             tentacle.infra.connect_mpremote_if_needed()
             try:
@@ -120,7 +124,6 @@ class CtxTestRun:
                 raise OctoprobeAppExitException(
                     f"{tentacle.infra.label}: Failed to control relays: {e!r}"
                 ) from e
-            tentacle.infra.power.dut = False
             tentacle.infra.mp_remote_close()
 
     def setup_relays(
