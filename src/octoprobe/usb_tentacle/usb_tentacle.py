@@ -179,6 +179,9 @@ class UsbTentacle:
     """
     pico_probe: UsbPico | None = None
 
+    def __post_init__(self) -> None:
+        pass
+
     def set_power(self, plug: UsbPlug, on: bool) -> bool:
         """
         return True: If the power changed
@@ -344,8 +347,12 @@ class UsbTentacle:
         )
 
     @property
+    def has_pico_probe(self) -> bool:
+        return self.tentacle_version.portnumber_pico_probe is not None
+
+    @property
     def usb_port_probe(self) -> UsbPort:
-        assert self.tentacle_version.portnumber_pico_probe is not None
+        assert self.has_pico_probe
         return UsbPort(
             usb_location=f"{self.hub4_location.short}.{self.tentacle_version.portnumber_pico_probe}"
         )

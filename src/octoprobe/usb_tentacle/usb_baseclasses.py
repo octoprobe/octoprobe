@@ -132,6 +132,9 @@ class UsbPort:
 
     usb_location: str
 
+    def __post_init__(self) -> None:
+        pass
+
     @property
     def device_sysfs(self) -> list_ports_linux.SysFS | None:
         return UsbPort.find_device_sysfs_by_usb_location(

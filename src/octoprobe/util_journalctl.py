@@ -17,7 +17,9 @@ import signal
 import subprocess
 import threading
 import time
+from collections.abc import Iterator
 
+from .lib_tentacle import TentacleUsbPort
 from .util_baseclasses import OctoprobeAppExitException
 
 logger = logging.getLogger(__file__)
@@ -25,6 +27,11 @@ logger = logging.getLogger(__file__)
 
 class JournalctlObserver:
     MSG_NOT_ABORTING = "Not aborting the test as --debug-skip-usb-error"
+
+    RE_USB_LOCATION = re.compile(r"^MESSAGE=usb\s+(?P<usb_location>[\d\-\.]+):")
+    """
+    Example: MESSAGE=usb 1-3.2.3: device not accepting address 122, error -22
+    """
 
     RE_ERRORS = [
         re.compile(r)
@@ -47,7 +54,7 @@ class JournalctlObserver:
             #     SYSLOG_FACILITY=0
             #     SYSLOG_IDENTIFIER=kernel
             ##############################################################
-            # r"MESSAGE=usb .*?: can't set config",
+            r"MESSAGE=usb .*?: can't set config",
             # Caused by ESP32_S3_DEVKIT. See https://reports.octoprobe.org/github_selfhosted_testrun_231/journalctl.txt
             # Mon 2025-01-20 15:05:58.411820 CET [s=3c16c64ddc5e47d3860baf61bd03cdcb;i=f293a3;b=5431e12877f64e10b32eae46c739923e;m=2321b2b09;t=62c23c278662c;x=2f39069dda9f5cb2]
             #     _BOOT_ID=5431e12877f64e10b32eae46c739923e
@@ -102,6 +109,7 @@ class JournalctlObserver:
             #     _UDEV_DEVNODE=/dev/bus/usb/003/000
             #     _UDEV_SYSNAME=3-1.1.4
             #     _SOURCE_MONOTONIC_TIMESTAMP=30272105414
+            r"MESSAGE=usb .*?: reset"
             #     MESSAGE=usb 3-1.1.4: reset high-speed USB device number 68 using xhci_hcd
             # MISSING: _KERNEL_SUBSYSTEM=usb
             # Fri 2025-01-31 19:05:30.263733 CET [s=4ede5dd1820f435db5f6a683258a4ba2;i=820255;b=0c3168bbe06541a5a92be924dde8ae39;m=70c61986b;t=62d04635a94b5;x=f0139dbcb79be972]
@@ -116,7 +124,7 @@ class JournalctlObserver:
             #     MESSAGE=usb 3-1.1.4-port1: attempt power cycle
             #     _SOURCE_MONOTONIC_TIMESTAMP=30272395116
             ##############################################################
-            # r"MESSAGE=usb .*?: Device not responding to setup address",
+            r"MESSAGE=usb .*?: Device not responding to setup address",
             # Caused by ESP32_S3_DEVKIT. See https://reports.octoprobe.org/github_selfhosted_testrun_231/journalctl.txt
             # Thu 2025-07-31 17:23:29.058559 CEST [s=8ca2d1a6b87a4d658f8567191da29032;i=6e65d;b=e9a786d373074cd596e34111d418158a;m=10bef5afc;t=63b3b3933a2ff;x=6dd2e53b6c498237]
             #     _BOOT_ID=e9a786d373074cd596e34111d418158a
@@ -150,7 +158,7 @@ class JournalctlObserver:
             #     _SOURCE_BOOTTIME_TIMESTAMP=4490539804
             #     _SOURCE_MONOTONIC_TIMESTAMP=4490539804
             ##############################################################
-            # r"MESSAGE=usb .*?: device not accepting address",
+            r"MESSAGE=usb .*?: device not accepting address",
             # Caused by ESP32_S3_DEVKIT. See https://reports.octoprobe.org/github_selfhosted_testrun_231/journalctl.txt
             # Thu 2025-07-31 17:23:14.347536 CEST [s=8ca2d1a6b87a4d658f8567191da29032;i=6e4e3;b=e9a786d373074cd596e34111d418158a;m=10b0ee20d;t=63b3b38532a10;x=8d1685bd4a236831]
             #     _BOOT_ID=e9a786d373074cd596e34111d418158a
@@ -173,6 +181,8 @@ class JournalctlObserver:
         self._logfile = logfile
         self._f_write = self._logfile.open("w")
         self._debug_skip_usb_error = debug_skip_usb_error
+        self._usb_locations_dut: dict[str, TentacleUsbPort] = {}
+        "From these locations, we accept errors"
 
         program = "journalctl"
         args = [
@@ -213,48 +223,83 @@ class JournalctlObserver:
             while True:
                 time.sleep(1)
 
-                warning = self.get_warning()
-                if warning is None:
-                    continue
+                for tentacle_usb_port, warning in self.get_warnings():
+                    if tentacle_usb_port.is_dut:
+                        logger.info(warning)
+                        continue
 
-                logger.error(warning)
+                    logger.error(warning)
+                    if self._debug_skip_usb_error:
+                        logger.info(self.MSG_NOT_ABORTING)
+                        continue
 
-                if self._debug_skip_usb_error:
-                    logger.info(self.MSG_NOT_ABORTING)
-                    continue
-
-                os.kill(os.getpid(), signal.SIGTERM)
+                    os.kill(os.getpid(), signal.SIGTERM)
 
         observer_thread = threading.Thread(target=observer)
         observer_thread.daemon = True
         observer_thread.name = "journalctl observer"
         observer_thread.start()
 
-    def get_warning(self) -> str | None:
+    def assign_usb_locations_dut(
+        self, usb_locations_dut: dict[str, TentacleUsbPort]
+    ) -> None:
+        self._usb_locations_dut = usb_locations_dut
+
+    def get_warnings(self) -> Iterator[tuple[TentacleUsbPort | None, str]]:
+        """
+        Returns the usb_location and the error message
+        """
         return_code = self.proc.poll()
         if return_code is not None:
-            return f"journalctl has unexpectedly exited with: {self.proc.returncode}. See {self._logfile}"
+            yield (
+                None,
+                f"journalctl has unexpectedly exited with: {self.proc.returncode}. See {self._logfile}",
+            )
+            return
         journal = self._f_read.read()
         if len(journal) == 0:
-            return None
-        logger.warning(f"journalctl: {journal}")
-        for re_error in self.RE_ERRORS:
-            for match in re_error.finditer(journal):
-                return f"USB error '{match.group(0)}': See {self._logfile}"
+            return
 
-        # forward = self._logfile.stat().st_size > self.f_pos:
-        #     return f"USB errors: See {self._logfile}"
-        return None
+        logger.debug(f"journalctl: {journal}")
+
+        for line in journal.splitlines():
+            if line.find("MESSAGE=usb") < 0:
+                continue
+
+            for re_error in self.RE_ERRORS:
+                match = re_error.search(line)
+                if match is None:
+                    continue
+                error = match.group(0)
+                match_usb_location = JournalctlObserver.RE_USB_LOCATION.match(error)
+                if match_usb_location is None:
+                    yield None, f"Failed to find usb location: {error}"
+                    continue
+
+                usb_location = match_usb_location.group("usb_location")
+                tentacle_usb_port = self._usb_locations_dut.get(usb_location, None)
+                if tentacle_usb_port is not None:
+                    yield (
+                        tentacle_usb_port,
+                        f"{tentacle_usb_port.info}: USB error'{error}': See {self._logfile}",
+                    )
+                    continue
+
+                yield None, f"USB error '{error}': See {self._logfile}"
 
     def assert_no_warnings(self) -> None:
         """
         This may be called from the main thread
         """
-        warning = self.get_warning()
-        if warning is None:
-            return
-        logger.error(warning)
-        if self._debug_skip_usb_error:
-            logger.info(self.MSG_NOT_ABORTING)
-            return
-        raise OctoprobeAppExitException(warning)
+        for tentacle_usb_port, warning in self.get_warnings():
+            if tentacle_usb_port is not None:
+                if tentacle_usb_port.is_dut:
+                    logger.info(warning)
+                    continue
+
+            logger.error(warning)
+            if self._debug_skip_usb_error:
+                logger.info(self.MSG_NOT_ABORTING)
+                continue
+
+            raise OctoprobeAppExitException(warning)

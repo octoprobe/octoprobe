@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import abc
 import contextlib
+import dataclasses
 import enum  # pylint: disable=unused-import
 import io
 import logging
@@ -11,6 +12,7 @@ import typing
 
 from .lib_tentacle_dut import TentacleDut
 from .lib_tentacle_infra import TentacleInfra
+from .usb_tentacle.usb_baseclasses import UsbPort
 from .usb_tentacle.usb_tentacle import (
     SERIALNUMBER_SHORT,
     TentaclePlugsPower,
@@ -22,6 +24,18 @@ from .util_firmware_spec import FirmwareSpecBase
 from .util_pyudev import UdevPoller
 
 logger = logging.getLogger(__file__)
+
+
+@dataclasses.dataclass(frozen=True, repr=True)
+class TentacleUsbPort:
+    tentacle_base: TentacleBase
+    usb_port: UsbPort
+    label: str
+    is_dut: bool
+
+    @property
+    def info(self) -> str:
+        return f"Tentacle {self.tentacle_base.label_short}: {self.label} {self.usb_port.usb_location}"
 
 
 class TentacleState:
@@ -264,3 +278,25 @@ class TentacleBase(abc.ABC):
             f.write(textwrap.indent(tentacle.description_short, prefix="  "))
 
         return f.getvalue()
+
+    @property
+    def usb_ports_with_label(self) -> typing.Iterator[TentacleUsbPort]:
+        yield TentacleUsbPort(
+            tentacle_base=self,
+            usb_port=self.infra.usb_tentacle.usb_port_infra,
+            label="INFRA",
+            is_dut=False,
+        )
+        if self.infra.usb_tentacle.has_pico_probe:
+            yield TentacleUsbPort(
+                tentacle_base=self,
+                usb_port=self.infra.usb_tentacle.usb_port_probe,
+                label="PROBE",
+                is_dut=False,
+            )
+        yield TentacleUsbPort(
+            tentacle_base=self,
+            usb_port=self.infra.usb_tentacle.usb_port_dut,
+            label="DUT",
+            is_dut=True,
+        )
