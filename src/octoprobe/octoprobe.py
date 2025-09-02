@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import enum
+import logging
 import pathlib
 import typing
-import logging
 
 from .lib_tentacle import TentacleBase
 from .usb_tentacle.usb_tentacle import UsbTentacles

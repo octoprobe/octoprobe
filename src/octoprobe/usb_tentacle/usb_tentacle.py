@@ -41,6 +41,7 @@ from ..usb_tentacle.usb_baseclasses import (
     TENTACLE_VERSION_V03,
     TENTACLE_VERSION_V04,
     TentacleVersion,
+    UsbPort,
 )
 from ..usb_tentacle.usb_constants import TyperPowerCycle, UsbPlug, UsbPlugs
 
@@ -335,6 +336,25 @@ class UsbTentacle:
         if serial_port is None:
             return None
         return serial_port
+
+    @property
+    def usb_port_infra(self) -> UsbPort:
+        return UsbPort(
+            usb_location=f"{self.hub4_location.short}.{self.tentacle_version.portnumber_pico_infra}"
+        )
+
+    @property
+    def usb_port_probe(self) -> UsbPort:
+        assert self.tentacle_version.portnumber_pico_probe is not None
+        return UsbPort(
+            usb_location=f"{self.hub4_location.short}.{self.tentacle_version.portnumber_pico_probe}"
+        )
+
+    @property
+    def usb_port_dut(self) -> UsbPort:
+        return UsbPort(
+            usb_location=f"{self.hub4_location.short}.{self.tentacle_version.portnumber_dut}"
+        )
 
 
 def _query_hubs() -> list[Location]:

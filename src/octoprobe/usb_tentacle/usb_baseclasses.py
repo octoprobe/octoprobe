@@ -116,6 +116,55 @@ TENTACLE_VERSION_V04 = TentacleVersion(
 )
 
 
+class UsbLocationDoesNotExistException(Exception):
+    """
+    Thrown if we can not retrieve a USB location.
+    """
+
+
+@dataclasses.dataclass(frozen=True, repr=True)
+class UsbPort:
+    """
+    A board which is connected to a USB plug.
+    The 'usb_location' may change when powercycling the hub.
+    However, the serial port may change when powercycling the board.
+    """
+
+    usb_location: str
+
+    @property
+    def device_sysfs(self) -> list_ports_linux.SysFS | None:
+        return UsbPort.find_device_sysfs_by_usb_location(
+            usb_location_short=self.usb_location
+        )
+
+    @property
+    def device_text(self) -> str:
+        device_sysfs = self.device_sysfs
+        if device_sysfs is None:
+            return "-"
+        return str(device_sysfs)
+
+    @staticmethod
+    def find_device_sysfs_by_usb_location(
+        usb_location_short: str,
+    ) -> list_ports_linux.SysFS | None:
+        """
+        Given a usb location, for example "1-3.4.1", finds is corresponding port.
+        Return None, if no port is assigned or the connected board is powered off.
+        """
+        for port in list_ports_linux.comports():
+            try:
+                location = Location.factory_sysfs(port=port)
+            except UsbLocationDoesNotExistException:
+                continue
+            if location.short == usb_location_short:
+                assert isinstance(port, list_ports_linux.SysFS)
+                return port
+
+        return None
+
+
 class Location:
     def __init__(self, bus: int, path: list[int]) -> None:
         self.bus = bus
@@ -142,6 +191,9 @@ class Location:
         assert isinstance(port, list_ports_linux.SysFS)
         # This is a Pico in application mode.
         # Returned from package 'list_ports', method 'serial.list_ports'
+        if port.location is None:
+            raise UsbLocationDoesNotExistException(port.device)
+
         location, _, _ = port.location.partition(":")
         bus_str, _, path_str = location.partition("-")
         bus = int(bus_str)
