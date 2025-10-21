@@ -5,6 +5,8 @@ import dataclasses
 import enum
 import pathlib  # pylint: disable=W0611:unused-import
 
+from octoprobe.usb_tentacle.usb_tentacle import serial_short_from_delimited
+
 from .util_tentacle_label.label_data import LabelData, LabelsData
 
 TENTACLE_TYPE_MCU = "tentacle_mcu"
@@ -199,7 +201,7 @@ class TentacleInstance:
     @property
     def label_data(self) -> LabelData:
         return LabelData(
-            serial=self.serial[-4:],
+            serial=serial_short_from_delimited(self.serial),
             description=self.tentacle_spec.description,
             tentacle_tag=self.tentacle_spec.tentacle_tag,
             tentacle_type=self.tentacle_spec.tentacle_type,

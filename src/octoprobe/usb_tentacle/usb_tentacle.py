@@ -47,6 +47,14 @@ from ..usb_tentacle.usb_constants import TyperPowerCycle, UsbPlug, UsbPlugs
 
 logger = logging.getLogger(__file__)
 
+SERIALNUMBER_LONG = 16
+"""
+Example: e46340474b551722
+"""
+SERIALNUMBER_DELIMITED = SERIALNUMBER_LONG + 1
+"""
+Example: e46340474b55-1722
+"""
 SERIALNUMBER_SHORT = 4
 """
 Example: 2731
@@ -63,11 +71,33 @@ Example: e46340474b4c2731
 
 
 def serial_delimited(serial: str) -> str:
+    """
+    Example
+    serial: e46340474b551722
+    return: e46340474b55-1722
+    """
+    assert isinstance(serial, str)
+    assert len(serial) == SERIALNUMBER_LONG, (
+        f"Expect len {SERIALNUMBER_LONG} but got {len(serial)}: {serial}"
+    )
     return (
         serial[:-SERIALNUMBER_SHORT]
         + SERIALNUMBER_DELIMITER
         + serial[-SERIALNUMBER_SHORT:]
     )
+
+
+def serial_short_from_delimited(serial: str) -> str:
+    """
+    Example
+    serial: e46340474b551722 or e46340474b55-1722
+    return: 1722
+    """
+    assert isinstance(serial, str)
+    assert len(serial) in (SERIALNUMBER_LONG, SERIALNUMBER_DELIMITED), (
+        f"Expect len {SERIALNUMBER_LONG} or {SERIALNUMBER_LONG} but got {len(serial)}: {serial}"
+    )
+    return serial[-SERIALNUMBER_SHORT:]
 
 
 def is_serial_valid(serial: str) -> bool:
@@ -603,6 +633,9 @@ class TentaclePlugsPower:
 
     def set_default_off(self) -> None:
         self.set_power_plugs(UsbPlugs.default_off())
+
+    def set_default_infra_on(self) -> None:
+        self.set_power_plugs(UsbPlugs.default_infra_on())
 
     @property
     def infra(self) -> bool:

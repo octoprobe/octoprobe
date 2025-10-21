@@ -74,9 +74,9 @@ class TentacleInfra:
         """
         if self._mp_remote is None:
             return None
-        serial_port = self._mp_remote.close()
+        self._mp_remote.close()
         self._mp_remote = None
-        return serial_port
+        return self.usb_tentacle.serial_port
 
     @property
     def mp_remote(self) -> MpRemote:
