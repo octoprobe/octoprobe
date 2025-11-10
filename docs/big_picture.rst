@@ -47,7 +47,7 @@ octoprobe testenvironment
 
 * Test software
 
-  * octoprobe provides basic functionality like updating firmware, connecting the inkbus, tentacle inventory.
+  * octoprobe provides basic functionality like updating firmware, connecting the octobus, tentacle inventory.
   * However the pytest code itselve is provided by the tester together with the firmware.
 
 
@@ -96,22 +96,22 @@ In this test the OLED display shall be tested agains PYBv1.1 and ESP32 using fir
       Note over U,TO: Test PYBv1.1 vs OLED
 
       U->>+TP: update firmware
-      TP->>+I: connect to inkbus
-      TO->>+I: connect to inkbus
+      TP->>+I: connect to octobus
+      TO->>+I: connect to octobus
       U->>+TP: run pytest
       TP-->>-U: collect results
-      I-->>-TP: disconnect inkbus
-      I-->>-TO: disconnect inkbus
+      I-->>-TP: disconnect octobus
+      I-->>-TO: disconnect octobus
 
       Note over U,TO: Test ESP32 vs OLED
 
       U->>+TE: update firmware
-      TE->>+I: connect to inkbus
-      TO->>+I: connect to inkbus
+      TE->>+I: connect to octobus
+      TO->>+I: connect to octobus
       U->>+TE: run pytest
       TE-->>-U: collect results
-      I-->>-TE: disconnect inkbus
-      I-->>-TO: disconnect inkbus
+      I-->>-TE: disconnect octobus
+      I-->>-TO: disconnect octobus
 
       U-->>github: testresults
 

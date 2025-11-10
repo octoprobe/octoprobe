@@ -62,6 +62,7 @@ class Log:
         if self._handler is None:
             return
         ROOT_LOGGER.removeHandler(self._handler)
+        self._handler.close()
         self._handler = None
 
     def __enter__(self) -> None:
@@ -109,12 +110,15 @@ class Logs:
                     return h.filename
         raise ValueError("Failed to evaluate relevant logger!")
 
+    def close(self) -> None:
+        for handler in self._handlers:
+            handler.remove()
+
     def __enter__(self) -> Logs:
         return self
 
     def __exit__(self, exc_type, exc_value, traceback) -> None:
-        for handler in self._handlers:
-            handler.remove()
+        self.close()
 
 
 def main() -> None:
