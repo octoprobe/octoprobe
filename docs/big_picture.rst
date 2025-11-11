@@ -5,7 +5,9 @@ Big Picture
 HIL (Hardware in the Loop) testinfrastructure
 ---------------------------------------------
 
-:download:`2024-07-27_melbourne_micropython_meetup.pdf </README_images/2024-07-27_melbourne_micropython_meetup.pdf>`
+* :download:`2025-11-11_Octoprobe.pdf </README_images/2025-11-11_Octoprobe.pdf>`
+* :download:`2025-11-11_Octoprobe.pdf </README_images/2025-11-11_Octoprobe.pdf>`
+* :download:`2024-07-27_melbourne_micropython_meetup.pdf </README_images/2024-07-27_melbourne_micropython_meetup.pdf>`
 
 TODO: Add link from second meeting
 TODO: change download to link. Move pdf to static pages. Create folder 'resources' and add this folder to the static folders in config.py.
