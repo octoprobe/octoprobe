@@ -27,13 +27,19 @@ from machine import Pin, unique_id
 import ubinascii
 
 pico_unique_id = ubinascii.hexlify(unique_id()).decode('ascii')
+gpio_hw_version = 0
+for _gpio in (29, 28, 27, 26, 25):
+    gpio_hw_version = 2 * gpio_hw_version + Pin(_gpio, Pin.IN, Pin.PULL_DOWN).value()
 files_on_flash = len(os.listdir())
 
-pin_led_active = Pin('GPIO{{ micropython_jina.gpio_led_active }}', Pin.OUT)
-pin_led_error = Pin('GPIO{{ micropython_jina.gpio_led_error }}', Pin.OUT)
+pin_led_active = Pin('GPIO24', Pin.OUT)
+pin_led_error = Pin('GPIO20', Pin.OUT) # Not connected on v0.3
+pin_power_dut = Pin('GPIO23', Pin.OUT) # Not connected on v0.3
+pin_power_probe = Pin('GPIO22', Pin.OUT) # Not connected on v0.3
+pin_power_probeboot = Pin('GPIO21', Pin.OUT) # Not connected on v0.3
 
 pin_relays = {
-{% for gpio  in micropython_jina.gpio_relays %}
+{% for gpio in (1, 2, 3, 4, 5, 6, 7) %}
     {{ loop.index }}: Pin('GPIO{{ gpio }}', Pin.OUT),
 {%- endfor %}
 }
@@ -54,30 +60,47 @@ def set_relays_pulse(relays, initial_closed, durations_ms):
         assert isinstance(tentacle_infra, TentacleInfra)
         self._infra = tentacle_infra
         self._base_code_loaded = False
+        self._gpio_hw_version: int | None = None
+        self._unique_id: str | None = None
 
-    def _load_base_code(self) -> None:
+    def load_base_code(self) -> None:
         if self._base_code_loaded:
             return
         assert self._infra.mp_remote is not None
         micropython_base_code = render(
-            micropython_code=self._MICROPYTHON_BASE_CODE_JINJA2,
-            micropython_jina=self._infra.usb_tentacle.tentacle_version.micropython_jina,
+            micropython_code=self._MICROPYTHON_BASE_CODE_JINJA2
         )
         self._infra.mp_remote.exec_raw(micropython_base_code)
+        self._unique_id = self._infra.mp_remote.read_str("pico_unique_id")
+        self._gpio_hw_version = self._infra.mp_remote.read_int("gpio_hw_version")
 
-    def get_unique_id(self) -> str:
-        self._load_base_code()
-        return self._infra.mp_remote.read_str("pico_unique_id")
+    @property
+    def gpio_hw_version(self) -> int:
+        if self._gpio_hw_version is None:
+            self.load_base_code()
+            assert self._gpio_hw_version is not None
+        return self._gpio_hw_version
+
+    @property
+    def hw_version(self) -> str:
+        return {0: "v0.3", 1: "v0.5"}[self.gpio_hw_version]
+
+    @property
+    def unique_id(self) -> str:
+        if self._unique_id is None:
+            self.load_base_code()
+            assert self._unique_id is not None
+        return self._unique_id
 
     def get_micropython_version(self) -> str:
-        self._load_base_code()
+        self.load_base_code()
         return self._infra.mp_remote.read_str(
             "sys.version + ',' + sys.implementation[2]"
         )
 
     def exception_if_files_on_flash(self) -> None:
         # "import os; print('main.py' in os.listdir())"
-        self._load_base_code()
+        self.load_base_code()
         file_count = self._infra.mp_remote.read_int("files_on_flash")
         if file_count == 0:
             return
@@ -102,7 +125,7 @@ def set_relays_pulse(relays, initial_closed, durations_ms):
         assert isinstance(relays_close, list)
         assert isinstance(relays_open, list)
 
-        self._load_base_code()
+        self.load_base_code()
 
         for i in relays_close + relays_open:
             assert self._infra.is_valid_relay_index(i)
@@ -152,21 +175,29 @@ def set_relays_pulse(relays, initial_closed, durations_ms):
         for duration_ms in durations_ms:
             assert isinstance(duration_ms, int)
 
-        self._load_base_code()
+        self.load_base_code()
 
         self._infra.mp_remote.exec_raw(
             cmd=f"set_relays_pulse(relays={relays}, initial_closed={initial_closed}, durations_ms={durations_ms})",
             timeout=int(1.5 * 1000 * sum(durations_ms)),
         )
 
-    def active_led(self, on: bool) -> None:
+    def _set_pin(self, name: str, on: bool) -> None:
         assert isinstance(on, bool)
-        self._load_base_code()
+        self.load_base_code()
+        self._infra.mp_remote.exec_raw(cmd=f"{name}.value({int(on)})")
 
-        self._infra.mp_remote.exec_raw(cmd=f"pin_led_active.value({int(on)})")
+    def active_led(self, on: bool) -> None:
+        self._set_pin("pin_led_active", on=on)
 
     def error_led(self, on: bool) -> None:
-        assert isinstance(on, bool)
-        self._load_base_code()
+        self._set_pin("pin_led_error", on=on)
 
-        self._infra.mp_remote.exec_raw(cmd=f"pin_led_error.value({int(on)})")
+    def power_dut(self, on: bool) -> None:
+        self._set_pin("pin_power_dut", on=on)
+
+    def power_probe(self, on: bool) -> None:
+        self._set_pin("pin_power_probe", on=on)
+
+    def power_probeboot(self, on: bool) -> None:
+        self._set_pin("pin_power_probeboot", on=on)

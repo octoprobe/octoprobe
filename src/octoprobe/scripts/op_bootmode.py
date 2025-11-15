@@ -4,6 +4,7 @@ import time
 import typing
 
 from .. import util_mcu_pico
+from ..lib_tentacle_infra import TentacleInfra
 from ..usb_tentacle.usb_constants import (
     UsbPlug,
     UsbPlugs,
@@ -21,6 +22,8 @@ def do_bootmode(
     picotool_cmd: bool,
     print_cb: typing.Callable[[str], None] = print,
 ) -> util_mcu_pico.Rp2UdevBootModeEvent | None:
+    tentacle_infra = TentacleInfra.factory_usb_tentacle(usb_tentacle=usb_tentacle)
+
     if usb_tentacle.pico_infra.serial is None:
         print(
             DELIM
@@ -33,12 +36,11 @@ def do_bootmode(
         return None
 
     if not is_infra:
-        if usb_tentacle.pico_probe is None:
+        tentacle_infra.connect_mpremote_if_needed()
+        hw_version = tentacle_infra.mcu_infra.hw_version
+        if hw_version == "v0.3":
             # This is a v0.3 tentacle without a PICO_PROBE
-            print(
-                DELIM
-                + f"SKIPPED: Tentacle {usb_tentacle.tentacle_version.version} does not have a PICO_PROBE."
-            )
+            print(DELIM + f"SKIPPED: Tentacle {hw_version} does not have a PICO_PROBE.")
             return None
 
     print_cb(DELIM + "Press Boot Button.")

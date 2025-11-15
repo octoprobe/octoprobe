@@ -11,10 +11,12 @@ import typing_extensions
 from octoprobe.util_cached_git_repo import CachedGitRepo
 from octoprobe.util_constants import DIRECTORY_OCTOPROBE_GIT_CACHE
 
+from ..lib_tentacle_infra import TentacleInfra
+from ..usb_tentacle.usb_baseclasses import HubPortNumber
 from ..usb_tentacle.usb_constants import (
     TyperPowerCycle,
     TyperUsbPlug,
-    UsbPlugs,
+    typerusbplug2usbplug,
 )
 from ..usb_tentacle.usb_tentacle import UsbTentacle, UsbTentacles
 from ..util_pyudev_monitor import do_udev_monitor
@@ -156,7 +158,9 @@ def bootmode_probe(
 ) -> None:
     for usb_tentacle in iter_usb_tentacles(poweron=poweron, serials=serials):
         op_bootmode.do_bootmode(
-            usb_tentacle=usb_tentacle, is_infra=False, picotool_cmd=picotool_cmd
+            usb_tentacle=usb_tentacle,
+            is_infra=False,
+            picotool_cmd=picotool_cmd,
         )
 
 
@@ -213,35 +217,39 @@ def power(
     ] = False,
     poweron: _PoweronAnnotation = False,
 ) -> None:
-    _on = TyperUsbPlug.convert(on)
-    _off = TyperUsbPlug.convert(off)
-
-    plugs = UsbPlugs()
-    if set_off:
-        plugs = UsbPlugs.default_off()
-    if _on is not None:
-        for __on in _on:
-            plugs[__on] = True
-    if _off is not None:
-        for __off in _off:
-            plugs[__off] = False
-
+    if on is None:
+        on = []
+    if off is None:
+        off = []
     for usb_tentacle in iter_usb_tentacles(
         poweron=poweron,
         serials=serials,
-        line_delimiter=op_bootmode.DELIM + plugs.text,
+        line_delimiter=op_bootmode.DELIM + "plugs.text",
     ):
-        usb_tentacle.set_plugs(plugs)
+        tentacle_infra = TentacleInfra.factory_usb_tentacle(usb_tentacle=usb_tentacle)
+        for plug in on:
+            tentacle_infra.handle_typer_usb_plug(typer_usb_plug=plug, on=True)
+        for plug in off:
+            tentacle_infra.handle_typer_usb_plug(typer_usb_plug=plug, on=False)
 
 
 @app.command(help="Query connected tentacles.")
 def query(poweron: _PoweronAnnotation = False) -> None:
-    for _ in iter_usb_tentacles(
+    for usb_tentacle in iter_usb_tentacles(
         poweron=poweron,
         serials=None,
         line_delimiter=None,
     ):
-        pass
+        tentacle_infra = TentacleInfra.factory_usb_tentacle(usb_tentacle=usb_tentacle)
+        tentacle_infra.connect_mpremote_if_needed()
+
+        def p(label: str, value: str) -> None:
+            if value != "-":
+                print(f"  {label}={value}")
+
+        p("hw_version", tentacle_infra.mcu_infra.hw_version)
+        p("dut", usb_tentacle.usb_port_dut.device_text)
+        p("probe", usb_tentacle.usb_port_probe.device_text)
 
 
 if __name__ == "__main__":

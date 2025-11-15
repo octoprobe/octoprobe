@@ -194,16 +194,14 @@
             "justMyCode": false,
         },
         {
-            "name": "op power",
+            "name": "op power --on dut",
             "type": "debugpy",
             "request": "launch",
             "module": "octoprobe.scripts.op",
             "cwd": "${workspaceFolder}",
             "args": [
                 "power",
-                "--off",
-                "infraboot",
-                "--off",
+                "--on",
                 "dut",
             ],
             "env": {
@@ -251,7 +249,6 @@
             "cwd": "${workspaceFolder}",
             "args": [
                 "exec-infra",
-                "--serials=5425",
                 "set_relays([(5, True)])",
             ],
             "env": {

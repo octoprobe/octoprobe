@@ -7,6 +7,8 @@ import time
 import typing
 
 from .lib_mpremote import MpRemote
+from .usb_tentacle.usb_baseclasses import HubPortNumber
+from .usb_tentacle.usb_constants import TyperUsbPlug, UsbPlug, typerusbplug2usbplug
 from .usb_tentacle.usb_tentacle import TentaclePlugsPower, UsbTentacle
 from .util_baseclasses import VersionMismatchException
 from .util_firmware_spec import FirmwareDownloadSpec, FirmwareSpecBase
@@ -48,13 +50,20 @@ class TentacleInfra:
     def is_valid_relay_index(self, i: int) -> bool:
         return i in self.list_all_relays
 
-    # @property
-    # def relay_count(self) -> int:
-    #     return self.usb_tentacle.tentacle_version.micropython_jina.relay_count
+    @staticmethod
+    def factory_usb_tentacle(usb_tentacle: UsbTentacle) -> TentacleInfra:
+        """
+        Create a temporary TentacleInfra
+        """
+        assert isinstance(usb_tentacle, UsbTentacle)
+        label = "tentacle"
+        if usb_tentacle.serial is not None:
+            label = f"tentacle_{usb_tentacle.serial_delimited}"
+        return TentacleInfra(label=label, usb_tentacle=usb_tentacle)
 
     @property
     def list_all_relays(self) -> list[int]:
-        return self.usb_tentacle.tentacle_version.micropython_jina.list_all_relays
+        return [1, 2, 3, 4, 5, 6, 7]
 
     @property
     def usb_location_infra(self) -> str:
@@ -94,7 +103,7 @@ class TentacleInfra:
 
     def pico_test_mp_remote(self) -> None:
         assert self.usb_tentacle is not None
-        unique_id = self.mcu_infra.get_unique_id()
+        unique_id = self.mcu_infra.unique_id
         assert self.usb_tentacle.serial == unique_id
 
         self.verify_micropython_version(self.get_firmware_spec())
@@ -207,6 +216,7 @@ class TentacleInfra:
             )
 
         assert isinstance(event, UdevApplicationModeEvent)
+        assert event.tty is not None
         self._mp_remote = MpRemote(tty=event.tty)
 
     @contextlib.contextmanager
@@ -214,3 +224,51 @@ class TentacleInfra:
         assert self._mp_remote is not None
         with self._mp_remote.borrow_tty() as tty:
             yield tty
+
+    def handle_typer_usb_plug(self, typer_usb_plug: TyperUsbPlug, on: bool) -> None:
+        assert isinstance(typer_usb_plug, TyperUsbPlug)
+        self.handle_usb_plug(typerusbplug2usbplug(typer_usb_plug), on=on)
+
+    def handle_usb_plug(self, usb_plug: UsbPlug, on: bool) -> None:
+        assert isinstance(usb_plug, UsbPlug)
+        if usb_plug.is_hub_plug:
+            hub_port = {
+                UsbPlug.PICO_INFRA: HubPortNumber.PORT1_INFRA,
+                UsbPlug.PICO_INFRA_BOOT: HubPortNumber.PORT2_INFRABOOT,
+            }[usb_plug]
+            self.usb_tentacle.set_power(hub_port, on=on)
+            return
+
+        if self.usb_tentacle.serial is None:
+            logger.warning(
+                f"{self.usb_tentacle.hub4_location.short}: May not switch '{usb_plug}' as rp_infra is not visible."
+            )
+            return
+
+        self.connect_mpremote_if_needed()
+        if usb_plug.is_relay:
+            kwargs = {"relays_close" if on else "relays_open": [usb_plug.relay_number]}
+            self.mcu_infra.relays(**kwargs)
+            return
+        if usb_plug is UsbPlug.DUT:
+            if self.mcu_infra.hw_version == "v0.3":
+                self.usb_tentacle.set_power(HubPortNumber.PORT3_DUT, on=on)
+            else:
+                self.mcu_infra.power_dut(on=on)
+            return
+        if usb_plug is UsbPlug.PICO_PROBE:
+            self.mcu_infra.power_probe(on=on)
+            return
+        if usb_plug is UsbPlug.PICO_PROBE_BOOT:
+            self.mcu_infra.power_probeboot(on=on)
+            return
+        if usb_plug is UsbPlug.LED_ACTIVE:
+            self.mcu_infra.active_led(on=on)
+            return
+        if usb_plug is UsbPlug.LED_ERROR:
+            if self.mcu_infra.hw_version == "v0.3":
+                self.usb_tentacle.set_power(HubPortNumber.PORT4_PROBE_LEDERROR, on=on)
+            else:
+                self.mcu_infra.error_led(on=on)
+            return
+        raise ValueError(f"{usb_plug=} not handled")

@@ -25,95 +25,30 @@ class HubPortNumber(enum.IntEnum):
     This enum is the number for every port.
     """
 
-    IDX1_1 = 1
-    IDX1_2 = 2
-    IDX1_3 = 3
-    IDX1_4 = 4
-
-
-@dataclasses.dataclass(frozen=True)
-class MicropythonJina:
+    PORT1_INFRA = 1
     """
-    GPIOx used, See KiCad schematics.
-    Different Tentacles version used different GPIO.
+    USB: rp_infra
+    POWER: rp_infra (v0.3)
+    POWER: rp_infra and rp_probe (v0.5+)
     """
-
-    gpio_relays: list[int]
+    PORT2_INFRABOOT = 2
     """
-    See KiCad schematics: RELAYS_1 .. RELAYS_7
+    USB: none.
+    POWER: rp_infra-boot
     """
-    gpio_led_active: int
+    PORT3_DUT = 3
     """
-    See KiCad schematics: LED_ACTIVE
+    USB: DUT
+    POWER: DUT (v0.3)
+    POWER: not connected (v0.5+)
     """
-    gpio_led_error: int
+    PORT4_PROBE_LEDERROR = 4
     """
-    See KiCad schematics: LED_ERROR
+    USB: not connected (v0.3)
+    USB: rp_probe (v0.5+)
+    POWER: LED_ERROR (v0.3)
+    POWER: not connected (v0.5+)
     """
-
-    @property
-    def list_all_relays(self) -> list[int]:
-        """
-        relays [1, 2, 3, 4, 5, 6, 7]
-        """
-        return list(range(1, len(self.gpio_relays) + 1))
-
-
-@dataclasses.dataclass(frozen=True)
-class TentacleVersion:
-    portnumber_pico_infra: HubPortNumber
-    portnumber_pico_probe: HubPortNumber | None
-    portnumber_infraboot: HubPortNumber
-    portnumber_dut: HubPortNumber
-    portnumber_error: HubPortNumber | None
-    micropython_jina: MicropythonJina
-    version: str
-
-    def get_hub_port(self, plug: UsbPlug) -> HubPortNumber | None:
-        """
-        UsbPlug is the generic naming.
-        This code converts it into the tentacle version specific number.
-        """
-
-        if plug == UsbPlug.PICO_INFRA:
-            return self.portnumber_pico_infra
-        if plug == UsbPlug.PICO_PROBE:
-            return self.portnumber_pico_probe
-        if plug == UsbPlug.DUT:
-            return self.portnumber_dut
-        if plug == UsbPlug.ERROR:
-            return self.portnumber_error
-        if plug == UsbPlug.BOOT:
-            return self.portnumber_infraboot
-        return None
-
-
-TENTACLE_VERSION_V03 = TentacleVersion(
-    portnumber_pico_infra=HubPortNumber.IDX1_1,
-    portnumber_infraboot=HubPortNumber.IDX1_2,
-    portnumber_dut=HubPortNumber.IDX1_3,
-    portnumber_error=HubPortNumber.IDX1_4,
-    portnumber_pico_probe=None,
-    micropython_jina=MicropythonJina(
-        gpio_relays=[1, 2, 3, 4, 5, 6, 7],
-        gpio_led_active=24,
-        gpio_led_error=25,  # GPIO25 is NOT used!
-    ),
-    version="v0.3",
-)
-TENTACLE_VERSION_V04 = TentacleVersion(
-    portnumber_pico_probe=HubPortNumber.IDX1_1,
-    portnumber_pico_infra=HubPortNumber.IDX1_2,
-    portnumber_dut=HubPortNumber.IDX1_3,
-    portnumber_infraboot=HubPortNumber.IDX1_4,
-    portnumber_error=None,
-    micropython_jina=MicropythonJina(
-        gpio_relays=[8, 9, 10, 11, 12, 13, 14],
-        gpio_led_active=24,
-        gpio_led_error=15,
-    ),
-    version="v0.4",
-)
 
 
 class UsbLocationDoesNotExistException(Exception):
@@ -183,7 +118,9 @@ class Location:
             pico_probe just controls USB communication, NOT USB power.
             pico_infra powers pico_infra AND pico_probe!
         """
-        self.tentacle_version: TentacleVersion | None = None
+
+    def __repr__(self) -> str:
+        return self.short
 
     @staticmethod
     def factory_sysfs(port: list_ports_linux.SysFS) -> Location:

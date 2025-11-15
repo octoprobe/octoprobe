@@ -150,6 +150,6 @@ class Commissioning:
             odd = [1, 3, 5, 7]
             mcu_infra.active_led(on=True)
             mcu_infra.relays(relays_close=even, relays_open=odd)
-            time.sleep(1.0)
+            time.sleep(2.0)
             mcu_infra.active_led(on=False)
             mcu_infra.relays(relays_close=odd, relays_open=even)
