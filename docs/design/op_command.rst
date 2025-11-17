@@ -77,13 +77,18 @@ These commands allow access the PICO_PROBE.
 **Power on PICO_PROBE in application mode**
 .. code-block:: bash
 
+    # Power off, Application mode
+    op power --off proberun --on probeboot
+    # Power on
     op power --on proberun
 
 **Power on PICO_PROBE in programming mode**
 
 .. code-block:: bash
 
-    op power --off probeboot
+    # Power off, Programming mode
+    op power --off proberun --off probeboot
+    # Power on
     op power --on proberun
 
 Power: Relay and leds

@@ -589,62 +589,6 @@ class UsbTentacles(list[UsbTentacle]):
             time.sleep(0.2)
 
 
-class TentaclePlugsPower:
-    def __init__(self, usb_tentacle: UsbTentacle) -> None:
-        assert isinstance(usb_tentacle, UsbTentacle)
-        self._usb_tentacle = usb_tentacle
-
-    def set_power_plugs(self, plugs: UsbPlugs) -> None:
-        self._usb_tentacle.set_plugs(plugs=plugs)
-
-    def _get_power_plug(self, plug: UsbPlug) -> bool:
-        return self._usb_tentacle.get_power(plug=plug)
-
-    def set_power_plug(self, plug: UsbPlug, on: bool) -> None:
-        self._usb_tentacle.set_power(plug=plug, on=on)
-
-    def set_default_off(self) -> None:
-        self.set_power_plugs(UsbPlugs.default_off())
-
-    def set_default_infra_on(self) -> None:
-        self.set_power_plugs(UsbPlugs.default_infra_on())
-
-    @property
-    def infra(self) -> bool:
-        return self._get_power_plug(UsbPlug.PICO_INFRA)
-
-    @infra.setter
-    def infra(self, on: bool) -> None:
-        self.set_power_plug(UsbPlug.PICO_INFRA, on)
-
-    @property
-    def infraboot(self) -> bool:
-        return self._get_power_plug(UsbPlug.BOOT)
-
-    @infraboot.setter
-    def infraboot(self, on: bool) -> None:
-        self.set_power_plug(UsbPlug.BOOT, on)
-
-    @property
-    def dut(self) -> bool:
-        """
-        USB-Power for the DUT-MCU
-        """
-        return self._get_power_plug(UsbPlug.DUT)
-
-    @dut.setter
-    def dut(self, on: bool) -> None:
-        self.set_power_plug(UsbPlug.DUT, on)
-
-    @property
-    def error(self) -> bool:
-        return self._get_power_plug(UsbPlug.ERROR)
-
-    @error.setter
-    def error(self, on: bool) -> None:
-        self.set_power_plug(UsbPlug.ERROR, on)
-
-
 def main() -> None:
     time_start_s = time.monotonic()
 

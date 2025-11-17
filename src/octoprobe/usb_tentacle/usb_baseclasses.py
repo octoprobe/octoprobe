@@ -14,8 +14,6 @@ import pathlib
 import usb.core
 from serial.tools import list_ports_linux
 
-from .usb_constants import UsbPlug
-
 logger = logging.getLogger(__file__)
 
 
@@ -81,7 +79,16 @@ class UsbPort:
         device_sysfs = self.device_sysfs
         if device_sysfs is None:
             return "-"
+
         return str(device_sysfs)
+
+    @property
+    def usb_text(self) -> str:
+        device_usb = UsbPort.find_usb_device_usb_location(self.usb_location)
+        if device_usb is None:
+            return "-"
+
+        return f"{device_usb.idVendor:04X}:{device_usb.idProduct:04X}, dev {device_usb.address}, {device_usb.manufacturer}, {device_usb.product}, {device_usb.serial_number}"
 
     @staticmethod
     def find_device_sysfs_by_usb_location(
@@ -100,6 +107,25 @@ class UsbPort:
                 assert isinstance(port, list_ports_linux.SysFS)
                 return port
 
+        return None
+
+    @staticmethod
+    def find_usb_device_usb_location(
+        usb_location_short: str,
+    ) -> usb.core.Device:
+        devices = usb.core.find(find_all=True)
+
+        for device in devices:
+            # Check if port_numbers is available
+            if device.port_numbers is None:
+                continue
+
+            device_usb_location = (
+                f"{device.bus}-{'.'.join(map(str, device.port_numbers))}"
+            )
+            if usb_location_short == device_usb_location:
+                assert isinstance(device, usb.core.Device)
+                return device
         return None
 
 

@@ -13,11 +13,7 @@ import typing
 from .lib_tentacle_dut import TentacleDut
 from .lib_tentacle_infra import TentacleInfra
 from .usb_tentacle.usb_baseclasses import UsbPort
-from .usb_tentacle.usb_tentacle import (
-    SERIALNUMBER_SHORT,
-    TentaclePlugsPower,
-    UsbTentacle,
-)
+from .usb_tentacle.usb_tentacle import SERIALNUMBER_SHORT, UsbTentacle
 from .util_baseclasses import TentacleInstance, TentacleSpecBase
 from .util_constants import DELIMITER_SERIAL_BOARD
 from .util_firmware_spec import FirmwareSpecBase

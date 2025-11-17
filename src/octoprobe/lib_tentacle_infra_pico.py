@@ -38,6 +38,8 @@ pin_led_error = Pin('GPIO20', Pin.OUT) # Not connected on v0.3
 pin_power_dut = Pin('GPIO23', Pin.OUT) # Not connected on v0.3
 pin_power_proberun = Pin('GPIO22', Pin.OUT) # Not connected on v0.3
 pin_power_probeboot = Pin('GPIO21', Pin.OUT) # Not connected on v0.3
+# If pico_probe is powered, it should start in application mode
+pin_power_probeboot.value(1)
 
 pin_relays = {
 {% for gpio in (1, 2, 3, 4, 5, 6, 7) %}
@@ -74,6 +76,7 @@ def set_relays_pulse(relays, initial_closed, durations_ms):
         self._infra.mp_remote.exec_raw(micropython_base_code)
         self._unique_id = self._infra.mp_remote.read_str("pico_unique_id")
         self._gpio_hw_version = self._infra.mp_remote.read_int("gpio_hw_version")
+        self._base_code_loaded = True
 
     @property
     def gpio_hw_version(self) -> int:

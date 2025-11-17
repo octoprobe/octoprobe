@@ -15,7 +15,7 @@ from .usb_tentacle.usb_constants import (
     UsbPlugs,
     typerusbplug2usbplug,
 )
-from .usb_tentacle.usb_tentacle import TentaclePlugsPower, UsbTentacle
+from .usb_tentacle.usb_tentacle import UsbTentacle
 from .util_baseclasses import VersionMismatchException
 from .util_firmware_spec import FirmwareDownloadSpec, FirmwareSpecBase
 from .util_mcu import UdevApplicationModeEvent, udev_filter_application_mode
@@ -48,7 +48,7 @@ class TentacleInfra:
 
         self.label = label
         self.usb_tentacle = usb_tentacle
-        self.power = TentaclePlugsPower(usb_tentacle=self.usb_tentacle)
+        self.power = TentaclePlugsPower(tentacle_infra=self)
         self._mp_remote: MpRemote | None = None
         self._power: TentaclePlugsPower | None = None
         self.mcu_infra: InfraPico = InfraPico(self)
@@ -170,12 +170,8 @@ class TentacleInfra:
             picotool_flash_micropython,
         )
 
-        # Power off everything and release boot button
-        # print("Power off everything and release boot button")
-        self.power.set_default_off()
-        time.sleep(0.3)
-        # Press Boot Button
-        # print("Press Boot Button")
+        # Power off PICO_INFRA and press Boot Button
+        self.usb_tentacle.set_power(hub_port=HubPortNumber.PORT1_INFRA, on=False)
         self.power.infraboot = False
         time.sleep(0.1)
 
@@ -196,12 +192,9 @@ class TentacleInfra:
             )
 
             # Release Boot Button
-            # print("Release Boot Button")
             self.power.infraboot = True
 
         with udev.guard as guard:
-            # This will flash the Pico
-            # print("Flash")
             picotool_flash_micropython(
                 event=event,
                 directory_logs=directory_test,
@@ -284,7 +277,7 @@ class TentacleInfra:
 
     def set_plugs(self, plugs: UsbPlugs) -> None:
         for plug, on in plugs.ordered:
-            self.usb_tentacle.set_power(plug=plug, on=on)
+            self.handle_usb_plug(usb_plug=plug, on=on)
 
     def powercycle(self, power_cycle: TyperPowerCycle) -> None:
         if power_cycle is TyperPowerCycle.INFRA:
@@ -315,3 +308,64 @@ class TentacleInfra:
             return
 
         raise NotImplementedError("Internal programming error")
+
+
+class TentaclePlugsPower:
+    def __init__(self, tentacle_infra: TentacleInfra) -> None:
+        assert isinstance(tentacle_infra, TentacleInfra)
+        self._tentacle_infra = tentacle_infra
+
+    def set_power_plugs(self, plugs: UsbPlugs) -> None:
+        self._tentacle_infra.set_plugs(plugs=plugs)
+
+    def _get_power_plug(self, plug: UsbPlug) -> bool:
+        return self._tentacle_infra.get_power(plug=plug)
+
+    def set_power_plug(self, plug: UsbPlug, on: bool) -> None:
+        self._tentacle_infra.usb_tentacle.set_power(HubPortNumber.PORT3_DUT, on=on)
+
+    def set_default_off(self) -> None:
+        self.set_power_plugs(UsbPlugs.default_off())
+
+    def set_default_infra_on(self) -> None:
+        self.set_power_plugs(UsbPlugs.default_infra_on())
+
+    @property
+    def infra(self) -> bool:
+        return self._tentacle_infra.usb_tentacle.get_power_hub_port(
+            HubPortNumber.PORT1_INFRA
+        )
+
+    @infra.setter
+    def infra(self, on: bool) -> None:
+        self._tentacle_infra.usb_tentacle.set_power(HubPortNumber.PORT1_INFRA, on=on)
+
+    @property
+    def infraboot(self) -> bool:
+        return self._get_power_plug(UsbPlug.BOOT)
+
+    @infraboot.setter
+    def infraboot(self, on: bool) -> None:
+        self._tentacle_infra.usb_tentacle.set_power(
+            HubPortNumber.PORT2_INFRABOOT,
+            on=on,
+        )
+
+    @property
+    def dut(self) -> bool:
+        """
+        USB-Power for the DUT-MCU
+        """
+        return self._get_power_plug(UsbPlug.DUT)
+
+    @dut.setter
+    def dut(self, on: bool) -> None:
+        self.set_power_plug(UsbPlug.DUT, on)
+
+    @property
+    def error(self) -> bool:
+        return self._get_power_plug(UsbPlug.ERROR)
+
+    @error.setter
+    def error(self, on: bool) -> None:
+        self._tentacle_infra.handle_usb_plug(UsbPlug.LED_ERROR, on)

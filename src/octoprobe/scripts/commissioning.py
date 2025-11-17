@@ -116,7 +116,7 @@ class Commissioning:
         self.tentacle_infra.verify_micropython_version(firmware_spec=firmware_spec)
 
         mcu_infra = self.tentacle_infra.mcu_infra
-        unique_id = mcu_infra.get_unique_id()
+        unique_id = mcu_infra.unique_id
         logger.info(f"Flashed tentacle. Serial Number is '{unique_id}'.")
         logger.info(f"* Please write onto the tentacle: {unique_id[-4:]}")
         logger.info(

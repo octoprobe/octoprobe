@@ -12,12 +12,7 @@ from octoprobe.util_cached_git_repo import CachedGitRepo
 from octoprobe.util_constants import DIRECTORY_OCTOPROBE_GIT_CACHE
 
 from ..lib_tentacle_infra import TentacleInfra
-from ..usb_tentacle.usb_baseclasses import HubPortNumber
-from ..usb_tentacle.usb_constants import (
-    TyperPowerCycle,
-    TyperUsbPlug,
-    typerusbplug2usbplug,
-)
+from ..usb_tentacle.usb_constants import TyperPowerCycle, TyperUsbPlug
 from ..usb_tentacle.usb_tentacle import UsbTentacle, UsbTentacles
 from ..util_pyudev_monitor import do_udev_monitor
 from . import op_bootmode, op_flash
@@ -243,13 +238,17 @@ def query(poweron: _PoweronAnnotation = False) -> None:
         tentacle_infra = TentacleInfra.factory_usb_tentacle(usb_tentacle=usb_tentacle)
         tentacle_infra.connect_mpremote_if_needed()
 
-        def p(label: str, value: str) -> None:
+        def log(label: str, value: str) -> bool:
             if value != "-":
-                print(f"  {label}={value}")
+                print(f"  {label}: {value}")
+                return True
+            return False
 
-        p("hw_version", tentacle_infra.mcu_infra.hw_version)
-        p("dut", usb_tentacle.usb_port_dut.device_text)
-        p("probe", usb_tentacle.usb_port_probe.device_text)
+        log("hw_version", tentacle_infra.mcu_infra.hw_version)
+        log("dut", usb_tentacle.usb_port_dut.device_text)
+        ok = log("probe-appmode", usb_tentacle.usb_port_probe.device_text)
+        if not ok:
+            log("probe-progmode", usb_tentacle.usb_port_probe.usb_text)
 
 
 if __name__ == "__main__":
