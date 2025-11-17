@@ -197,9 +197,6 @@ def set_relays_pulse(relays, initial_closed, durations_ms):
     def power_dut(self, on: bool) -> None:
         self._set_pin("pin_power_dut", on=on)
 
-    def power_probe(self, on: bool) -> None:
-        self._set_pin("pin_power_probe", on=on)
-
     def power_probeboot(self, on: bool) -> None:
         self._set_pin("pin_power_probeboot", on=on)
 

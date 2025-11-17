@@ -43,16 +43,6 @@ def do_bootmode(
             return None
 
     print_cb(DELIM + f"{tag}: Power off.")
-    # usb_tentacle.set_plugs(
-    #     plugs=UsbPlugs(
-    #         {
-    #             UsbPlug.PICO_INFRA: False,
-    #             UsbPlug.PICO_PROBE: False,
-    #             UsbPlug.DUT: False,
-    #             UsbPlug.PICO_INFRA_BOOT: False,
-    #         }
-    #     )
-    # )
     print_cb(DELIM + f"{tag}: Press Boot Button.")
     if is_infra:
         usb_tentacle.set_power(HubPortNumber.PORT1_INFRA, on=False)
@@ -68,14 +58,6 @@ def do_bootmode(
 
     with UdevPoller() as guard:
         print_cb(DELIM + f"{tag}: Power on.")
-        # usb_tentacle.set_plugs(
-        #     plugs=UsbPlugs(
-        #         {
-        #             UsbPlug.PICO_INFRA: True,
-        #             UsbPlug.PICO_PROBE: True,
-        #         }
-        #     )
-        # )
         if is_infra:
             usb_tentacle.set_power(HubPortNumber.PORT1_INFRA, on=True)
         else:
@@ -83,13 +65,6 @@ def do_bootmode(
 
         time.sleep(0.2)
         print_cb(DELIM + f"{tag}: Release Boot Button.")
-        # usb_tentacle.set_plugs(
-        #     plugs=UsbPlugs(
-        #         {
-        #             UsbPlug.BOOT: True,
-        #         }
-        #     )
-        # )
         if is_infra:
             usb_tentacle.set_power(HubPortNumber.PORT2_INFRABOOT, on=True)
         else:
@@ -126,12 +101,14 @@ def do_bootmode(
             )
             picotool_text = " ".join(picotool)
             print_cb(
-                DELIM + f"Detected {tag} on port {pico.location.short}. Please flash:"
+                DELIM + f"{tag}: Detected on port {pico.location.short}. Please flash:"
             )
             print_cb(DELIM2 + picotool_text)
             return event
 
         assert isinstance(event, util_mcu_pico.Rp2UdevBootModeEvent2)
-        print_cb(DELIM + f"Detected {tag} on port {pico.location.short}. Please flash:")
+        print_cb(
+            DELIM + f"{tag}: Detected on port {pico.location.short}. Please flash:"
+        )
         print_cb(DELIM2 + f"cp firmware.uf2 {event.mount_point}")
         return None

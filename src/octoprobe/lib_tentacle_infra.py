@@ -262,8 +262,8 @@ class TentacleInfra:
             else:
                 self.mcu_infra.power_dut(on=on)
             return
-        if usb_plug is UsbPlug.PICO_PROBE_OBSOLETE:
-            self.mcu_infra.power_probe(on=on)
+        if usb_plug is UsbPlug.PICO_PROBE_RUN:
+            self.mcu_infra.power_proberun(on=on)
             return
         if usb_plug is UsbPlug.PICO_PROBE_BOOT:
             self.mcu_infra.power_probeboot(on=on)

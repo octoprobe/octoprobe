@@ -60,8 +60,6 @@ class UsbPlug(int, enum.Enum):
     """True: rp_infra is powered"""
     PICO_INFRA_BOOT = enum.auto()
     """False: rp_infra boot button pressed"""
-    PICO_PROBE_OBSOLETE = enum.auto()
-    """Not used"""
     PICO_PROBE_BOOT = enum.auto()
     """False: rp_probe boot button pressed"""
     PICO_PROBE_RUN = enum.auto()
@@ -114,9 +112,8 @@ class TyperUsbPlug(str, enum.Enum):
 
     PICO_INFRA = "infra"
     PICO_INFRA_BOOT = "infraboot"
-    PICO_PROBE = "probe"  # >= v0.5
     PICO_PROBE_BOOT = "probeboot"  # >= v0.5
-    PICO_PROBE_RUN = "probereset"  # >= v0.5
+    PICO_PROBE_RUN = "proberun"  # >= v0.5
     DUT = "dut"
 
     LED_ERROR = "led_error"
@@ -134,7 +131,6 @@ class TyperUsbPlug(str, enum.Enum):
     def usbplug(self) -> UsbPlug | None:
         return {
             TyperUsbPlug.PICO_INFRA: UsbPlug.PICO_INFRA,
-            TyperUsbPlug.PICO_PROBE: UsbPlug.PICO_PROBE_OBSOLETE,
             TyperUsbPlug.PICO_INFRA_BOOT: UsbPlug.PICO_INFRA_BOOT,
             TyperUsbPlug.DUT: UsbPlug.DUT,
             TyperUsbPlug.LED_ERROR: UsbPlug.LED_ERROR,
@@ -150,7 +146,6 @@ class TyperUsbPlug(str, enum.Enum):
 _TRANSLATION_TABLE = (
     (UsbPlug.PICO_INFRA, TyperUsbPlug.PICO_INFRA),
     (UsbPlug.PICO_INFRA_BOOT, TyperUsbPlug.PICO_INFRA_BOOT),
-    (UsbPlug.PICO_PROBE_OBSOLETE, TyperUsbPlug.PICO_PROBE),
     (UsbPlug.PICO_PROBE_BOOT, TyperUsbPlug.PICO_PROBE_BOOT),
     (UsbPlug.PICO_PROBE_RUN, TyperUsbPlug.PICO_PROBE_RUN),
     (UsbPlug.DUT, TyperUsbPlug.DUT),
@@ -169,16 +164,18 @@ _TRANSLATION_TABLE = (
 class UsbPlugs(dict[UsbPlug, bool]):
     _DICT_DEFAULT_OFF = {
         UsbPlug.PICO_INFRA: False,
-        UsbPlug.PICO_PROBE_OBSOLETE: False,
         UsbPlug.PICO_INFRA_BOOT: True,
+        UsbPlug.PICO_PROBE_RUN: False,
+        UsbPlug.PICO_PROBE_BOOT: True,
         UsbPlug.DUT: False,
         UsbPlug.LED_ERROR: False,
     }
 
     _DICT_INFRA_ON = {
         UsbPlug.PICO_INFRA: True,
-        UsbPlug.PICO_PROBE_OBSOLETE: True,
         UsbPlug.PICO_INFRA_BOOT: True,
+        UsbPlug.PICO_PROBE_RUN: False,
+        UsbPlug.PICO_PROBE_BOOT: True,
         UsbPlug.DUT: False,
         UsbPlug.LED_ERROR: False,
     }
