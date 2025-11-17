@@ -6,6 +6,7 @@ Octoprobe
 
     big_picture.rst
     design/terms.rst
+    design/op_command.rst
     sphinx/index
     rst_sandbox/index
     license.rst
