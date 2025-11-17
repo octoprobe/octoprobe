@@ -8,7 +8,13 @@ import typing
 
 from .lib_mpremote import MpRemote
 from .usb_tentacle.usb_baseclasses import HubPortNumber
-from .usb_tentacle.usb_constants import TyperUsbPlug, UsbPlug, typerusbplug2usbplug
+from .usb_tentacle.usb_constants import (
+    HwVersion,
+    TyperUsbPlug,
+    UsbPlug,
+    UsbPlugs,
+    typerusbplug2usbplug,
+)
 from .usb_tentacle.usb_tentacle import TentaclePlugsPower, UsbTentacle
 from .util_baseclasses import VersionMismatchException
 from .util_firmware_spec import FirmwareDownloadSpec, FirmwareSpecBase
@@ -251,24 +257,61 @@ class TentacleInfra:
             self.mcu_infra.relays(**kwargs)
             return
         if usb_plug is UsbPlug.DUT:
-            if self.mcu_infra.hw_version == "v0.3":
+            if self.mcu_infra.hw_version == HwVersion.V03:
                 self.usb_tentacle.set_power(HubPortNumber.PORT3_DUT, on=on)
             else:
                 self.mcu_infra.power_dut(on=on)
             return
-        if usb_plug is UsbPlug.PICO_PROBE:
+        if usb_plug is UsbPlug.PICO_PROBE_OBSOLETE:
             self.mcu_infra.power_probe(on=on)
             return
         if usb_plug is UsbPlug.PICO_PROBE_BOOT:
             self.mcu_infra.power_probeboot(on=on)
             return
+        if usb_plug is UsbPlug.PICO_PROBE_RUN:
+            self.mcu_infra.power_proberun(on=on)
+            return
         if usb_plug is UsbPlug.LED_ACTIVE:
             self.mcu_infra.active_led(on=on)
             return
         if usb_plug is UsbPlug.LED_ERROR:
-            if self.mcu_infra.hw_version == "v0.3":
+            if self.mcu_infra.hw_version == HwVersion.V03:
                 self.usb_tentacle.set_power(HubPortNumber.PORT4_PROBE_LEDERROR, on=on)
             else:
                 self.mcu_infra.error_led(on=on)
             return
         raise ValueError(f"{usb_plug=} not handled")
+
+    def set_plugs(self, plugs: UsbPlugs) -> None:
+        for plug, on in plugs.ordered:
+            self.usb_tentacle.set_power(plug=plug, on=on)
+
+    def powercycle(self, power_cycle: TyperPowerCycle) -> None:
+        if power_cycle is TyperPowerCycle.INFRA:
+            self.set_plugs(plugs=UsbPlugs.default_off())
+            time.sleep(1.0)
+            self.set_plugs(plugs=UsbPlugs({UsbPlug.PICO_INFRA: True}))
+            return
+
+        if power_cycle is TyperPowerCycle.INFRBOOT:
+            self.set_plugs(plugs=UsbPlugs.default_off())
+            self.set_plugs(plugs=UsbPlugs({UsbPlug.BOOT: False}))
+            time.sleep(1.0)
+            self.set_plugs(plugs=UsbPlugs({UsbPlug.PICO_INFRA: True}))
+            time.sleep(0.5)
+            self.set_plugs(plugs=UsbPlugs({UsbPlug.BOOT: True}))
+            return
+
+        if power_cycle is TyperPowerCycle.DUT:
+            self.set_plugs(plugs=UsbPlugs.default_off())
+            time.sleep(1.0)
+            self.set_plugs(
+                plugs=UsbPlugs({UsbPlug.PICO_INFRA: True, UsbPlug.DUT: True})
+            )
+            return
+
+        if power_cycle is TyperPowerCycle.OFF:
+            self.set_plugs(plugs=UsbPlugs.default_off())
+            return
+
+        raise NotImplementedError("Internal programming error")

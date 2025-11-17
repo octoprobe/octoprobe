@@ -5,10 +5,8 @@ import typing
 
 from .. import util_mcu_pico
 from ..lib_tentacle_infra import TentacleInfra
-from ..usb_tentacle.usb_constants import (
-    UsbPlug,
-    UsbPlugs,
-)
+from ..usb_tentacle.usb_baseclasses import HubPortNumber
+from ..usb_tentacle.usb_constants import HwVersion, UsbPlug
 from ..usb_tentacle.usb_tentacle import UsbTentacle
 from ..util_pyudev import UdevPoller
 
@@ -22,6 +20,7 @@ def do_bootmode(
     picotool_cmd: bool,
     print_cb: typing.Callable[[str], None] = print,
 ) -> util_mcu_pico.Rp2UdevBootModeEvent | None:
+    tag = "PICO_INFRA" if is_infra else "PICO_PROBE"
     tentacle_infra = TentacleInfra.factory_usb_tentacle(usb_tentacle=usb_tentacle)
 
     if usb_tentacle.pico_infra.serial is None:
@@ -38,48 +37,68 @@ def do_bootmode(
     if not is_infra:
         tentacle_infra.connect_mpremote_if_needed()
         hw_version = tentacle_infra.mcu_infra.hw_version
-        if hw_version == "v0.3":
+        if hw_version == HwVersion.V03:
             # This is a v0.3 tentacle without a PICO_PROBE
             print(DELIM + f"SKIPPED: Tentacle {hw_version} does not have a PICO_PROBE.")
             return None
 
-    print_cb(DELIM + "Press Boot Button.")
-    print_cb(DELIM + "Power off PICO_INFRA and PICO_PROBE.")
-    usb_tentacle.set_plugs(
-        plugs=UsbPlugs(
-            {
-                UsbPlug.PICO_INFRA: False,
-                UsbPlug.PICO_PROBE: False,
-                UsbPlug.DUT: False,
-                UsbPlug.BOOT: False,
-            }
-        )
-    )
+    print_cb(DELIM + f"{tag}: Power off.")
+    # usb_tentacle.set_plugs(
+    #     plugs=UsbPlugs(
+    #         {
+    #             UsbPlug.PICO_INFRA: False,
+    #             UsbPlug.PICO_PROBE: False,
+    #             UsbPlug.DUT: False,
+    #             UsbPlug.PICO_INFRA_BOOT: False,
+    #         }
+    #     )
+    # )
+    print_cb(DELIM + f"{tag}: Press Boot Button.")
+    if is_infra:
+        usb_tentacle.set_power(HubPortNumber.PORT1_INFRA, on=False)
+        # boot on rp_infra is invers (False: pressed)
+        usb_tentacle.set_power(HubPortNumber.PORT2_INFRABOOT, on=False)
+    else:
+        assert tentacle_infra is not None
+        # boot on rp_probe is invers (False: pressed)
+        tentacle_infra.handle_usb_plug(UsbPlug.PICO_PROBE_RUN, on=False)
+        tentacle_infra.handle_usb_plug(UsbPlug.PICO_PROBE_BOOT, on=False)
 
     time.sleep(0.1)
 
     with UdevPoller() as guard:
-        print_cb(DELIM + "Power on PICO_INFRA and PICO_PROBE.")
-        usb_tentacle.set_plugs(
-            plugs=UsbPlugs(
-                {
-                    UsbPlug.PICO_INFRA: True,
-                    UsbPlug.PICO_PROBE: True,
-                }
-            )
-        )
+        print_cb(DELIM + f"{tag}: Power on.")
+        # usb_tentacle.set_plugs(
+        #     plugs=UsbPlugs(
+        #         {
+        #             UsbPlug.PICO_INFRA: True,
+        #             UsbPlug.PICO_PROBE: True,
+        #         }
+        #     )
+        # )
+        if is_infra:
+            usb_tentacle.set_power(HubPortNumber.PORT1_INFRA, on=True)
+        else:
+            tentacle_infra.handle_usb_plug(UsbPlug.PICO_PROBE_RUN, on=True)
+
         time.sleep(0.2)
-        print_cb(DELIM + "Release Boot Button.")
-        usb_tentacle.set_plugs(
-            plugs=UsbPlugs(
-                {
-                    UsbPlug.BOOT: True,
-                }
-            )
-        )
+        print_cb(DELIM + f"{tag}: Release Boot Button.")
+        # usb_tentacle.set_plugs(
+        #     plugs=UsbPlugs(
+        #         {
+        #             UsbPlug.BOOT: True,
+        #         }
+        #     )
+        # )
+        if is_infra:
+            usb_tentacle.set_power(HubPortNumber.PORT2_INFRABOOT, on=True)
+        else:
+            # probe
+            assert tentacle_infra is not None
+            assert HwVersion.is_V05or_newer(tentacle_infra.mcu_infra.hw_version)
+            tentacle_infra.handle_usb_plug(UsbPlug.PICO_PROBE_BOOT, on=True)
 
         pico = usb_tentacle.pico_infra if is_infra else usb_tentacle.pico_probe
-        tag = "PICO_INFRA" if is_infra else "PICO_PROBE"
         assert pico is not None
 
         if picotool_cmd:

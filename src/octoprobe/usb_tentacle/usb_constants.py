@@ -9,6 +9,28 @@ from __future__ import annotations
 import enum
 
 
+class HwVersion(enum.StrEnum):
+    V03 = "v0.3"
+    V05 = "v0.5"
+
+    @staticmethod
+    def is_V05or_newer(version: str) -> bool:
+        return HwVersion.factory(version) >= HwVersion.V05
+
+    @staticmethod
+    def factory(version: str) -> HwVersion:
+        assert isinstance(version, str)
+        if isinstance(version, HwVersion):
+            return version
+
+        try:
+            return HwVersion(version)
+        except ValueError as e:
+            raise ValueError(
+                f"Unknown HwVersion '{version}'! Valid values are {', '.join([v.value for v in HwVersion])}."
+            ) from e
+
+
 class TyperPowerCycle(str, enum.Enum):
     """
     Used as command line argument (Typer)
@@ -35,15 +57,25 @@ class UsbPlug(int, enum.Enum):
     """
 
     PICO_INFRA = enum.auto()
+    """True: rp_infra is powered"""
     PICO_INFRA_BOOT = enum.auto()
-    PICO_PROBE = enum.auto()
+    """False: rp_infra boot button pressed"""
+    PICO_PROBE_OBSOLETE = enum.auto()
+    """Not used"""
     PICO_PROBE_BOOT = enum.auto()
+    """False: rp_probe boot button pressed"""
+    PICO_PROBE_RUN = enum.auto()
+    """True: rp_probe run (reset released)"""
 
     DUT = enum.auto()
+    """True: DUT is powerered"""
     LED_ERROR = enum.auto()
+    """True: LED_ERROR is on bright"""
     LED_ACTIVE = enum.auto()
+    """True: LED_ACTIVE is on bright"""
 
     RELAY1 = enum.auto()
+    """True: RELAYx is closed"""
     RELAY2 = enum.auto()
     RELAY3 = enum.auto()
     RELAY4 = enum.auto()
@@ -84,6 +116,7 @@ class TyperUsbPlug(str, enum.Enum):
     PICO_INFRA_BOOT = "infraboot"
     PICO_PROBE = "probe"  # >= v0.5
     PICO_PROBE_BOOT = "probeboot"  # >= v0.5
+    PICO_PROBE_RUN = "probereset"  # >= v0.5
     DUT = "dut"
 
     LED_ERROR = "led_error"
@@ -101,7 +134,7 @@ class TyperUsbPlug(str, enum.Enum):
     def usbplug(self) -> UsbPlug | None:
         return {
             TyperUsbPlug.PICO_INFRA: UsbPlug.PICO_INFRA,
-            TyperUsbPlug.PICO_PROBE: UsbPlug.PICO_PROBE,
+            TyperUsbPlug.PICO_PROBE: UsbPlug.PICO_PROBE_OBSOLETE,
             TyperUsbPlug.PICO_INFRA_BOOT: UsbPlug.PICO_INFRA_BOOT,
             TyperUsbPlug.DUT: UsbPlug.DUT,
             TyperUsbPlug.LED_ERROR: UsbPlug.LED_ERROR,
@@ -116,9 +149,10 @@ class TyperUsbPlug(str, enum.Enum):
 
 _TRANSLATION_TABLE = (
     (UsbPlug.PICO_INFRA, TyperUsbPlug.PICO_INFRA),
-    (UsbPlug.PICO_PROBE, TyperUsbPlug.PICO_PROBE),
-    (UsbPlug.PICO_PROBE_BOOT, TyperUsbPlug.PICO_PROBE_BOOT),
     (UsbPlug.PICO_INFRA_BOOT, TyperUsbPlug.PICO_INFRA_BOOT),
+    (UsbPlug.PICO_PROBE_OBSOLETE, TyperUsbPlug.PICO_PROBE),
+    (UsbPlug.PICO_PROBE_BOOT, TyperUsbPlug.PICO_PROBE_BOOT),
+    (UsbPlug.PICO_PROBE_RUN, TyperUsbPlug.PICO_PROBE_RUN),
     (UsbPlug.DUT, TyperUsbPlug.DUT),
     (UsbPlug.LED_ERROR, TyperUsbPlug.LED_ERROR),
     (UsbPlug.LED_ACTIVE, TyperUsbPlug.LED_ACTIVE),
@@ -135,7 +169,7 @@ _TRANSLATION_TABLE = (
 class UsbPlugs(dict[UsbPlug, bool]):
     _DICT_DEFAULT_OFF = {
         UsbPlug.PICO_INFRA: False,
-        UsbPlug.PICO_PROBE: False,
+        UsbPlug.PICO_PROBE_OBSOLETE: False,
         UsbPlug.PICO_INFRA_BOOT: True,
         UsbPlug.DUT: False,
         UsbPlug.LED_ERROR: False,
@@ -143,7 +177,7 @@ class UsbPlugs(dict[UsbPlug, bool]):
 
     _DICT_INFRA_ON = {
         UsbPlug.PICO_INFRA: True,
-        UsbPlug.PICO_PROBE: True,
+        UsbPlug.PICO_PROBE_OBSOLETE: True,
         UsbPlug.PICO_INFRA_BOOT: True,
         UsbPlug.DUT: False,
         UsbPlug.LED_ERROR: False,

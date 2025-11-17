@@ -5,6 +5,7 @@ import logging
 import typing
 
 from .lib_tentacle import TentacleInfra
+from .usb_tentacle.usb_constants import HwVersion
 from .util_jinja2 import render
 
 logger = logging.getLogger(__name__)
@@ -35,7 +36,7 @@ files_on_flash = len(os.listdir())
 pin_led_active = Pin('GPIO24', Pin.OUT)
 pin_led_error = Pin('GPIO20', Pin.OUT) # Not connected on v0.3
 pin_power_dut = Pin('GPIO23', Pin.OUT) # Not connected on v0.3
-pin_power_probe = Pin('GPIO22', Pin.OUT) # Not connected on v0.3
+pin_power_proberun = Pin('GPIO22', Pin.OUT) # Not connected on v0.3
 pin_power_probeboot = Pin('GPIO21', Pin.OUT) # Not connected on v0.3
 
 pin_relays = {
@@ -83,7 +84,7 @@ def set_relays_pulse(relays, initial_closed, durations_ms):
 
     @property
     def hw_version(self) -> str:
-        return {0: "v0.3", 1: "v0.5"}[self.gpio_hw_version]
+        return {0: HwVersion.V03, 1: HwVersion.V05}[self.gpio_hw_version]
 
     @property
     def unique_id(self) -> str:
@@ -201,3 +202,6 @@ def set_relays_pulse(relays, initial_closed, durations_ms):
 
     def power_probeboot(self, on: bool) -> None:
         self._set_pin("pin_power_probeboot", on=on)
+
+    def power_proberun(self, on: bool) -> None:
+        self._set_pin("pin_power_proberun", on=on)

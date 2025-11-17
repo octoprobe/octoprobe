@@ -60,7 +60,7 @@ def do_flash(usb_tentacle: UsbTentacle, is_infra: bool, firmware: pathlib.Path) 
         plugs=UsbPlugs(
             {
                 UsbPlug.PICO_INFRA: False,
-                UsbPlug.PICO_PROBE: False,
+                UsbPlug.PICO_PROBE_OBSOLETE: False,
                 UsbPlug.DUT: False,
                 UsbPlug.BOOT: True,
             }
@@ -73,7 +73,7 @@ def do_flash(usb_tentacle: UsbTentacle, is_infra: bool, firmware: pathlib.Path) 
         plugs=UsbPlugs(
             {
                 UsbPlug.PICO_INFRA: True,
-                UsbPlug.PICO_PROBE: True,
+                UsbPlug.PICO_PROBE_OBSOLETE: True,
             }
         )
     )

@@ -169,10 +169,9 @@ class UsbPico:
         """
         Return this UsbRp2, but with the port number of the pico_probe.
         """
-        assert TENTACLE_VERSION_V04.portnumber_pico_probe is not None
         path = [
             *self.location.path[:-1],
-            TENTACLE_VERSION_V04.portnumber_pico_probe.value,
+            HubPortNumber.PORT4_PROBE_LEDERROR.value,
         ]
         return UsbPico(
             location=Location(bus=self.location.bus, path=path),
@@ -196,6 +195,10 @@ class UsbTentacle:
 
     def __post_init__(self) -> None:
         pass
+
+    @property
+    def pico_probe(self) -> UsbPico:
+        return self.pico_infra.as_pico_probe
 
     def set_power(self, hub_port: HubPortNumber, on: bool) -> bool:
         """
@@ -249,7 +252,7 @@ class UsbTentacle:
 
         if plug == UsbPlug.PICO_INFRA:
             return HubPortNumber.PORT1_INFRA
-        if plug == UsbPlug.PICO_PROBE:
+        if plug == UsbPlug.PICO_PROBE_OBSOLETE:
             return HubPortNumber.PORT4_PROBE_LEDERROR
         if plug == UsbPlug.DUT:
             return HubPortNumber.PORT3_DUT
@@ -265,47 +268,13 @@ class UsbTentacle:
         if hub_port is None:
             # TODO: Handle this error.
             msg = f"'{plug}' does not match any usb port"
-            if plug in (UsbPlug.ERROR, UsbPlug.PICO_PROBE):
+            if plug in (UsbPlug.ERROR, UsbPlug.PICO_PROBE_OBSOLETE):
                 logger.debug(msg)
             else:
                 logger.error(msg)
             return None
 
         return hub_port
-
-    def set_plugs(self, plugs: UsbPlugs) -> None:
-        for plug, on in plugs.ordered:
-            self.set_power(plug=plug, on=on)
-
-    def powercycle(self, power_cycle: TyperPowerCycle) -> None:
-        if power_cycle is TyperPowerCycle.INFRA:
-            self.set_plugs(plugs=UsbPlugs.default_off())
-            time.sleep(1.0)
-            self.set_plugs(plugs=UsbPlugs({UsbPlug.PICO_INFRA: True}))
-            return
-
-        if power_cycle is TyperPowerCycle.INFRBOOT:
-            self.set_plugs(plugs=UsbPlugs.default_off())
-            self.set_plugs(plugs=UsbPlugs({UsbPlug.BOOT: False}))
-            time.sleep(1.0)
-            self.set_plugs(plugs=UsbPlugs({UsbPlug.PICO_INFRA: True}))
-            time.sleep(0.5)
-            self.set_plugs(plugs=UsbPlugs({UsbPlug.BOOT: True}))
-            return
-
-        if power_cycle is TyperPowerCycle.DUT:
-            self.set_plugs(plugs=UsbPlugs.default_off())
-            time.sleep(1.0)
-            self.set_plugs(
-                plugs=UsbPlugs({UsbPlug.PICO_INFRA: True, UsbPlug.DUT: True})
-            )
-            return
-
-        if power_cycle is TyperPowerCycle.OFF:
-            self.set_plugs(plugs=UsbPlugs.default_off())
-            return
-
-        raise NotImplementedError("Internal programming error")
 
     def __repr__(self) -> str:
         repr = f"UsbTentacle({self.hub4_location.short}"
