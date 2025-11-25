@@ -20,6 +20,7 @@ def _get_programmers() -> list[type[DutProgrammerABC]]:
     from .util_mcu_mimxrt import DutProgrammerTeensyLoaderCli
     from .util_mcu_nrf import DutProgrammerBossac
     from .util_mcu_pico import DutProgrammerPicotool
+    from .util_mcu_picoprobe import DutProgrammerPicoprobe
     from .util_mcu_pyboard import DutProgrammerDfuUtil
     from .util_mcu_samd import DutProgrammerSamdBossac
 
@@ -30,6 +31,7 @@ def _get_programmers() -> list[type[DutProgrammerABC]]:
         DutProgrammerPicotool,
         DutProgrammerSamdBossac,
         DutProgrammerTeensyLoaderCli,
+        DutProgrammerPicoprobe,
     ]
 
 

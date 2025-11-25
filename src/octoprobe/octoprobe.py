@@ -43,8 +43,8 @@ class CtxTestRun:
         tentacle: TentacleBase,
         directory_logs: pathlib.Path,
     ) -> None:
-        self.function_prepare_dut(tentacle=tentacle)
         self.function_setup_infra(udev_poller=udev_poller, tentacle=tentacle)
+        self.function_prepare_dut(tentacle=tentacle)
         self.function_setup_dut_flash(
             udev_poller=udev_poller,
             tentacle=tentacle,
@@ -70,6 +70,7 @@ class CtxTestRun:
         # Instantiate poller BEFORE switching on power to avoid a race condition
         tentacle.infra.setup_infra(udev_poller)
         tentacle.infra.mcu_infra.active_led(on=False)
+        tentacle.verify_hw_version()
 
         if not FULL_POWERCYCLE_ALL_TENTACLES:
             # As the tentacle infra has NOT been powercycled, we

@@ -360,7 +360,10 @@ class TentaclePlugsPower:
 
     @dut.setter
     def dut(self, on: bool) -> None:
+        # Tentacle v0.3
         self.set_power_plug(UsbPlug.DUT, on)
+        # Tentacle >= v0.5
+        self._tentacle_infra.set_plugs(plugs=UsbPlugs({UsbPlug.DUT: on}))
 
     @property
     def error(self) -> bool:

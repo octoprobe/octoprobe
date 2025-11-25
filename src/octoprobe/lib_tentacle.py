@@ -283,7 +283,7 @@ class TentacleBase(abc.ABC):
             label="INFRA",
             is_dut=False,
         )
-        if self.infra.usb_tentacle.has_pico_probe:
+        if self.tentacle_instance.has_pico_probe:
             yield TentacleUsbPort(
                 tentacle_base=self,
                 usb_port=self.infra.usb_tentacle.usb_port_probe,
@@ -296,3 +296,11 @@ class TentacleBase(abc.ABC):
             label="DUT",
             is_dut=True,
         )
+
+    def verify_hw_version(self) -> None:
+        hw_version_expected = self.tentacle_instance.hw_version_expected
+        hw_version = self.infra.mcu_infra.hw_version
+        if hw_version != hw_version_expected:
+            logger.warning(
+                f"{self.label_short}: hw_version in tentacles_inventory.py: {hw_version_expected}. But connected tentacle is {hw_version}! Please update 'tentacles_inventory.py'!"
+            )

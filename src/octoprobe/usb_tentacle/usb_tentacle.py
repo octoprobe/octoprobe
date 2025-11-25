@@ -473,6 +473,8 @@ class UsbTentacles(list[UsbTentacle]):
             usb_tentacle.set_power(hub_port=hub_port, on=on)
 
     def set_plugs(self, plugs: UsbPlugs) -> None:
+        # TODO: Obsolete
+        assert isinstance(plugs, UsbPlugs)
         for usb_tentacle in self:
             usb_tentacle.set_plugs(plugs=plugs)
 

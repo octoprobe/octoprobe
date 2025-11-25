@@ -3,8 +3,9 @@ from __future__ import annotations
 import abc
 import dataclasses
 import enum
-import pathlib  # pylint: disable=W0611:unused-import
+import pathlib
 
+from octoprobe.usb_tentacle.usb_constants import HwVersion
 from octoprobe.usb_tentacle.usb_tentacle import serial_short_from_delimited
 
 from .util_tentacle_label.label_data import LabelData, LabelsData
@@ -194,7 +195,8 @@ class TentacleSpecBase(abc.ABC):
 class TentacleInstance:
     serial: str
     tentacle_spec: TentacleSpecBase
-    hw_version: str
+    solder_version: str
+    hw_version_expected: HwVersion
     testbed_name: str
     testbed_instance: str
 
@@ -208,6 +210,10 @@ class TentacleInstance:
             testbed_name=self.testbed_name,
             testbed_instance=self.testbed_instance,
         )
+
+    @property
+    def has_pico_probe(self) -> bool:
+        return self.hw_version_expected >= HwVersion.V05
 
 
 class TentaclesInventory(dict[str, TentacleInstance]):
@@ -232,18 +238,22 @@ class TentaclesCollector:
         return self
 
     def add_testbed_instance(
-        self, testbed_instance: str, tentacles: list[tuple[str, str, TentacleSpecBase]]
+        self,
+        testbed_instance: str,
+        tentacles: list[tuple[str, HwVersion, str, TentacleSpecBase]],
     ) -> TentaclesCollector:
         assert isinstance(testbed_instance, str)
         assert isinstance(tentacles, list)
 
-        for serial, hw_version, tentacle_spec in tentacles:
+        for serial, hw_version_expected, solder_version, tentacle_spec in tentacles:
             assert isinstance(serial, str)
-            assert isinstance(hw_version, str)
+            assert isinstance(hw_version_expected, str)
+            assert isinstance(solder_version, str)
             assert isinstance(tentacle_spec, TentacleSpecBase)
             tentacle_instance = TentacleInstance(
                 serial=serial,
-                hw_version=hw_version,
+                hw_version_expected=hw_version_expected,
+                solder_version=solder_version,
                 tentacle_spec=tentacle_spec,
                 testbed_name=self.testbed_name,
                 testbed_instance=testbed_instance,
