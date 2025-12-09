@@ -12,6 +12,7 @@ import enum
 class HwVersion(enum.StrEnum):
     V03 = "v0.3"
     V05 = "v0.5"
+    V06 = "v0.6"
 
     @staticmethod
     def is_V05or_newer(version: str) -> bool:

@@ -5,6 +5,7 @@ import pathlib
 import time
 
 from ..lib_tentacle_infra import TentacleInfra
+from ..usb_tentacle.usb_constants import UsbPlug
 from ..usb_tentacle.usb_tentacle import UsbTentacle, UsbTentacles
 from ..util_firmware_spec import FirmwareDownloadSpec
 from ..util_pyudev import UdevPoller
@@ -126,30 +127,25 @@ class Commissioning:
         mcu_infra.exception_if_files_on_flash()
 
     def do_commissioning(self) -> None:
-        self.tentacle_infra.power.error = True
-        self.tentacle_infra.power.dut = True
-        time.sleep(1.0)
-        self.tentacle_infra.power.error = False
-        self.tentacle_infra.power.dut = False
-        time.sleep(1.0)
-
         mcu_infra = self.tentacle_infra.mcu_infra
+        relays_even = [2, 4, 6]
+        relays_odd = [1, 3, 5, 7]
+        relays_open, relays_close = relays_even, relays_odd
 
-        if False:
-            # Running von 1 to 7
-            for i0 in range(self.tentacle_infra.RELAY_COUNT):
-                mcu_infra.active_led(on=bool(i0 % 2))
+        for on, usbplug in (
+            # (True, UsbPlug.PICO_INFRA),
+            # (True, UsbPlug.PICO_INFRA_BOOT),
+            (True, UsbPlug.LED_ERROR),
+            (True, UsbPlug.LED_ACTIVE),
+            (True, UsbPlug.DUT),
+            (True, UsbPlug.PICO_PROBE_RUN),
+            (False, UsbPlug.PICO_PROBE_BOOT),
+        ):
+            # Toggle relays
+            mcu_infra.relays(relays_close=relays_close, relays_open=relays_open)
+            relays_close, relays_open = relays_open, relays_close
 
-                mcu_infra.relays(relays_close=[i0 + 1])
-                time.sleep(1.0)
-                mcu_infra.relays(relays_open=[i0 + 1])
-
-        if True:
-            # Alternating
-            even = [2, 4, 6]
-            odd = [1, 3, 5, 7]
-            mcu_infra.active_led(on=True)
-            mcu_infra.relays(relays_close=even, relays_open=odd)
+            # circle LEDs
+            self.tentacle_infra.handle_usb_plug(usbplug, on=on)
             time.sleep(2.0)
-            mcu_infra.active_led(on=False)
-            mcu_infra.relays(relays_close=odd, relays_open=even)
+            self.tentacle_infra.handle_usb_plug(usbplug, on=not on)
