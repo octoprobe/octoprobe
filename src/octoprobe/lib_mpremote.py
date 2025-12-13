@@ -177,10 +177,11 @@ class MpRemote:
 
         ret = None
         try:
+            assert self.state.transport is not None
             self.state.transport.exec_raw_no_follow(cmd)
             if follow:
                 # ret, ret_err = state.transport.follow(timeout=None, data_consumer=stdout_write_bytes)
-                ret, ret_err = self.state.transport.follow(timeout=timeout)
+                ret, ret_err = self.state.transport.follow(timeout=timeout)  # type: ignore
                 if ret_err:
                     lines = [
                         ret_err.decode("ascii"),

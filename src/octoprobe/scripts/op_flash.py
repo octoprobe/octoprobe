@@ -56,24 +56,10 @@ def do_flash(usb_tentacle: UsbTentacle, is_infra: bool, firmware: pathlib.Path) 
     # and therefore both processors have to be restarted.
 
     # Powercycle
-    usb_tentacle.set_plugs(
-        plugs=UsbPlugs(
-            {
-                UsbPlug.PICO_INFRA: False,
-                UsbPlug.PICO_PROBE_OBSOLETE: False,
-                UsbPlug.DUT: False,
-                UsbPlug.BOOT: True,
-            }
-        )
-    )
+    usb_tentacle.switches.infra = False
+    usb_tentacle.switches.infraboot = True
+    usb_tentacle.switches.dut = False
 
     time.sleep(0.1)
 
-    usb_tentacle.set_plugs(
-        plugs=UsbPlugs(
-            {
-                UsbPlug.PICO_INFRA: True,
-                UsbPlug.PICO_PROBE_OBSOLETE: True,
-            }
-        )
-    )
+    usb_tentacle.switches.infra = True

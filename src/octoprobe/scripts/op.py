@@ -130,7 +130,8 @@ def powercycle(
     poweron: _PoweronAnnotation = False,
 ) -> None:
     for usb_tentacle in iter_usb_tentacles(poweron=poweron, serials=serials):
-        usb_tentacle.powercycle(power_cycle=power_cycle)
+        tentacle_infra = TentacleInfra.factory_usb_tentacle(usb_tentacle=usb_tentacle)
+        tentacle_infra.switches.powercycle(power_cycle=power_cycle)
 
 
 @app.command(help="Bring and PICO_INFRA into boot mode.")

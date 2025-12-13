@@ -132,7 +132,7 @@
             "cwd": "${workspaceFolder}",
             "args": [
                 "flash-infra",
-                "${userHome}/octoprobe_downloads/cache_firmware/RPI_PICO-20240602-v1.23.0.uf2",
+                "${userHome}/octoprobe_downloads/firmware-cache/RPI_PICO-20250809-v1.26.0.uf2",
             ],
             "env": {
                 "PYTHONPATH": "${workspaceFolder}/src"

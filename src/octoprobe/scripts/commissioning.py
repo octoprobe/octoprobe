@@ -127,12 +127,12 @@ class Commissioning:
         mcu_infra.exception_if_files_on_flash()
 
     def do_commissioning(self) -> None:
-        mcu_infra = self.tentacle_infra.mcu_infra
         relays_even = [2, 4, 6]
         relays_odd = [1, 3, 5, 7]
         relays_open, relays_close = relays_even, relays_odd
 
-        for on, usbplug in (
+        switches = self.tentacle_infra.switches
+        for on, usb_plug in (
             # (True, UsbPlug.PICO_INFRA),
             # (True, UsbPlug.PICO_INFRA_BOOT),
             (True, UsbPlug.LED_ERROR),
@@ -142,10 +142,11 @@ class Commissioning:
             (False, UsbPlug.PICO_PROBE_BOOT),
         ):
             # Toggle relays
-            mcu_infra.relays(relays_close=relays_close, relays_open=relays_open)
+            switches.relays(relays_close=relays_close, relays_open=relays_open)
             relays_close, relays_open = relays_open, relays_close
 
             # circle LEDs
-            self.tentacle_infra.handle_usb_plug(usbplug, on=on)
+            switch = switches[usb_plug]
+            switch.set(on=on)
             time.sleep(2.0)
-            self.tentacle_infra.handle_usb_plug(usbplug, on=not on)
+            switch.set(on=not on)

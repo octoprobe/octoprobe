@@ -45,33 +45,33 @@ def do_bootmode(
     print_cb(DELIM + f"{tag}: Power off.")
     print_cb(DELIM + f"{tag}: Press Boot Button.")
     if is_infra:
-        usb_tentacle.set_power(HubPortNumber.PORT1_INFRA, on=False)
+        usb_tentacle.switches.infra = False
         # boot on rp_infra is invers (False: pressed)
-        usb_tentacle.set_power(HubPortNumber.PORT2_INFRABOOT, on=False)
+        usb_tentacle.switches.infraboot = False
     else:
         assert tentacle_infra is not None
         # boot on rp_probe is invers (False: pressed)
-        tentacle_infra.handle_usb_plug(UsbPlug.PICO_PROBE_RUN, on=False)
-        tentacle_infra.handle_usb_plug(UsbPlug.PICO_PROBE_BOOT, on=False)
+        tentacle_infra.switches.proberun = False
+        tentacle_infra.switches.probeboot = False
 
     time.sleep(0.1)
 
     with UdevPoller() as guard:
         print_cb(DELIM + f"{tag}: Power on.")
         if is_infra:
-            usb_tentacle.set_power(HubPortNumber.PORT1_INFRA, on=True)
+            usb_tentacle.switches.infra = True
         else:
-            tentacle_infra.handle_usb_plug(UsbPlug.PICO_PROBE_RUN, on=True)
+            tentacle_infra.switches.proberun = True
 
         time.sleep(0.2)
         print_cb(DELIM + f"{tag}: Release Boot Button.")
         if is_infra:
-            usb_tentacle.set_power(HubPortNumber.PORT2_INFRABOOT, on=True)
+            usb_tentacle.switches.infraboot = True
         else:
             # probe
             assert tentacle_infra is not None
             assert HwVersion.is_V05or_newer(tentacle_infra.mcu_infra.hw_version)
-            tentacle_infra.handle_usb_plug(UsbPlug.PICO_PROBE_BOOT, on=True)
+            tentacle_infra.switches.probeboot = True
 
         pico = usb_tentacle.pico_infra if is_infra else usb_tentacle.pico_probe
         assert pico is not None

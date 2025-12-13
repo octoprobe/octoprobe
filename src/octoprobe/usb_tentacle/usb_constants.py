@@ -6,6 +6,7 @@ USB hub ports may be assigned depending of the version of the tentacle.
 
 from __future__ import annotations
 
+import abc
 import enum
 
 
@@ -61,10 +62,10 @@ class UsbPlug(int, enum.Enum):
     """True: rp_infra is powered"""
     PICO_INFRA_BOOT = enum.auto()
     """False: rp_infra boot button pressed"""
-    PICO_PROBE_BOOT = enum.auto()
-    """False: rp_probe boot button pressed"""
     PICO_PROBE_RUN = enum.auto()
     """True: rp_probe run (reset released)"""
+    PICO_PROBE_BOOT = enum.auto()
+    """False: rp_probe boot button pressed"""
 
     DUT = enum.auto()
     """True: DUT is powerered"""
@@ -92,6 +93,18 @@ class UsbPlug(int, enum.Enum):
         Return true if control is (on all hardware versions of the tentacles) via USB plugs
         """
         return self in (UsbPlug.PICO_INFRA, UsbPlug.PICO_INFRA_BOOT)
+
+    @staticmethod
+    def RELAYS() -> list[UsbPlug]:
+        return [
+            UsbPlug.RELAY1,
+            UsbPlug.RELAY2,
+            UsbPlug.RELAY3,
+            UsbPlug.RELAY4,
+            UsbPlug.RELAY5,
+            UsbPlug.RELAY6,
+            UsbPlug.RELAY7,
+        ]
 
     @property
     def is_relay(self) -> bool:
@@ -237,3 +250,25 @@ def typerusbplug2usbplug(typer_usb_plug: TyperUsbPlug) -> UsbPlug:
         if t is typer_usb_plug:
             return u
     raise ValueError(f"Unknown {typer_usb_plug}")
+
+
+class SwitchABC(abc.ABC):
+    @property
+    @abc.abstractmethod
+    def usb_plug(self) -> UsbPlug: ...
+
+    @abc.abstractmethod
+    def set(self, on: bool) -> bool:
+        """
+        return True if the value changed.
+        return True if the value did not change
+        """
+        ...
+
+    @abc.abstractmethod
+    def get(self) -> bool:
+        """
+        return True: LED on, Power on, Relays closed
+        return False: LED off, Power off, Relays open
+        """
+        ...

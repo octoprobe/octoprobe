@@ -5,6 +5,7 @@ import logging
 import typing
 
 from .lib_tentacle import TentacleInfra
+from .lib_tentacle_infra import UsbPlug
 from .usb_tentacle.usb_constants import HwVersion
 from .util_jinja2 import render
 
@@ -33,25 +34,39 @@ for _gpio in (29, 28, 27, 26, 25):
     gpio_hw_version = 2 * gpio_hw_version + Pin(_gpio, Pin.IN, Pin.PULL_DOWN).value()
 files_on_flash = len(os.listdir())
 
-pin_led_active = Pin('GPIO24', Pin.OUT)
-pin_led_error = Pin('GPIO20', Pin.OUT) # Not connected on v0.3
-pin_power_dut = Pin('GPIO23', Pin.OUT) # Not connected on v0.3
-pin_power_proberun = Pin('GPIO22', Pin.OUT) # Not connected on v0.3
-pin_power_probeboot = Pin('GPIO21', Pin.OUT) # Not connected on v0.3
+pin_LED_ACTIVE = Pin('GPIO24', Pin.OUT)
+pin_LED_ERROR = Pin('GPIO20', Pin.OUT) # Not connected on v0.3
+pin_DUT = Pin('GPIO23', Pin.OUT) # Not connected on v0.3
+pin_PICO_PROBE_RUN = Pin('GPIO22', Pin.OUT) # Not connected on v0.3
+pin_PICO_PROBE_BOOT = Pin('GPIO21', Pin.OUT) # Not connected on v0.3
 # If pico_probe is powered, it should start in application mode
-pin_power_probeboot.value(1)
+pin_PICO_PROBE_BOOT.value(1)
+
+{% for gpio in (1, 2, 3, 4, 5, 6, 7) %}
+pin_RELAY{{ loop.index }} = Pin('GPIO{{ gpio }}', Pin.OUT)
+{%- endfor %}
 
 pin_relays = {
 {% for gpio in (1, 2, 3, 4, 5, 6, 7) %}
-    {{ loop.index }}: Pin('GPIO{{ gpio }}', Pin.OUT),
+    {{ loop.index }}: pin_RELAY{{ loop.index }},
 {%- endfor %}
 }
 
-def set_relays(list_relays):
-    for i, close  in list_relays:
-        pin_relays[i].value(close)
+def get_relays(relays) -> bool:
+   "return True when relays is closed"
+   return pin_relays[i].value()
 
-def set_relays_pulse(relays, initial_closed, durations_ms):
+def set_relays(list_relays) -> bool:
+    "return True if at least one relay changed."
+    changed = False
+    for i, close  in list_relays:
+        state_before = pin_relays[i].value()
+        pin_relays[i].value(close)
+        if state_before != close:
+            changed = True
+    return changed
+
+def set_relays_pulse(relays, initial_closed, durations_ms) -> None:
     pin = pin_relays[relays]
     pin.value(initial_closed)
     for duration_ms in durations_ms:
@@ -62,13 +77,25 @@ def set_relays_pulse(relays, initial_closed, durations_ms):
     def __init__(self, tentacle_infra: TentacleInfra) -> None:
         assert isinstance(tentacle_infra, TentacleInfra)
         self._infra = tentacle_infra
-        self._base_code_loaded = False
+        self._base_code_loaded_counter = -1
+        """
+        We compare this counter with the changed counter of switch PICO_INFRA.
+        If it changed, the PICO_INFRA was powered down and we have to reload the base code.
+        """
         self._gpio_hw_version: int | None = None
         self._unique_id: str | None = None
 
+    def base_code_lost(self) -> None:
+        self._base_code_loaded_counter = -1
+
     def load_base_code(self) -> None:
-        if self._base_code_loaded:
+        changed_counter = self._infra.usb_tentacle.switches[
+            UsbPlug.PICO_INFRA
+        ].changed_counter
+        if changed_counter == self._base_code_loaded_counter:
             return
+        self._base_code_loaded_counter = changed_counter
+
         assert self._infra.mp_remote is not None
         micropython_base_code = render(
             micropython_code=self._MICROPYTHON_BASE_CODE_JINJA2
@@ -76,7 +103,6 @@ def set_relays_pulse(relays, initial_closed, durations_ms):
         self._infra.mp_remote.exec_raw(micropython_base_code)
         self._unique_id = self._infra.mp_remote.read_str("pico_unique_id")
         self._gpio_hw_version = self._infra.mp_remote.read_int("gpio_hw_version")
-        self._base_code_loaded = True
 
     @property
     def gpio_hw_version(self) -> int:
@@ -120,35 +146,12 @@ def set_relays_pulse(relays, initial_closed, durations_ms):
             f"{self._infra.label}: Found {file_count} files on flash!': Please remove them!"
         )
 
-    def relays(
-        self,
-        relays_close: list[int] | None = None,
-        relays_open: list[int] | None = None,
-    ) -> None:
+    def get_relays(self) -> list[int]:
         """
-        If the same relays appears in 'relays_open' and 'relays_close': The relay will be CLOSED.
+        Returns a list of 7 booleans with wheter the relays is closed.
         """
-        if relays_close is None:
-            relays_close = []
-        if relays_open is None:
-            relays_open = []
-
-        assert isinstance(relays_close, list)
-        assert isinstance(relays_open, list)
-
-        self.load_base_code()
-
-        for i in relays_close + relays_open:
-            assert self._infra.is_valid_relay_index(i)
-
-        dict_relays = {}
-        for i in relays_open:
-            dict_relays[i] = False
-        for i in relays_close:
-            dict_relays[i] = True
-        list_relays = list(dict_relays.items())
-
-        self._infra.mp_remote.exec_raw(cmd=f"set_relays({list_relays})")
+        1 / 0
+        self._infra.mp_remote.exec_raw(cmd="get_relays()")
 
     @contextlib.contextmanager
     def relays_ctx(
@@ -194,21 +197,41 @@ def set_relays_pulse(relays, initial_closed, durations_ms):
         )
 
     def _set_pin(self, name: str, on: bool) -> None:
+        # TODO(hans): Merge with calling method
         assert isinstance(on, bool)
         self.load_base_code()
         self._infra.mp_remote.exec_raw(cmd=f"{name}.value({int(on)})")
 
-    def active_led(self, on: bool) -> None:
-        self._set_pin("pin_led_active", on=on)
+        # TODO(hans): Implement
+        changed = True
+        return changed
 
-    def error_led(self, on: bool) -> None:
-        self._set_pin("pin_led_error", on=on)
+    # def active_led(self, on: bool) -> None:
+    #     self._set_pin("pin_led_active", on=on)
 
-    def power_dut(self, on: bool) -> None:
-        self._set_pin("pin_power_dut", on=on)
+    # def get_active_led(self, on: bool) -> bool:
+    #     1 / 0
 
-    def power_probeboot(self, on: bool) -> None:
-        self._set_pin("pin_power_probeboot", on=on)
+    # def error_led(self, on: bool) -> None:
+    #     self._set_pin("pin_led_error", on=on)
 
-    def power_proberun(self, on: bool) -> None:
-        self._set_pin("pin_power_proberun", on=on)
+    # def get_error_led(self, on: bool) -> bool:
+    #     1 / 0
+
+    # def power_dut(self, on: bool) -> None:
+    #     self._set_pin("pin_power_dut", on=on)
+
+    # def get_power_dut(self) -> bool:
+    #     1 / 0
+
+    # def power_probeboot(self, on: bool) -> None:
+    #     self._set_pin("pin_power_probeboot", on=on)
+
+    # def get_power_probeboot(self) -> bool:
+    #     1 / 0
+
+    # def power_proberun(self, on: bool) -> None:
+    #     self._set_pin("pin_power_proberun", on=on)
+
+    # def get_power_proberun(self) -> bool:
+    #     1 / 0

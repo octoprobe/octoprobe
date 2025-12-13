@@ -6,6 +6,7 @@ import pathlib
 import typing
 
 from .lib_tentacle import TentacleBase
+from .lib_tentacle_infra import UsbPlug
 from .usb_tentacle.usb_tentacle import UsbTentacles
 from .util_baseclasses import OctoprobeAppExitException
 from .util_pyudev import UdevPoller
@@ -69,19 +70,21 @@ class CtxTestRun:
 
         # Instantiate poller BEFORE switching on power to avoid a race condition
         tentacle.infra.setup_infra(udev_poller)
-        tentacle.infra.mcu_infra.active_led(on=False)
+        # tentacle.infra.mcu_infra.active_led(on=False)
+        tentacle.infra.switches[UsbPlug.DUT].set(on=False)
         tentacle.verify_hw_version()
 
         if not FULL_POWERCYCLE_ALL_TENTACLES:
             # As the tentacle infra has NOT been powercycled, we
             # have to reset the relays
-            tentacle.infra.mcu_infra.relays(
+            tentacle.infra.switches.relays(
                 relays_close=[],
                 relays_open=[1, 2, 3, 4, 5, 6, 7],
             )
 
     def function_prepare_dut(self, tentacle: TentacleBase) -> None:
         tentacle.power.dut = False
+        # Why close the infra mp_remote?
         tentacle.infra.mp_remote_close()
         if tentacle.is_mcu:
             tentacle.dut.mp_remote_close()
@@ -135,7 +138,7 @@ class CtxTestRun:
             tentacle.infra.connect_mpremote_if_needed()
             ping_tentacle_infra(tentacle=tentacle, tag="e")
             try:
-                tentacle.infra.mcu_infra.relays(
+                tentacle.infra.switches.relays(
                     relays_open=tentacle.infra.list_all_relays
                 )
             except Exception as e:

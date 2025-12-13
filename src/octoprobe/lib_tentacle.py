@@ -11,7 +11,7 @@ import textwrap
 import typing
 
 from .lib_tentacle_dut import TentacleDut
-from .lib_tentacle_infra import TentacleInfra
+from .lib_tentacle_infra import TentacleInfra, TentacleInfraSwitches
 from .usb_tentacle.usb_baseclasses import UsbPort
 from .usb_tentacle.usb_tentacle import SERIALNUMBER_SHORT, UsbTentacle
 from .util_baseclasses import TentacleInstance, TentacleSpecBase
@@ -191,8 +191,12 @@ class TentacleBase(abc.ABC):
         return self.tentacle_spec_base.is_mcu
 
     @property
-    def power(self) -> TentaclePlugsPower:
-        return self.infra.power
+    def switches(self) -> TentacleInfraSwitches:
+        return self.infra.switches
+
+    @property
+    def power(self) -> TentacleInfraSwitches:
+        return self.infra.switches
 
     @property
     def description_short(self) -> str:
@@ -258,7 +262,7 @@ class TentacleBase(abc.ABC):
                 raise KeyError(
                     f"{self.description_short}: Does not specify: tentacle_spec.relays_closed[{fut.name}]"
                 ) from e
-        self.infra.mcu_infra.relays(relays_close=list_relays, relays_open=relays_open)
+        self.infra.switches.relays(relays_close=list_relays, relays_open=relays_open)
 
     def dut_boot_and_init_mp_remote(self, udev: UdevPoller) -> None:
         assert isinstance(udev, UdevPoller)
