@@ -1,17 +1,18 @@
 import time
 
-from octoprobe.usb_tentacle.usb_constants import UsbPlug, UsbPlugs
 from octoprobe.usb_tentacle.usb_tentacle import UsbTentacles
 
 
 def test_power_default_infra_on():
     usb_tentacles = UsbTentacles.query(poweron=False)
-    usb_tentacles.set_plugs(plugs=UsbPlugs.default_infra_on())
+    for usb_tentacle in usb_tentacles:
+        usb_tentacle.switches.default_infra_on()
 
 
 def test_power_default_off():
     usb_tentacles = UsbTentacles.query(poweron=False)
-    usb_tentacles.set_plugs(plugs=UsbPlugs.default_off())
+    for usb_tentacle in usb_tentacles:
+        usb_tentacle.switches.default_off()
 
 
 def test_query_serial():
@@ -52,8 +53,9 @@ def test_blib():
     """
     usb_tentacles = UsbTentacles.query(poweron=False)
 
-    usb_tentacles.set_plugs(plugs=UsbPlugs.default_off())
-    usb_tentacles.set_plugs(plugs=UsbPlugs.default_infra_on())
+    for usb_tentacle in usb_tentacles:
+        usb_tentacle.switches.default_off()
+        usb_tentacle.switches.default_infra_on()
 
 
 def test_blib2():
@@ -62,25 +64,27 @@ def test_blib2():
     """
     usb_tentacles = UsbTentacles.query(poweron=False)
 
-    usb_tentacles.set_plugs(plugs=UsbPlugs.default_off())
+    for usb_tentacle in usb_tentacles:
+        usb_tentacle.switches.default_off()
+
     time.sleep(1.0)
 
     if True:
         # attempt power cycle
-        usb_tentacles[0].set_plugs(plugs=UsbPlugs.default_infra_on())
-        usb_tentacles[1].set_plugs(plugs=UsbPlugs.default_infra_on())
+        usb_tentacles[0].switches.default_infra_on()
+        usb_tentacles[1].switches.default_infra_on()
 
     if False:
         # attempt power cycle
-        usb_tentacles[0].set_plugs(plugs=UsbPlugs({UsbPlug.PICO_INFRA: True}))
-        usb_tentacles[1].set_plugs(plugs=UsbPlugs({UsbPlug.PICO_INFRA: True}))
+        usb_tentacles[0].switches.infra = True
+        usb_tentacles[1].switches.infra = True
 
     if False:
         # NO: attempt power cycle
-        usb_tentacles[0].set_plugs(plugs=UsbPlugs({UsbPlug.LED_ERROR: True}))
-        usb_tentacles[1].set_plugs(plugs=UsbPlugs({UsbPlug.LED_ERROR: True}))
+        usb_tentacles[0].switches.led_error = True
+        usb_tentacles[1].switches.led_error = True
 
     if False:
         # attempt power cycle - strange rythm
-        usb_tentacles[0].set_plugs(plugs=UsbPlugs({UsbPlug.PICO_INFRA: True}))
-        usb_tentacles[1].set_plugs(plugs=UsbPlugs({UsbPlug.LED_ERROR: True}))
+        usb_tentacles[0].switches.infra = True
+        usb_tentacles[1].switches.led_error = True

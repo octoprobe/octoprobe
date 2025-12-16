@@ -142,7 +142,7 @@ class TyperUsbPlug(str, enum.Enum):
     RELAY7 = "relay7"
 
     @property
-    def usbplug(self) -> UsbPlug :
+    def usbplug(self) -> UsbPlug:
         return {
             TyperUsbPlug.PICO_INFRA: UsbPlug.PICO_INFRA,
             TyperUsbPlug.PICO_INFRA_BOOT: UsbPlug.PICO_INFRA_BOOT,
@@ -173,69 +173,6 @@ _TRANSLATION_TABLE = (
     (UsbPlug.RELAY6, TyperUsbPlug.RELAY6),
     (UsbPlug.RELAY7, TyperUsbPlug.RELAY7),
 )
-
-
-class UsbPlugs(dict[UsbPlug, bool]):
-    _DICT_DEFAULT_OFF = {
-        UsbPlug.PICO_INFRA: False,
-        UsbPlug.PICO_INFRA_BOOT: True,
-        UsbPlug.PICO_PROBE_RUN: False,
-        UsbPlug.PICO_PROBE_BOOT: True,
-        UsbPlug.DUT: False,
-        UsbPlug.LED_ERROR: False,
-    }
-
-    _DICT_INFRA_ON = {
-        UsbPlug.PICO_INFRA: True,
-        UsbPlug.PICO_INFRA_BOOT: True,
-        UsbPlug.PICO_PROBE_RUN: False,
-        UsbPlug.PICO_PROBE_BOOT: True,
-        UsbPlug.DUT: False,
-        UsbPlug.LED_ERROR: False,
-    }
-
-    @property
-    def ordered(self) -> list[tuple[UsbPlug, bool]]:
-        """
-        Always power the power in the same order:
-        * first switch off plugs.
-        * then switch on plugs.
-        """
-        return sorted(self.items(), key=lambda item: (item[1], item[0].value))
-
-    @property
-    def text(self) -> str:
-        plugs: list[str] = []
-        for up in UsbPlug:
-            try:
-                plugs.append(self._get_text(up))
-            except KeyError:
-                continue
-        return ",".join(plugs)
-
-    def _get_text(self, up: UsbPlug) -> str:
-        """
-        Raise KeyError if UsbPower not found
-        """
-        v = self[up]
-        sign = "+" if v else "-"
-        return sign + up.text
-
-    @staticmethod
-    def all_on() -> UsbPlugs:
-        return UsbPlugs(dict.fromkeys(UsbPlug, True))
-
-    @staticmethod
-    def all_off() -> UsbPlugs:
-        return UsbPlugs(dict.fromkeys(UsbPlug, False))
-
-    @classmethod
-    def default_off(cls) -> UsbPlugs:
-        return UsbPlugs(cls._DICT_DEFAULT_OFF)
-
-    @classmethod
-    def default_infra_on(cls) -> UsbPlugs:
-        return UsbPlugs(cls._DICT_INFRA_ON)
 
 
 def usbplug2typerusbplug(usb_plug: UsbPlug) -> TyperUsbPlug:

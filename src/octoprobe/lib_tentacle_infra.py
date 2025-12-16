@@ -12,7 +12,6 @@ from .usb_tentacle.usb_constants import (
     TyperPowerCycle,
     TyperUsbPlug,
     UsbPlug,
-    UsbPlugs,
     typerusbplug2usbplug,
 )
 from .usb_tentacle.usb_tentacle import UsbTentacle
@@ -230,10 +229,6 @@ class TentacleInfra:
         assert isinstance(typer_usb_plug, TyperUsbPlug)
         self.switches[typerusbplug2usbplug(typer_usb_plug)].set(on=on)
 
-    def set_plugs(self, plugs: UsbPlugs) -> None:
-        for plug, on in plugs.ordered:
-            self.switches[plug].set(on=on)
-
 
 class TentacleInfraSwitch(SwitchABC):
     def __init__(
@@ -283,7 +278,8 @@ class TentacleInfraSwitch(SwitchABC):
 
         self._tentacle_infra.connect_mpremote_if_needed()
         changed = self._tentacle_infra.mcu_infra.set_pin(
-            f"pin_{self.usb_plug.name}", on=on,
+            f"pin_{self.usb_plug.name}",
+            on=on,
         )
         return changed
         # if self.usb_plug.is_relay:
@@ -524,37 +520,37 @@ class TentacleInfraSwitches(dict[UsbPlug, TentacleInfraSwitch]):
             relays_open=relays_open,
         )
 
-    def set_plugs(self, plugs: UsbPlugs) -> None:
-        assert isinstance(plugs, UsbPlugs)
-        for plug, on in plugs.items():
-            self[plug].set(on=on)
+    def default_off(self) -> None:
+        1/0
+
+    def default_infra_on(self) -> None:
+        1/0
 
     def powercycle(self, power_cycle: TyperPowerCycle) -> None:
         if power_cycle is TyperPowerCycle.INFRA:
-            self.set_plugs(plugs=UsbPlugs.default_off())
+            self.default_off()
             time.sleep(1.0)
-            self.set_plugs(plugs=UsbPlugs({UsbPlug.PICO_INFRA: True}))
+            self.infra = True
             return
 
         if power_cycle is TyperPowerCycle.INFRABOOT:
-            self.set_plugs(plugs=UsbPlugs.default_off())
-            self.set_plugs(plugs=UsbPlugs({UsbPlug.PICO_INFRA_BOOT: False}))
+            self.default_off()
+            self.infraboot = False
             time.sleep(1.0)
-            self.set_plugs(plugs=UsbPlugs({UsbPlug.PICO_INFRA: True}))
+            self.infra = True
             time.sleep(0.5)
-            self.set_plugs(plugs=UsbPlugs({UsbPlug.PICO_INFRA_BOOT: True}))
+            self.infraboot = True
             return
 
         if power_cycle is TyperPowerCycle.DUT:
-            self.set_plugs(plugs=UsbPlugs.default_off())
+            self.default_off()
             time.sleep(1.0)
-            self.set_plugs(
-                plugs=UsbPlugs({UsbPlug.PICO_INFRA: True, UsbPlug.DUT: True})
-            )
+            self.infra = True
+            self.dut = True
             return
 
         if power_cycle is TyperPowerCycle.OFF:
-            self.set_plugs(plugs=UsbPlugs.default_off())
+            self.default_off()
             return
 
         raise NotImplementedError("Internal programming error")

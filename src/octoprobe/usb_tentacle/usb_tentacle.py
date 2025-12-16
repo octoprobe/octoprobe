@@ -36,7 +36,7 @@ from serial.tools import list_ports, list_ports_linux
 from usb.legacy import CLASS_HUB
 
 from ..usb_tentacle.usb_baseclasses import HubPortNumber, Location, UsbPort
-from ..usb_tentacle.usb_constants import UsbPlug, UsbPlugs
+from ..usb_tentacle.usb_constants import UsbPlug
 from . import usb_constants
 
 logger = logging.getLogger(__file__)
@@ -201,12 +201,6 @@ class UsbTentacle:
     @property
     def pico_probe(self) -> UsbPico:
         return self.pico_infra.as_pico_probe
-
-    def set_plugs(self, plugs: UsbPlugs) -> None:
-        # TODO(hans): Obsolete
-        assert isinstance(plugs, UsbPlugs)
-        for plug, on in plugs.items():
-            self.switches[plug].set(on=on)
 
     def get_power_hub_port(self, hub_port: HubPortNumber) -> bool:
         assert isinstance(hub_port, HubPortNumber)
@@ -511,6 +505,12 @@ class UsbTentacleSwitches(dict[UsbPlug, UsbTentacleSwitch]):
     def _add(self, usb_tentacle_switch: UsbTentacleSwitch) -> None:
         self[usb_tentacle_switch.usb_plug] = usb_tentacle_switch
 
+    def default_off(self) -> None:
+        1/0
+
+    def default_infra_on(self) -> None:
+        1/0
+
 
 class UsbTentacles(list[UsbTentacle]):
     TIMEOUT_PICO_BOOT = 2.0
@@ -518,12 +518,6 @@ class UsbTentacles(list[UsbTentacle]):
     def set_switch(self, usb_plug: UsbPlug, on: bool) -> None:
         for usb_tentacle in self:
             usb_tentacle.switches[usb_plug].set(on=on)
-
-    def set_plugs(self, plugs: UsbPlugs) -> None:
-        # TODO(hans): Obsolete
-        assert isinstance(plugs, UsbPlugs)
-        for usb_tentacle in self:
-            usb_tentacle.set_plugs(plugs=plugs)
 
     def select(self, serials: list[str] | None) -> UsbTentacles:
         """
