@@ -99,6 +99,10 @@ source-includes = [
 # enable_incomplete_feature = ["NewGenericSyntax"]
 
 [[tool.mypy.overrides]]
+module = ["typer.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
 module = "octoprobe.tests.*"
 ignore_missing_imports = true
 check_untyped_defs = true

@@ -146,13 +146,6 @@ def set_relays_pulse(relays, initial_closed, durations_ms) -> None:
             f"{self._infra.label}: Found {file_count} files on flash!': Please remove them!"
         )
 
-    def get_relays(self) -> list[int]:
-        """
-        Returns a list of 7 booleans with wheter the relays is closed.
-        """
-        1 / 0
-        self._infra.mp_remote.exec_raw(cmd="get_relays()")
-
     @contextlib.contextmanager
     def relays_ctx(
         self,
@@ -166,11 +159,15 @@ def set_relays_pulse(relays, initial_closed, durations_ms) -> None:
         """
         try:
             logger.debug(f"CTX enter: {description}")
-            self.relays(relays_close=relays_close, relays_open=relays_open)
+            self._infra.switches.relays(
+                relays_close=relays_close, relays_open=relays_open
+            )
             yield None
         finally:
             logger.debug(f"CTX leave: {description}")
-            self.relays(relays_close=relays_open, relays_open=relays_close)
+            self._infra.switches.relays(
+                relays_close=relays_open, relays_open=relays_close
+            )
 
     def relays_pulse(
         self,
@@ -196,7 +193,7 @@ def set_relays_pulse(relays, initial_closed, durations_ms) -> None:
             timeout=int(1.5 * 1000 * sum(durations_ms)),
         )
 
-    def _set_pin(self, name: str, on: bool) -> None:
+    def set_pin(self, name: str, on: bool) -> bool:
         # TODO(hans): Merge with calling method
         assert isinstance(on, bool)
         self.load_base_code()

@@ -6,10 +6,6 @@ import time
 import typer
 
 from .. import util_mcu_pico
-from ..usb_tentacle.usb_constants import (
-    UsbPlug,
-    UsbPlugs,
-)
 from ..usb_tentacle.usb_tentacle import UsbTentacle
 from ..util_mcu_pico import picotool_flash_micropython
 from .op_bootmode import DELIM, do_bootmode

@@ -40,7 +40,7 @@ class TyperPowerCycle(str, enum.Enum):
 
     INFRA = "infra"
     PROBE = "probe"  # Only v0.4
-    INFRBOOT = "infraboot"
+    INFRABOOT = "infraboot"
     DUT = "dut"
     OFF = "off"
 
@@ -142,7 +142,7 @@ class TyperUsbPlug(str, enum.Enum):
     RELAY7 = "relay7"
 
     @property
-    def usbplug(self) -> UsbPlug | None:
+    def usbplug(self) -> UsbPlug :
         return {
             TyperUsbPlug.PICO_INFRA: UsbPlug.PICO_INFRA,
             TyperUsbPlug.PICO_INFRA_BOOT: UsbPlug.PICO_INFRA_BOOT,
@@ -263,7 +263,6 @@ class SwitchABC(abc.ABC):
         return True if the value changed.
         return True if the value did not change
         """
-        ...
 
     @abc.abstractmethod
     def get(self) -> bool:
@@ -271,4 +270,3 @@ class SwitchABC(abc.ABC):
         return True: LED on, Power on, Relays closed
         return False: LED off, Power off, Relays open
         """
-        ...

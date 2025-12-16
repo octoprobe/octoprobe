@@ -125,7 +125,7 @@ class CtxTestRun:
             ping_tentacle_infra(tentacle=tentacle, tag="a")
             tentacle.power.dut = False
             ping_tentacle_infra(tentacle=tentacle, tag="b")
-            tentacle.power.error = False
+            tentacle.power.led_error = False
             ping_tentacle_infra(tentacle=tentacle, tag="c")
 
             # Free mp_remote

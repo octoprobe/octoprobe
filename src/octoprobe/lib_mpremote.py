@@ -59,11 +59,6 @@ class MpRemote:
             wait=self._wait_s,
             timeout=self._timeout_s,
         )
-        # TODO: It would be beneficial to add a timeout parameter to mpremote
-        # Rationale. The timeout is required as 'mp_remote.exec_raw()' may block forever as
-        # it will not return from 'serial.read()'. This happens when a pico is flashed with
-        # this firmware: https://github.com/gusmanb/logicanalyzer
-        # self.state.transport.serial.timeout = timeout_s
 
     def __enter__(self) -> Self:
         return self
@@ -203,7 +198,7 @@ class MpRemote:
         value_text = self.exec_raw(cmd)
         return eval(value_text)
 
-    def exec_bool(self, cmd: str) -> int:
+    def exec_bool(self, cmd: str) -> bool:
         "last statment in 'cmd' must be print(xxx)"
         v = self._exec(cmd)
         assert isinstance(v, bool)

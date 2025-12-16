@@ -5,8 +5,7 @@ import typing
 
 from .. import util_mcu_pico
 from ..lib_tentacle_infra import TentacleInfra
-from ..usb_tentacle.usb_baseclasses import HubPortNumber
-from ..usb_tentacle.usb_constants import HwVersion, UsbPlug
+from ..usb_tentacle.usb_constants import HwVersion
 from ..usb_tentacle.usb_tentacle import UsbTentacle
 from ..util_pyudev import UdevPoller
 

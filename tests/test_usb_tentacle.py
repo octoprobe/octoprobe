@@ -51,8 +51,8 @@ def test_blib():
                             ID 2e8a:0005
     """
     usb_tentacles = UsbTentacles.query(poweron=False)
-    usb_tentacles.set_plugs(plugs=UsbPlugs.default_off())
 
+    usb_tentacles.set_plugs(plugs=UsbPlugs.default_off())
     usb_tentacles.set_plugs(plugs=UsbPlugs.default_infra_on())
 
 
@@ -61,6 +61,7 @@ def test_blib2():
     Same error provoked as above
     """
     usb_tentacles = UsbTentacles.query(poweron=False)
+
     usb_tentacles.set_plugs(plugs=UsbPlugs.default_off())
     time.sleep(1.0)
 
@@ -76,10 +77,10 @@ def test_blib2():
 
     if False:
         # NO: attempt power cycle
-        usb_tentacles[0].set_plugs(plugs=UsbPlugs({UsbPlug.ERROR: True}))
-        usb_tentacles[1].set_plugs(plugs=UsbPlugs({UsbPlug.ERROR: True}))
+        usb_tentacles[0].set_plugs(plugs=UsbPlugs({UsbPlug.LED_ERROR: True}))
+        usb_tentacles[1].set_plugs(plugs=UsbPlugs({UsbPlug.LED_ERROR: True}))
 
     if False:
         # attempt power cycle - strange rythm
         usb_tentacles[0].set_plugs(plugs=UsbPlugs({UsbPlug.PICO_INFRA: True}))
-        usb_tentacles[1].set_plugs(plugs=UsbPlugs({UsbPlug.ERROR: True}))
+        usb_tentacles[1].set_plugs(plugs=UsbPlugs({UsbPlug.LED_ERROR: True}))

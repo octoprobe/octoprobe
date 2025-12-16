@@ -59,7 +59,11 @@ class LayoutLabelBolzoneDue:
                 (self.x_r, self.y_b),
             ),
         ):
-            yield shapes.PolyLine(polyline, strokeWidth=0.1, strokeColor=colors.black)
+            yield shapes.PolyLine(
+                polyline,# type: ignore[arg-type]
+                strokeWidth=0.1,
+                strokeColor=colors.black,
+            )
 
 
 @dataclasses.dataclass
@@ -74,7 +78,11 @@ class RendererLabelBolzoneDuo:
     line_c = LayoutLine(y=1.5 * units.mm, fontsize=10.0)
 
     def text(
-        self, text_line: LayoutLine, text: str, flip: bool = False, bold: bool = False
+        self,
+        text_line: LayoutLine,
+        text: str,
+        flip: bool = False,
+        bold: bool = False,
     ) -> shapes.String:
         x = self.label.x_r_label if flip else self.label.x_l_label
         anchor = "end" if flip else "start"
@@ -85,7 +93,7 @@ class RendererLabelBolzoneDuo:
             text_line.y,
             text=text,
             fontSize=text_line.fontsize,
-            textAnchor=anchor,
+            textAnchor=anchor,  # type: ignore[arg-type]
             fontName=font,
         )
 

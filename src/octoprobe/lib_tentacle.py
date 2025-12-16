@@ -242,10 +242,10 @@ class TentacleBase(abc.ABC):
     @contextlib.contextmanager
     def active_led_on(self) -> typing.Iterator[typing.Any]:
         try:
-            self.infra.mcu_infra.active_led(on=True)
+            self.infra.switches.led_active=True
             yield
         finally:
-            self.infra.mcu_infra.active_led(on=False)
+            self.infra.switches.led_active=False
 
     def set_relays_by_FUT(self, fut: enum.StrEnum, open_others: bool = False) -> None:
         assert isinstance(fut, enum.StrEnum)

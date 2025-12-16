@@ -223,6 +223,7 @@ def power(
         line_delimiter=op_bootmode.DELIM + "plugs.text",
     ):
         tentacle_infra = TentacleInfra.factory_usb_tentacle(usb_tentacle=usb_tentacle)
+        plug: TyperUsbPlug
         for plug in on:
             tentacle_infra.handle_typer_usb_plug(typer_usb_plug=plug, on=True)
         for plug in off:
