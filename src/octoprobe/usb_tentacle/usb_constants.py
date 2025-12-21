@@ -39,10 +39,29 @@ class TyperPowerCycle(str, enum.Enum):
     """
 
     INFRA = "infra"
-    PROBE = "probe"  # Only v0.4
+    """
+    infra=off, sleep(1), infra=on (PICO_INFRA will be left in application mode)
+    """
     INFRABOOT = "infraboot"
+    """
+    infra=off, infraboot=programming_mode, sleep(1), infra=on (PICO_INFRA will be left in programming mode)
+    """
+    PROBE = "probe"  # Only v0.6
+    """
+    probe=off, sleep(1), probe=on (PICO_PROBE will be left in application mode)
+    """
+    PROBEBOOT = "probeboot"
+    """
+    probe=off, probeboot=programming_mode, sleep(1), infra=on (PICO_PROBE will be left in programming mode)
+    """
     DUT = "dut"
+    """
+    dut=off, sleep(1), dut=on
+    """
     OFF = "off"
+    """
+    All off, even PICO_INFA
+    """
 
 
 class UsbPlug(int, enum.Enum):

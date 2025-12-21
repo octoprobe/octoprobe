@@ -30,6 +30,7 @@ import dataclasses
 import logging
 import re
 import time
+import typing
 
 import usb.core
 from serial.tools import list_ports, list_ports_linux
@@ -307,8 +308,8 @@ def _query_hubs() -> list[Location]:
     Return all connected tentacle hubs.
     """
     return [
-        Location.factory_device(device=device)
-        for device in usb.core.find(
+        Location.factory_device(device=device)  # type: ignore[arg-type]
+        for device in usb.core.find(  # type: ignore[misc]
             find_all=True,
             bDeviceClass=CLASS_HUB,
             idVendor=HUB4_VENDOR,
@@ -323,9 +324,9 @@ def _query_pico_boot_mode() -> list[UsbPico]:
     This will return also pico which are not soldered on the tentacles.
     """
     return [
-        UsbPico.factory_device(device=device)
-        for device in usb.core.find(idVendor=PICO_VENDOR, find_all=True)
-        if device.idProduct == PICO_PRODUCT_BOOT_MODE
+        UsbPico.factory_device(device=device)  # type: ignore[arg-type]
+        for device in usb.core.find(idVendor=PICO_VENDOR, find_all=True)  # type: ignore[misc]
+        if device.idProduct == PICO_PRODUCT_BOOT_MODE  # type: ignore[union-attr]
     ]
 
 
@@ -336,7 +337,7 @@ def _query_pico_serial() -> list[UsbPico]:
     """
     return [
         UsbPico.factory_sysfs(
-            port=port, serial=port.serial_number, serial_port=port.device
+            port=port, serial=port.serial_number, serial_port=port.device  # type: ignore[arg-type]
         )
         for port in list_ports.comports()
         if (PICO_VENDOR == port.vid) and (PICO_PRODUCT_APPLICATION_MODE == port.pid)
@@ -454,9 +455,9 @@ class UsbTentacleSwitchProperty(property):
         self._usb_plug = usb_plug
         super().__init__()
 
-    def __get__(self, usb_tentacle_switches, owner):
+    def __get__(self, usb_tentacle_switches, owner=None) -> typing.Any:
         assert isinstance(usb_tentacle_switches, UsbTentacleSwitches)
-        usb_tentacle_switches[self._usb_plug].get()
+        return usb_tentacle_switches[self._usb_plug].get()
 
     def __set__(self, usb_tentacle_switches, on: bool):
         assert isinstance(usb_tentacle_switches, UsbTentacleSwitches)
@@ -506,10 +507,18 @@ class UsbTentacleSwitches(dict[UsbPlug, UsbTentacleSwitch]):
         self[usb_tentacle_switch.usb_plug] = usb_tentacle_switch
 
     def default_off(self) -> None:
-        1/0
+        """
+        After 'default_off', the PICO_INFRA has not power.
+        The PICO_INFRA must be restarted using ...
+        """
+        self.infra = False
+        self.infraboot = True
+        self.dut = False
 
-    def default_infra_on(self) -> None:
-        1/0
+    def default_off_infra_on(self) -> None:
+        self.infra = True
+        self.infraboot = True
+        self.dut = False
 
 
 class UsbTentacles(list[UsbTentacle]):

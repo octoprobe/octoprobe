@@ -71,7 +71,7 @@ class CtxTestRun:
         # Instantiate poller BEFORE switching on power to avoid a race condition
         tentacle.infra.setup_infra(udev_poller)
         # tentacle.infra.mcu_infra.active_led(on=False)
-        tentacle.infra.switches[UsbPlug.DUT].set(on=False)
+        tentacle.infra.switches.dut = False
         tentacle.verify_hw_version()
 
         if not FULL_POWERCYCLE_ALL_TENTACLES:
@@ -79,7 +79,7 @@ class CtxTestRun:
             # have to reset the relays
             tentacle.infra.switches.relays(
                 relays_close=[],
-                relays_open=[1, 2, 3, 4, 5, 6, 7],
+                relays_open=tentacle.infra.list_all_relays,
             )
 
     def function_prepare_dut(self, tentacle: TentacleBase) -> None:

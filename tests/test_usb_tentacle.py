@@ -6,7 +6,7 @@ from octoprobe.usb_tentacle.usb_tentacle import UsbTentacles
 def test_power_default_infra_on():
     usb_tentacles = UsbTentacles.query(poweron=False)
     for usb_tentacle in usb_tentacles:
-        usb_tentacle.switches.default_infra_on()
+        usb_tentacle.switches.default_off_infra_on()
 
 
 def test_power_default_off():
@@ -55,7 +55,7 @@ def test_blib():
 
     for usb_tentacle in usb_tentacles:
         usb_tentacle.switches.default_off()
-        usb_tentacle.switches.default_infra_on()
+        usb_tentacle.switches.default_off_infra_on()
 
 
 def test_blib2():
@@ -71,8 +71,8 @@ def test_blib2():
 
     if True:
         # attempt power cycle
-        usb_tentacles[0].switches.default_infra_on()
-        usb_tentacles[1].switches.default_infra_on()
+        usb_tentacles[0].switches.default_off_infra_on()
+        usb_tentacles[1].switches.default_off_infra_on()
 
     if False:
         # attempt power cycle

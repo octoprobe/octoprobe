@@ -131,6 +131,7 @@ def powercycle(
 ) -> None:
     for usb_tentacle in iter_usb_tentacles(poweron=poweron, serials=serials):
         tentacle_infra = TentacleInfra.factory_usb_tentacle(usb_tentacle=usb_tentacle)
+        tentacle_infra.load_base_code_if_needed()
         tentacle_infra.switches.powercycle(power_cycle=power_cycle)
 
 
@@ -238,7 +239,7 @@ def query(poweron: _PoweronAnnotation = False) -> None:
         line_delimiter=None,
     ):
         tentacle_infra = TentacleInfra.factory_usb_tentacle(usb_tentacle=usb_tentacle)
-        tentacle_infra.connect_mpremote_if_needed()
+        tentacle_infra.load_base_code_if_needed()
 
         def log(label: str, value: str) -> bool:
             if value != "-":

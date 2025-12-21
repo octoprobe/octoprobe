@@ -109,7 +109,9 @@ def picotool_cmd(event: UdevEventBase, filename_firmware: str) -> list[str]:
 
 
 def picotool_flash_micropython(
-    event: UdevEventBase, directory_logs: pathlib.Path, filename_firmware: pathlib.Path
+    event: UdevEventBase,
+    directory_logs: pathlib.Path,
+    filename_firmware: pathlib.Path,
 ) -> None:
     assert isinstance(event, Rp2UdevBootModeEvent)
     assert filename_firmware.is_file(), str(filename_firmware)

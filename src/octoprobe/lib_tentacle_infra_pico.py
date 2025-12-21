@@ -52,6 +52,12 @@ pin_relays = {
 {%- endfor %}
 }
 
+def set_switch(pin, on:bool) -> bool:
+   "return True when the value changed)"
+   changed = on != pin.value()
+   pin.value(on)
+   return changed
+
 def get_relays(relays) -> bool:
    "return True when relays is closed"
    return pin_relays[i].value()
@@ -88,14 +94,30 @@ def set_relays_pulse(relays, initial_closed, durations_ms) -> None:
     def base_code_lost(self) -> None:
         self._base_code_loaded_counter = -1
 
-    def load_base_code(self) -> None:
+    def is_base_code_loaded(self, will_load=False) -> bool:
         changed_counter = self._infra.usb_tentacle.switches[
             UsbPlug.PICO_INFRA
         ].changed_counter
-        if changed_counter == self._base_code_loaded_counter:
-            return
-        self._base_code_loaded_counter = changed_counter
 
+        try:
+            return changed_counter == self._base_code_loaded_counter
+        finally:
+            if will_load:
+                # Remember that the base code has been loaded!
+                self._base_code_loaded_counter = changed_counter
+
+    def assert_base_code_loaded(self) -> None:
+        if not self.is_base_code_loaded():
+            raise ValueError(
+                f"{self._infra.label}: The base code has not be loaded yet into the PICO_INFR! Please power PICO_INFRA correctly using udev and load the base code."
+            )
+
+    def load_base_code(self) -> None:
+        if self.is_base_code_loaded(will_load=True):
+            # The mcu has NOT been powercycled
+            return
+
+        # The mcu HAS been powercycled
         assert self._infra.mp_remote is not None
         micropython_base_code = render(
             micropython_code=self._MICROPYTHON_BASE_CODE_JINJA2
@@ -107,7 +129,7 @@ def set_relays_pulse(relays, initial_closed, durations_ms) -> None:
     @property
     def gpio_hw_version(self) -> int:
         if self._gpio_hw_version is None:
-            self.load_base_code()
+            self.assert_base_code_loaded()
             assert self._gpio_hw_version is not None
         return self._gpio_hw_version
 
@@ -125,19 +147,19 @@ def set_relays_pulse(relays, initial_closed, durations_ms) -> None:
     @property
     def unique_id(self) -> str:
         if self._unique_id is None:
-            self.load_base_code()
+            self.assert_base_code_loaded()
             assert self._unique_id is not None
         return self._unique_id
 
     def get_micropython_version(self) -> str:
-        self.load_base_code()
+        self.assert_base_code_loaded()
         return self._infra.mp_remote.read_str(
             "sys.version + ',' + sys.implementation[2]"
         )
 
     def exception_if_files_on_flash(self) -> None:
         # "import os; print('main.py' in os.listdir())"
-        self.load_base_code()
+        self.assert_base_code_loaded()
         file_count = self._infra.mp_remote.read_int("files_on_flash")
         if file_count == 0:
             return
@@ -187,48 +209,9 @@ def set_relays_pulse(relays, initial_closed, durations_ms) -> None:
             assert isinstance(duration_ms, int)
 
         self.load_base_code()
+        self.assert_base_code_loaded()
 
         self._infra.mp_remote.exec_raw(
             cmd=f"set_relays_pulse(relays={relays}, initial_closed={initial_closed}, durations_ms={durations_ms})",
             timeout=int(1.5 * 1000 * sum(durations_ms)),
         )
-
-    def set_pin(self, name: str, on: bool) -> bool:
-        # TODO(hans): Merge with calling method
-        assert isinstance(on, bool)
-        self.load_base_code()
-        self._infra.mp_remote.exec_raw(cmd=f"{name}.value({int(on)})")
-
-        # TODO(hans): Implement
-        changed = True
-        return changed
-
-    # def active_led(self, on: bool) -> None:
-    #     self._set_pin("pin_led_active", on=on)
-
-    # def get_active_led(self, on: bool) -> bool:
-    #     1 / 0
-
-    # def error_led(self, on: bool) -> None:
-    #     self._set_pin("pin_led_error", on=on)
-
-    # def get_error_led(self, on: bool) -> bool:
-    #     1 / 0
-
-    # def power_dut(self, on: bool) -> None:
-    #     self._set_pin("pin_power_dut", on=on)
-
-    # def get_power_dut(self) -> bool:
-    #     1 / 0
-
-    # def power_probeboot(self, on: bool) -> None:
-    #     self._set_pin("pin_power_probeboot", on=on)
-
-    # def get_power_probeboot(self) -> bool:
-    #     1 / 0
-
-    # def power_proberun(self, on: bool) -> None:
-    #     self._set_pin("pin_power_proberun", on=on)
-
-    # def get_power_proberun(self) -> bool:
-    #     1 / 0

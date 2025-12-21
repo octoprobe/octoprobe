@@ -15,7 +15,7 @@ from .usb_tentacle.usb_constants import (
     typerusbplug2usbplug,
 )
 from .usb_tentacle.usb_tentacle import UsbTentacle
-from .util_baseclasses import VersionMismatchException
+from .util_baseclasses import OctoprobeAppExitException, VersionMismatchException
 from .util_firmware_spec import FirmwareDownloadSpec, FirmwareSpecBase
 from .util_mcu import UdevApplicationModeEvent, udev_filter_application_mode
 from .util_pyudev import UdevPoller
@@ -45,13 +45,14 @@ class TentacleInfra:
         # pylint: disable=import-outside-toplevel
         from .lib_tentacle_infra_pico import InfraPico
 
+        self._mpremote_connected_counter = -1
         self.label = label
         self.usb_tentacle = usb_tentacle
         self._mp_remote: MpRemote | None = None
         self.mcu_infra: InfraPico = InfraPico(self)
         self.switches = TentacleInfraSwitches(tentacle_infra=self)
         self.power = self.switches
-        self.power.dut = False
+        # self.power.dut = False
 
     def is_valid_relay_index(self, i: int) -> bool:
         return i in self.list_all_relays
@@ -99,6 +100,10 @@ class TentacleInfra:
         assert self._mp_remote is not None
         return self._mp_remote
 
+    @property
+    def msg_PICO_INFRA_unpowered(self) -> str:
+        return f"{self.label}: Could not connect to PICO_INFRA. Might be PICO_INFRA is unpowerered or in programming mode. Recover with: op query --poweron"
+
     def power_dut_off_and_wait(self) -> None:
         """
         Use this instead of 'self.power.dut = False'
@@ -115,17 +120,34 @@ class TentacleInfra:
 
         self.verify_micropython_version(self.get_firmware_spec())
 
+    def load_base_code_if_needed(self) -> None:
+        self.connect_mpremote_if_needed()
+        self.mcu_infra.load_base_code()
+
     def connect_mpremote_if_needed(self) -> None:
         if self._mp_remote is not None:
             # We are already connected
-            return
+
+            changed_counter = self.usb_tentacle.switches[
+                UsbPlug.PICO_INFRA
+            ].changed_counter
+            if changed_counter == self._mpremote_connected_counter:
+                # We have not been powercycled, so the connection should be still ok
+                return
+
+            # We have been powercycled, so reconnect!
+            self._mpremote_connected_counter = changed_counter
 
         serial_port = self.usb_tentacle.serial_port
-        assert serial_port is not None
+        if serial_port is None:
+            msg = self.msg_PICO_INFRA_unpowered
+            logger.error(msg)
+            raise OctoprobeAppExitException(msg)
+
         self._mp_remote = MpRemote(tty=serial_port)
 
     def setup_infra(self, udev: UdevPoller) -> None:
-        self.connect_mpremote_if_needed()
+        self.load_base_code_if_needed()
         try:
             self.pico_test_mp_remote()
         except VersionMismatchException as e:
@@ -151,6 +173,27 @@ class TentacleInfra:
                 version_installed=installed_version,
                 version_expected=firmware_spec.micropython_full_version_text,
             )
+
+    def wait_power_up_PICO_INFRA(
+        self,
+        udev: UdevPoller,
+        usb_location: str,
+    ) -> UdevApplicationModeEvent:
+        # pylint: disable=import-outside-toplevel
+        from .util_mcu_pico import RPI_PICO_USB_ID
+
+        udev_filter = udev_filter_application_mode(
+            usb_id=RPI_PICO_USB_ID.application,
+            usb_location=usb_location,
+        )
+        event = udev.expect_event(
+            udev_filter=udev_filter,
+            text_where=self.label,
+            text_expect="Expect Pico in application mode to become visible on udev after programming ",
+            timeout_s=3.0,
+        )
+        assert isinstance(event, UdevApplicationModeEvent)
+        return event
 
     def flash(
         self,
@@ -204,16 +247,7 @@ class TentacleInfra:
 
             # The Pico will reboot in application mode
             # and we wait for this event here
-            udev_filter = udev_filter_application_mode(
-                usb_id=RPI_PICO_USB_ID.application,
-                usb_location=usb_location,
-            )
-            event = udev.expect_event(
-                udev_filter=udev_filter,
-                text_where=self.label,
-                text_expect="Expect Pico in application mode to become visible on udev after programming ",
-                timeout_s=3.0,
-            )
+            event = self.wait_power_up_PICO_INFRA(udev=udev, usb_location=usb_location)
 
         assert isinstance(event, UdevApplicationModeEvent)
         assert event.tty is not None
@@ -246,95 +280,43 @@ class TentacleInfraSwitch(SwitchABC):
     def usb_plug(self) -> UsbPlug:
         return self._usb_plug
 
+    @property
+    def micropython_pin(self) -> str:
+        return f"pin_{self.usb_plug.name}"
+
     def set(self, on: bool) -> bool:
-        return self._get_set_usb_plug(on=on, getter=False)
+        assert isinstance(on, bool)
+        # self._tentacle_infra.pico_infra_load_base_code()
+        # if self._tentacle_infra.usb_tentacle.serial is None:
+        #     logger.warning(
+        #         f"{self._tentacle_infra.usb_tentacle.hub4_location.short}: May not switch '{self.usb_plug}' as rp_infra is not visible."
+        #     )
+        #     return False
 
-    def get(self) -> bool:
-        return self._get_set_usb_plug(on=False, getter=True)
+        # self._tentacle_infra.load_base_code_if_needed()
 
-    def _get_set_usb_plug(self, getter: bool, on: bool) -> bool:
-        # TODO(hans): Move method
-        """
-        Getter (if get is True) and setter (if get is False).
-        If Getter: return True if on.
-        If Setter: return False
-        """
-        # if self.usb_plug.is_hub_plug:
-        #     hub_port = {
-        #         UsbPlug.PICO_INFRA: HubPortNumber.PORT1_INFRA,
-        #         UsbPlug.PICO_INFRA_BOOT: HubPortNumber.PORT2_INFRABOOT,
-        #     }[self.usb_plug]
-        #     if getter:
-        #         return self.usb_tentacle.get_power(hub_port=hub_port)
-        #     else:
-        #         self.usb_tentacle.set_power(hub_port=hub_port, on=on)
-        #     return
+        self._tentacle_infra.mcu_infra.assert_base_code_loaded()
 
-        if self._tentacle_infra.usb_tentacle.serial is None:
-            logger.warning(
-                f"{self._tentacle_infra.usb_tentacle.hub4_location.short}: May not switch '{self.usb_plug}' as rp_infra is not visible."
-            )
-            return False
-
-        self._tentacle_infra.connect_mpremote_if_needed()
-        changed = self._tentacle_infra.mcu_infra.set_pin(
-            f"pin_{self.usb_plug.name}",
-            on=on,
+        changed = self._tentacle_infra.mp_remote.exec_bool(
+            cmd=f"print(set_switch({self.micropython_pin}, on={int(on)}))"
         )
         return changed
-        # if self.usb_plug.is_relay:
-        #     if getter:
-        #         pass
-        #         self.mcu_infra.relays
-        #         1 / 0
-        #     else:
-        #         kwargs = {
-        #             "relays_close" if on else "relays_open": [
-        #                 self.usb_plug.relay_number
-        #             ]
-        #         }
-        #         self.mcu_infra.relays(**kwargs)
-        #     return
-        # if self.usb_plug is UsbPlug.DUT:
-        #     if self.mcu_infra.hw_version == HwVersion.V03:
-        #         if getter:
-        #             return self.usb_tentacle.get_power(hub_port=HubPortNumber.PORT3_DUT)
-        #         else:
-        #             self.usb_tentacle.set_power(hub_port=HubPortNumber.PORT3_DUT, on=on)
-        #             return
-        #     if getter:
-        #         return self.mcu_infra.get_power_dut()
-        #     self.mcu_infra.power_dut(on=on)
-        #     return
-        # if self.usb_plug is UsbPlug.PICO_PROBE_RUN:
-        #     if getter:
-        #         return self.mcu_infra.get_power_proberun()
-        #     self.mcu_infra.power_proberun(on=on)
-        #     return
-        # if self.usb_plug is UsbPlug.PICO_PROBE_BOOT:
-        #     if getter:
-        #         return self.mcu_infra.get_power_probeboot()
-        #     self.mcu_infra.power_probeboot(on=on)
-        #     return
-        # if self.usb_plug is UsbPlug.LED_ACTIVE:
-        #     if getter:
-        #         return self.mcu_infra.get_active_led()
-        #     self.mcu_infra.active_led(on=on)
-        #     return
-        # if self.usb_plug is UsbPlug.LED_ERROR:
-        #     if self.mcu_infra.hw_version == HwVersion.V03:
-        #         if getter:
-        #             return self.usb_tentacle.get_power(
-        #                 HubPortNumber.PORT4_PROBE_LEDERROR
-        #             )
 
-        #         self.usb_tentacle.set_power(HubPortNumber.PORT4_PROBE_LEDERROR, on=on)
-        #         return
-        #     if getter:
-        #         return self.mcu_infra.get_error_led()
-        #     self.mcu_infra.error_led(on=on)
-        #     return
-        raise ValueError(f"{self. usb_plug=} not handled")
+    def get(self) -> bool:
+        self._tentacle_infra.mcu_infra.assert_base_code_loaded()
+
+        # if self._tentacle_infra.usb_tentacle.serial is None:
+        #     logger.warning(
+        #         f"{self._tentacle_infra.usb_tentacle.hub4_location.short}: May not switch '{self.usb_plug}' as rp_infra is not visible."
+        #     )
+        #     return False
+
+        # self._tentacle_infra.load_base_code_if_needed()
+
+        changed = self._tentacle_infra.mp_remote.exec_bool(
+            cmd=f"print({self.micropython_pin}.value())"
+        )
+        return changed
 
 
 class TentacleInfraSwitchDUT(TentacleInfraSwitch):
@@ -350,6 +332,8 @@ class TentacleInfraSwitchDUT(TentacleInfraSwitch):
 
 class TentacleInfraSwitchRelays(TentacleInfraSwitch):
     def set(self, on: bool) -> bool:
+        self._tentacle_infra.mcu_infra.assert_base_code_loaded()
+
         relays_close = []
         relays_open = []
 
@@ -365,7 +349,7 @@ class TentacleInfraSwitchRelays(TentacleInfraSwitch):
         )
 
     def get(self) -> bool:
-        self._tentacle_infra.mcu_infra.load_base_code()
+        self._tentacle_infra.mcu_infra.assert_base_code_loaded()
         closed = self._tentacle_infra.mp_remote.exec_bool(
             cmd=f"print(get_relays({self.usb_plug.relay_number}))"
         )
@@ -405,7 +389,7 @@ class TentacleInfraSwitchRelays(TentacleInfraSwitch):
             dict_relays[i] = True
         list_relays = list(dict_relays.items())
 
-        tentacle_infra.mcu_infra.load_base_code()
+        tentacle_infra.mcu_infra.assert_base_code_loaded()
         changed = tentacle_infra.mp_remote.exec_bool(
             cmd=f"print(set_relays({list_relays}))"
         )
@@ -437,7 +421,7 @@ class TentacleInfraSwitchProperty(property):
         self._usb_plug = usb_plug
         super().__init__()
 
-    def __get__(self, tentacle_infra_switches, owner):
+    def __get__(self, tentacle_infra_switches, owner=None) -> typing.Any:
         assert isinstance(tentacle_infra_switches, TentacleInfraSwitches)
         tentacle_infra_switches[self._usb_plug].get()
 
@@ -521,12 +505,25 @@ class TentacleInfraSwitches(dict[UsbPlug, TentacleInfraSwitch]):
         )
 
     def default_off(self) -> None:
-        1/0
+        # First PICO_INFRA controlled switches
+        # self.probeboot = True
+        # self.dut = False
+        # self.led_error = False
+        # Now USB controlled switches
+        self._tentacle_infra.usb_tentacle.switches.default_off()
 
-    def default_infra_on(self) -> None:
-        1/0
+    def default_off_infra_on(self) -> None:
+        # First USB controlled switches
+        self._tentacle_infra.usb_tentacle.switches.default_off_infra_on()
+        # Second PICO_INFRA controlled switches
+        self.probeboot = True
+        self.proberun = False
+        self.dut = False
+        self.led_error = False
 
     def powercycle(self, power_cycle: TyperPowerCycle) -> None:
+        switches = self._tentacle_infra.switches
+
         if power_cycle is TyperPowerCycle.INFRA:
             self.default_off()
             time.sleep(1.0)
@@ -534,7 +531,7 @@ class TentacleInfraSwitches(dict[UsbPlug, TentacleInfraSwitch]):
             return
 
         if power_cycle is TyperPowerCycle.INFRABOOT:
-            self.default_off()
+            self.infra = False
             self.infraboot = False
             time.sleep(1.0)
             self.infra = True
@@ -542,11 +539,24 @@ class TentacleInfraSwitches(dict[UsbPlug, TentacleInfraSwitch]):
             self.infraboot = True
             return
 
-        if power_cycle is TyperPowerCycle.DUT:
-            self.default_off()
+        if power_cycle is TyperPowerCycle.PROBE:
+            switches.probeboot = True
+            switches.proberun = False
             time.sleep(1.0)
-            self.infra = True
-            self.dut = True
+            switches.proberun = True
+            return
+
+        if power_cycle is TyperPowerCycle.PROBEBOOT:
+            switches.probeboot = False
+            switches.proberun = False
+            time.sleep(1.0)
+            switches.proberun = True
+            return
+
+        if power_cycle is TyperPowerCycle.DUT:
+            switches.dut = False
+            time.sleep(1.0)
+            switches.dut = True
             return
 
         if power_cycle is TyperPowerCycle.OFF:
