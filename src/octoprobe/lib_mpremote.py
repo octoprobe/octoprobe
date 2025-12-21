@@ -71,8 +71,10 @@ class MpRemote:
         Return the serial port which was closed.
         """
         if self.state.transport is not None:
-            self.state.transport.close()
-            self.state.transport = None
+            try:
+                self.state.transport.close()
+            finally:
+                self.state.transport = None
 
         return self._tty
 

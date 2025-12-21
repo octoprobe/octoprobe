@@ -38,9 +38,8 @@ pin_LED_ACTIVE = Pin('GPIO24', Pin.OUT)
 pin_LED_ERROR = Pin('GPIO20', Pin.OUT) # Not connected on v0.3
 pin_DUT = Pin('GPIO23', Pin.OUT) # Not connected on v0.3
 pin_PICO_PROBE_RUN = Pin('GPIO22', Pin.OUT) # Not connected on v0.3
-pin_PICO_PROBE_BOOT = Pin('GPIO21', Pin.OUT) # Not connected on v0.3
 # If pico_probe is powered, it should start in application mode
-pin_PICO_PROBE_BOOT.value(1)
+pin_PICO_PROBE_BOOT = Pin('GPIO21', Pin.OUT, value=1) # Not connected on v0.3
 
 {% for gpio in (1, 2, 3, 4, 5, 6, 7) %}
 pin_RELAY{{ loop.index }} = Pin('GPIO{{ gpio }}', Pin.OUT)
@@ -95,6 +94,10 @@ def set_relays_pulse(relays, initial_closed, durations_ms) -> None:
         self._base_code_loaded_counter = -1
 
     def is_base_code_loaded(self, will_load=False) -> bool:
+        """
+        Return True if the base code has been loaded into PICO_INFRA.
+        Return False if not, for example after a powercycle.
+        """
         changed_counter = self._infra.usb_tentacle.switches[
             UsbPlug.PICO_INFRA
         ].changed_counter
@@ -108,9 +111,7 @@ def set_relays_pulse(relays, initial_closed, durations_ms) -> None:
 
     def assert_base_code_loaded(self) -> None:
         if not self.is_base_code_loaded():
-            raise ValueError(
-                f"{self._infra.label}: The base code has not be loaded yet into the PICO_INFR! Please power PICO_INFRA correctly using udev and load the base code."
-            )
+            raise ValueError(self._infra.msg_PICO_INFRA_unpowered)
 
     def load_base_code(self) -> None:
         if self.is_base_code_loaded(will_load=True):

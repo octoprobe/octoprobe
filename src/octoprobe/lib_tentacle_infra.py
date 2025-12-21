@@ -10,9 +10,7 @@ from .lib_mpremote import MpRemote
 from .usb_tentacle.usb_constants import (
     SwitchABC,
     TyperPowerCycle,
-    TyperUsbPlug,
     UsbPlug,
-    typerusbplug2usbplug,
 )
 from .usb_tentacle.usb_tentacle import UsbTentacle
 from .util_baseclasses import OctoprobeAppExitException, VersionMismatchException
@@ -108,9 +106,9 @@ class TentacleInfra:
         """
         Use this instead of 'self.power.dut = False'
         """
-        if self.power.dut:
+        changed = self.switches[UsbPlug.DUT].set(on=False)
+        if changed:
             logger.debug("self.power.dut = False")
-            self.power.dut = False
             time.sleep(0.5)
 
     def pico_test_mp_remote(self) -> None:
@@ -125,18 +123,16 @@ class TentacleInfra:
         self.mcu_infra.load_base_code()
 
     def connect_mpremote_if_needed(self) -> None:
+        changed_counter = self.usb_tentacle.switches[UsbPlug.PICO_INFRA].changed_counter
+
         if self._mp_remote is not None:
             # We are already connected
-
-            changed_counter = self.usb_tentacle.switches[
-                UsbPlug.PICO_INFRA
-            ].changed_counter
             if changed_counter == self._mpremote_connected_counter:
                 # We have not been powercycled, so the connection should be still ok
                 return
 
-            # We have been powercycled, so reconnect!
-            self._mpremote_connected_counter = changed_counter
+        # We have been powercycled, so reconnect!
+        self._mpremote_connected_counter = changed_counter
 
         serial_port = self.usb_tentacle.serial_port
         if serial_port is None:
@@ -259,9 +255,9 @@ class TentacleInfra:
         with self._mp_remote.borrow_tty() as tty:
             yield tty
 
-    def handle_typer_usb_plug(self, typer_usb_plug: TyperUsbPlug, on: bool) -> None:
-        assert isinstance(typer_usb_plug, TyperUsbPlug)
-        self.switches[typerusbplug2usbplug(typer_usb_plug)].set(on=on)
+    def power_usb_plug(self, usb_plug: UsbPlug, on: bool) -> None:
+        assert isinstance(usb_plug, UsbPlug)
+        self.switches[usb_plug].set(on=on)
 
 
 class TentacleInfraSwitch(SwitchABC):

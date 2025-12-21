@@ -209,8 +209,8 @@ class TentacleBase(abc.ABC):
     def power_dut_off_and_wait(self) -> None:
         if self.dut is None:
             return
-        self.infra.power_dut_off_and_wait()
         self.dut.mp_remote_close()
+        self.infra.power_dut_off_and_wait()
 
     @property
     def label_short(self) -> str:
@@ -242,10 +242,10 @@ class TentacleBase(abc.ABC):
     @contextlib.contextmanager
     def active_led_on(self) -> typing.Iterator[typing.Any]:
         try:
-            self.infra.switches.led_active=True
+            self.infra.switches.led_active = True
             yield
         finally:
-            self.infra.switches.led_active=False
+            self.infra.switches.led_active = False
 
     def set_relays_by_FUT(self, fut: enum.StrEnum, open_others: bool = False) -> None:
         assert isinstance(fut, enum.StrEnum)

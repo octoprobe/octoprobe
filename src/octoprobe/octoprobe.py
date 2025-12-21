@@ -3,6 +3,7 @@ from __future__ import annotations
 import enum
 import logging
 import pathlib
+import time
 import typing
 
 from .lib_tentacle import TentacleBase
@@ -83,11 +84,14 @@ class CtxTestRun:
             )
 
     def function_prepare_dut(self, tentacle: TentacleBase) -> None:
-        tentacle.power.dut = False
         # Why close the infra mp_remote?
-        tentacle.infra.mp_remote_close()
         if tentacle.is_mcu:
             tentacle.dut.mp_remote_close()
+
+        changed = tentacle.switches[UsbPlug.DUT].set(on=False)
+        if changed:
+            # Give the DUT some time to power off
+            time.sleep(0.5)
 
     def function_setup_dut_flash(
         self,
@@ -121,32 +125,40 @@ class CtxTestRun:
                     f"{tentacle.label_short}: {tag}: Ping failed!", exc_info=e
                 )
 
+        do_ping = False
         for tentacle in active_tentacles:
-            ping_tentacle_infra(tentacle=tentacle, tag="a")
-            tentacle.power.dut = False
-            ping_tentacle_infra(tentacle=tentacle, tag="b")
-            tentacle.power.led_error = False
-            ping_tentacle_infra(tentacle=tentacle, tag="c")
-
-            # Free mp_remote
-            if not tentacle.is_mcu:
-                continue
-            tentacle.dut.mp_remote_close()
-            ping_tentacle_infra(tentacle=tentacle, tag="d")
-
-            # Before we can switch the relays: Connect to infra, power off and free mp_remote
-            tentacle.infra.connect_mpremote_if_needed()
-            ping_tentacle_infra(tentacle=tentacle, tag="e")
             try:
-                tentacle.infra.switches.relays(
-                    relays_open=tentacle.infra.list_all_relays
-                )
+                tentacle.dut.mp_remote_close()
+                if do_ping:
+                    ping_tentacle_infra(tentacle=tentacle, tag="a")
+                tentacle.power.dut = False
+                if do_ping:
+                    ping_tentacle_infra(tentacle=tentacle, tag="b")
+                tentacle.power.led_error = False
+                if do_ping:
+                    ping_tentacle_infra(tentacle=tentacle, tag="c")
+
+                # Free mp_remote
+                if not tentacle.is_mcu:
+                    continue
+                if do_ping:
+                    ping_tentacle_infra(tentacle=tentacle, tag="d")
+
+                # Before we can switch the relays: Connect to infra, power off and free mp_remote
+                tentacle.infra.load_base_code_if_needed()
+                ping_tentacle_infra(tentacle=tentacle, tag="e")
+                try:
+                    tentacle.infra.switches.relays(
+                        relays_open=tentacle.infra.list_all_relays
+                    )
+                except Exception as e:
+                    raise OctoprobeAppExitException(
+                        f"{tentacle.infra.label}: Failed to control relays: {e!r}"
+                    ) from e
+                ping_tentacle_infra(tentacle=tentacle, tag="f")
+                tentacle.infra.mp_remote_close()
             except Exception as e:
-                raise OctoprobeAppExitException(
-                    f"{tentacle.infra.label}: Failed to control relays: {e!r}"
-                ) from e
-            ping_tentacle_infra(tentacle=tentacle, tag="f")
-            tentacle.infra.mp_remote_close()
+                logger.error(e)
 
     def setup_relays(
         self, tentacles: typing.Sequence[TentacleBase], futs: tuple[enum.StrEnum]

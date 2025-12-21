@@ -85,7 +85,7 @@ class DutMicropythonPico(DutMcu):
                 udev_filter=udev_filter,
                 text_where=tentacle.dut.label,
                 text_expect="Expect RP2 to become visible",
-                timeout_s=3.0,
+                timeout_s=5.0,
             )
 
         assert isinstance(event, UdevApplicationModeEvent)

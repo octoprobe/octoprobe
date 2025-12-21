@@ -59,6 +59,8 @@ class TentacleDut:
 
     @property
     def mp_remote(self) -> MpRemote:
+        if self._mp_remote is None:
+            print("TODO")
         assert self._mp_remote is not None
         return self._mp_remote
 
@@ -86,7 +88,9 @@ class TentacleDut:
         return serial_port
 
     def boot_and_init_mp_remote_dut(
-        self, tentacle: TentacleBase, udev: UdevPoller
+        self,
+        tentacle: TentacleBase,
+        udev: UdevPoller,
     ) -> None:
         """
         Eventually, self._mp_remote will be initialized

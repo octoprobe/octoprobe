@@ -64,7 +64,7 @@ class TyperPowerCycle(str, enum.Enum):
     """
 
 
-class UsbPlug(int, enum.Enum):
+class UsbPlug(str, enum.Enum):
     """
     TODO(Hans):
     Before:
@@ -77,30 +77,30 @@ class UsbPlug(int, enum.Enum):
     Every port of this hub as a function, we call it 'UsbPlug'.
     """
 
-    PICO_INFRA = enum.auto()
+    PICO_INFRA = "infra"
     """True: rp_infra is powered"""
-    PICO_INFRA_BOOT = enum.auto()
+    PICO_INFRA_BOOT = "infraboot"
     """False: rp_infra boot button pressed"""
-    PICO_PROBE_RUN = enum.auto()
+    PICO_PROBE_RUN = "proberun"  # >= v0.6
     """True: rp_probe run (reset released)"""
-    PICO_PROBE_BOOT = enum.auto()
+    PICO_PROBE_BOOT = "probeboot"  # >= v0.6
     """False: rp_probe boot button pressed"""
 
-    DUT = enum.auto()
+    DUT = "dut"
     """True: DUT is powerered"""
-    LED_ERROR = enum.auto()
+    LED_ERROR = "led_error"
     """True: LED_ERROR is on bright"""
-    LED_ACTIVE = enum.auto()
+    LED_ACTIVE = "led_active"
     """True: LED_ACTIVE is on bright"""
 
-    RELAY1 = enum.auto()
+    RELAY1 = "relay1"
     """True: RELAYx is closed"""
-    RELAY2 = enum.auto()
-    RELAY3 = enum.auto()
-    RELAY4 = enum.auto()
-    RELAY5 = enum.auto()
-    RELAY6 = enum.auto()
-    RELAY7 = enum.auto()
+    RELAY2 = "relay2"
+    RELAY3 = "relay3"
+    RELAY4 = "relay4"
+    RELAY5 = "relay5"
+    RELAY6 = "relay6"
+    RELAY7 = "relay7"
 
     @property
     def text(self) -> str:
@@ -138,74 +138,8 @@ class UsbPlug(int, enum.Enum):
         return int(self.name[5])
 
 
-class TyperUsbPlug(str, enum.Enum):
-    """
-    Used as command line argument (Typer)
-    """
-
-    PICO_INFRA = "infra"
-    PICO_INFRA_BOOT = "infraboot"
-    PICO_PROBE_BOOT = "probeboot"  # >= v0.5
-    PICO_PROBE_RUN = "proberun"  # >= v0.5
-    DUT = "dut"
-
-    LED_ERROR = "led_error"
-    LED_ACTIVE = "led_active"
-
-    RELAY1 = "relay1"
-    RELAY2 = "relay2"
-    RELAY3 = "relay3"
-    RELAY4 = "relay4"
-    RELAY5 = "relay5"
-    RELAY6 = "relay6"
-    RELAY7 = "relay7"
-
-    @property
-    def usbplug(self) -> UsbPlug:
-        return {
-            TyperUsbPlug.PICO_INFRA: UsbPlug.PICO_INFRA,
-            TyperUsbPlug.PICO_INFRA_BOOT: UsbPlug.PICO_INFRA_BOOT,
-            TyperUsbPlug.DUT: UsbPlug.DUT,
-            TyperUsbPlug.LED_ERROR: UsbPlug.LED_ERROR,
-        }[self]
-
-    @staticmethod
-    def convert(typer_usb_plugs: list[TyperUsbPlug] | None) -> list[UsbPlug] | None:
-        if typer_usb_plugs is None:
-            return None
-        return [plug.usbplug for plug in typer_usb_plugs]
-
-
-_TRANSLATION_TABLE = (
-    (UsbPlug.PICO_INFRA, TyperUsbPlug.PICO_INFRA),
-    (UsbPlug.PICO_INFRA_BOOT, TyperUsbPlug.PICO_INFRA_BOOT),
-    (UsbPlug.PICO_PROBE_BOOT, TyperUsbPlug.PICO_PROBE_BOOT),
-    (UsbPlug.PICO_PROBE_RUN, TyperUsbPlug.PICO_PROBE_RUN),
-    (UsbPlug.DUT, TyperUsbPlug.DUT),
-    (UsbPlug.LED_ERROR, TyperUsbPlug.LED_ERROR),
-    (UsbPlug.LED_ACTIVE, TyperUsbPlug.LED_ACTIVE),
-    (UsbPlug.RELAY1, TyperUsbPlug.RELAY1),
-    (UsbPlug.RELAY2, TyperUsbPlug.RELAY2),
-    (UsbPlug.RELAY3, TyperUsbPlug.RELAY3),
-    (UsbPlug.RELAY4, TyperUsbPlug.RELAY4),
-    (UsbPlug.RELAY5, TyperUsbPlug.RELAY5),
-    (UsbPlug.RELAY6, TyperUsbPlug.RELAY6),
-    (UsbPlug.RELAY7, TyperUsbPlug.RELAY7),
-)
-
-
-def usbplug2typerusbplug(usb_plug: UsbPlug) -> TyperUsbPlug:
-    for u, t in _TRANSLATION_TABLE:
-        if u is usb_plug:
-            return t
-    raise ValueError(f"Unknown {usb_plug}")
-
-
-def typerusbplug2usbplug(typer_usb_plug: TyperUsbPlug) -> UsbPlug:
-    for u, t in _TRANSLATION_TABLE:
-        if t is typer_usb_plug:
-            return u
-    raise ValueError(f"Unknown {typer_usb_plug}")
+def usb_plug_typer_names() -> list[str]:
+    return [usb_plug.name.lower() for usb_plug in UsbPlug]
 
 
 class SwitchABC(abc.ABC):
