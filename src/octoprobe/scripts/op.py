@@ -12,7 +12,7 @@ from octoprobe.util_cached_git_repo import CachedGitRepo
 from octoprobe.util_constants import DIRECTORY_OCTOPROBE_GIT_CACHE
 
 from ..lib_tentacle_infra import TentacleInfra
-from ..usb_tentacle.usb_constants import TyperPowerCycle, UsbPlug
+from ..usb_tentacle.usb_constants import Switch, TyperPowerCycle
 from ..usb_tentacle.usb_tentacle import UsbTentacle, UsbTentacles
 from ..util_pyudev_monitor import do_udev_monitor
 from . import op_bootmode, op_flash
@@ -198,11 +198,11 @@ def exec_infra(
 @app.command(help="Power on/off usb ports.")
 def power(
     on: TyperAnnotated[
-        list[UsbPlug] | None,
+        list[Switch] | None,
         typer.Option(help="Power ON given usb hub port on all tentacles"),
     ] = None,
     off: TyperAnnotated[
-        list[UsbPlug] | None,
+        list[Switch] | None,
         typer.Option(help="Power OFF given usb hub port on all tentacles"),
     ] = None,
     serials: _SerialsAnnotation = None,
@@ -221,17 +221,17 @@ def power(
     for usb_tentacle in iter_usb_tentacles(
         poweron=poweron,
         serials=serials,
-        line_delimiter=op_bootmode.DELIM + "plugs.text",
+        line_delimiter=op_bootmode.DELIM + "switches.text",
     ):
         tentacle_infra = TentacleInfra.factory_usb_tentacle(usb_tentacle=usb_tentacle)
         tentacle_infra.load_base_code_if_needed()
         if set_off:
             tentacle_infra.switches.default_off_infra_on()
-        plug: UsbPlug
-        for plug in on:
-            tentacle_infra.power_usb_plug(usb_plug=plug, on=True)
-        for plug in off:
-            tentacle_infra.power_usb_plug(usb_plug=plug, on=False)
+        switch: Switch
+        for switch in on:
+            tentacle_infra.power_usb_switch(switch=switch, on=True)
+        for switch in off:
+            tentacle_infra.power_usb_switch(switch=switch, on=False)
 
 
 @app.command(help="Query connected tentacles.")

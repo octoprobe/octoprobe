@@ -37,7 +37,7 @@ from serial.tools import list_ports, list_ports_linux
 from usb.legacy import CLASS_HUB
 
 from ..usb_tentacle.usb_baseclasses import HubPortNumber, Location, UsbPort
-from ..usb_tentacle.usb_constants import UsbPlug
+from ..usb_tentacle.usb_constants import Switch
 from . import usb_constants
 
 logger = logging.getLogger(__file__)
@@ -337,7 +337,9 @@ def _query_pico_serial() -> list[UsbPico]:
     """
     return [
         UsbPico.factory_sysfs(
-            port=port, serial=port.serial_number, serial_port=port.device  # type: ignore[arg-type]
+            port=port,
+            serial=port.serial_number,
+            serial_port=port.device,  # type: ignore[arg-type]
         )
         for port in list_ports.comports()
         if (PICO_VENDOR == port.vid) and (PICO_PRODUCT_APPLICATION_MODE == port.pid)
@@ -400,15 +402,15 @@ def _combine_hubs_and_pico(
 class UsbTentacleSwitch(usb_constants.SwitchABC):
     def __init__(
         self,
-        usb_plug: UsbPlug,
+        switch: Switch,
         usb_tentacle: UsbTentacle,
         hub_port: HubPortNumber,
     ) -> None:
-        assert isinstance(usb_plug, UsbPlug)
+        assert isinstance(switch, Switch)
         assert isinstance(usb_tentacle, UsbTentacle)
         assert isinstance(hub_port, HubPortNumber)
 
-        self._usb_plug = usb_plug
+        self._switch = switch
         self._usb_tentacle = usb_tentacle
         self._hub_port = hub_port
         self.changed_counter = 42
@@ -418,8 +420,8 @@ class UsbTentacleSwitch(usb_constants.SwitchABC):
         """
 
     @property
-    def usb_plug(self) -> UsbPlug:
-        return self._usb_plug
+    def switch(self) -> Switch:
+        return self._switch
 
     def set(self, on: bool) -> bool:
         """
@@ -429,21 +431,21 @@ class UsbTentacleSwitch(usb_constants.SwitchABC):
         assert isinstance(on, bool)
 
         if on == self._usb_tentacle.get_power_hub_port(hub_port=self._hub_port):
-            logger.debug(f"{self.plug_text} is already {on}")
+            logger.debug(f"{self.switch_text} is already {on}")
             return False
 
         self.changed_counter += 1
         self._usb_tentacle.hub4_location.set_power(hub_port=self._hub_port, on=on)
 
-        logger.debug(f"{self.plug_text} set({on})")
+        logger.debug(f"{self.switch_text} set({on})")
         return True
 
     def get(self) -> bool:
         return self._usb_tentacle.get_power_hub_port(hub_port=self._hub_port)
 
     @property
-    def plug_text(self) -> str:
-        return f"usbplug {self._hub_port.name} {self._usb_tentacle.hub4_location.short} port {self._hub_port}"
+    def switch_text(self) -> str:
+        return f"switch {self._hub_port.name} {self._usb_tentacle.hub4_location.short} port {self._hub_port}"
 
 
 class UsbTentacleSwitchProperty(property):
@@ -451,38 +453,38 @@ class UsbTentacleSwitchProperty(property):
     A custom property descriptor that hides the switch on/off logic.
     """
 
-    def __init__(self, usb_plug: UsbPlug):
-        self._usb_plug = usb_plug
+    def __init__(self, switch: Switch):
+        self._switch = switch
         super().__init__()
 
     def __get__(self, usb_tentacle_switches, owner=None) -> typing.Any:
         assert isinstance(usb_tentacle_switches, UsbTentacleSwitches)
-        return usb_tentacle_switches[self._usb_plug].get()
+        return usb_tentacle_switches[self._switch].get()
 
     def __set__(self, usb_tentacle_switches, on: bool):
         assert isinstance(usb_tentacle_switches, UsbTentacleSwitches)
-        usb_tentacle_switches[self._usb_plug].set(on=on)
+        usb_tentacle_switches[self._switch].set(on=on)
 
 
-class UsbTentacleSwitches(dict[UsbPlug, UsbTentacleSwitch]):
-    infra = UsbTentacleSwitchProperty(usb_plug=UsbPlug.PICO_INFRA)
-    infraboot = UsbTentacleSwitchProperty(usb_plug=UsbPlug.PICO_INFRA_BOOT)
-    dut = UsbTentacleSwitchProperty(usb_plug=UsbPlug.DUT)
+class UsbTentacleSwitches(dict[Switch, UsbTentacleSwitch]):
+    infra = UsbTentacleSwitchProperty(switch=Switch.PICO_INFRA)
+    infraboot = UsbTentacleSwitchProperty(switch=Switch.PICO_INFRA_BOOT)
+    dut = UsbTentacleSwitchProperty(switch=Switch.DUT)
     "Only tentacle v0.3"
-    led_error = UsbTentacleSwitchProperty(usb_plug=UsbPlug.LED_ERROR)
+    led_error = UsbTentacleSwitchProperty(switch=Switch.LED_ERROR)
     "Only tentacle v0.3"
 
     def __init__(self, usb_tentacle: UsbTentacle) -> None:
         self._add(
             UsbTentacleSwitch(
-                usb_plug=UsbPlug.PICO_INFRA,
+                switch=Switch.PICO_INFRA,
                 usb_tentacle=usb_tentacle,
                 hub_port=HubPortNumber.PORT1_INFRA,
             )
         )
         self._add(
             UsbTentacleSwitch(
-                usb_plug=UsbPlug.PICO_INFRA_BOOT,
+                switch=Switch.PICO_INFRA_BOOT,
                 usb_tentacle=usb_tentacle,
                 hub_port=HubPortNumber.PORT2_INFRABOOT,
             )
@@ -490,21 +492,21 @@ class UsbTentacleSwitches(dict[UsbPlug, UsbTentacleSwitch]):
 
         self._add(
             UsbTentacleSwitch(
-                usb_plug=UsbPlug.DUT,
+                switch=Switch.DUT,
                 usb_tentacle=usb_tentacle,
                 hub_port=HubPortNumber.PORT3_DUT,
             )
         )
         self._add(
             UsbTentacleSwitch(
-                usb_plug=UsbPlug.LED_ERROR,
+                switch=Switch.LED_ERROR,
                 usb_tentacle=usb_tentacle,
                 hub_port=HubPortNumber.PORT4_PROBE_LEDERROR,
             )
         )
 
     def _add(self, usb_tentacle_switch: UsbTentacleSwitch) -> None:
-        self[usb_tentacle_switch.usb_plug] = usb_tentacle_switch
+        self[usb_tentacle_switch.switch] = usb_tentacle_switch
 
     def default_off(self) -> None:
         """
@@ -524,9 +526,9 @@ class UsbTentacleSwitches(dict[UsbPlug, UsbTentacleSwitch]):
 class UsbTentacles(list[UsbTentacle]):
     TIMEOUT_PICO_BOOT = 2.0
 
-    def set_switch(self, usb_plug: UsbPlug, on: bool) -> None:
+    def set_switch(self, switch: Switch, on: bool) -> None:
         for usb_tentacle in self:
-            usb_tentacle.switches[usb_plug].set(on=on)
+            usb_tentacle.switches[switch].set(on=on)
 
     def select(self, serials: list[str] | None) -> UsbTentacles:
         """

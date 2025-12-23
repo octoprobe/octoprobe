@@ -7,7 +7,7 @@ import time
 import typing
 
 from .lib_tentacle import TentacleBase
-from .lib_tentacle_infra import UsbPlug
+from .lib_tentacle_infra import Switch
 from .usb_tentacle.usb_tentacle import UsbTentacles
 from .util_baseclasses import OctoprobeAppExitException
 from .util_pyudev import UdevPoller
@@ -59,7 +59,7 @@ class CtxTestRun:
         tentacle: TentacleBase,
     ) -> None:
         """
-        Power off all other known usb power plugs.
+        Power off all other known usb power switchs.
 
         For each active tentacle:
 
@@ -88,7 +88,7 @@ class CtxTestRun:
         if tentacle.is_mcu:
             tentacle.dut.mp_remote_close()
 
-        changed = tentacle.switches[UsbPlug.DUT].set(on=False)
+        changed = tentacle.switches[Switch.DUT].set(on=False)
         if changed:
             # Give the DUT some time to power off
             time.sleep(0.5)

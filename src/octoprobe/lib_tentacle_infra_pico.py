@@ -5,7 +5,7 @@ import logging
 import typing
 
 from .lib_tentacle import TentacleInfra
-from .lib_tentacle_infra import UsbPlug
+from .lib_tentacle_infra import Switch
 from .usb_tentacle.usb_constants import HwVersion
 from .util_jinja2 import render
 
@@ -99,7 +99,7 @@ def set_relays_pulse(relays, initial_closed, durations_ms) -> None:
         Return False if not, for example after a powercycle.
         """
         changed_counter = self._infra.usb_tentacle.switches[
-            UsbPlug.PICO_INFRA
+            Switch.PICO_INFRA
         ].changed_counter
 
         try:

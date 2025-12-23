@@ -8,9 +8,9 @@ import typing
 
 from .lib_mpremote import MpRemote
 from .usb_tentacle.usb_constants import (
+    Switch,
     SwitchABC,
     TyperPowerCycle,
-    UsbPlug,
 )
 from .usb_tentacle.usb_tentacle import UsbTentacle
 from .util_baseclasses import OctoprobeAppExitException, VersionMismatchException
@@ -106,7 +106,7 @@ class TentacleInfra:
         """
         Use this instead of 'self.power.dut = False'
         """
-        changed = self.switches[UsbPlug.DUT].set(on=False)
+        changed = self.switches[Switch.DUT].set(on=False)
         if changed:
             logger.debug("self.power.dut = False")
             time.sleep(0.5)
@@ -123,7 +123,7 @@ class TentacleInfra:
         self.mcu_infra.load_base_code()
 
     def connect_mpremote_if_needed(self) -> None:
-        changed_counter = self.usb_tentacle.switches[UsbPlug.PICO_INFRA].changed_counter
+        changed_counter = self.usb_tentacle.switches[Switch.PICO_INFRA].changed_counter
 
         if self._mp_remote is not None:
             # We are already connected
@@ -255,37 +255,37 @@ class TentacleInfra:
         with self._mp_remote.borrow_tty() as tty:
             yield tty
 
-    def power_usb_plug(self, usb_plug: UsbPlug, on: bool) -> None:
-        assert isinstance(usb_plug, UsbPlug)
-        self.switches[usb_plug].set(on=on)
+    def power_usb_switch(self, switch: Switch, on: bool) -> None:
+        assert isinstance(switch, Switch)
+        self.switches[switch].set(on=on)
 
 
 class TentacleInfraSwitch(SwitchABC):
     def __init__(
         self,
-        usb_plug: UsbPlug,
+        switch: Switch,
         tentacle_infra: TentacleInfra,
     ) -> None:
-        assert isinstance(usb_plug, UsbPlug)
+        assert isinstance(switch, Switch)
         assert isinstance(tentacle_infra, TentacleInfra)
 
-        self._usb_plug = usb_plug
+        self._switch = switch
         self._tentacle_infra = tentacle_infra
 
     @property
-    def usb_plug(self) -> UsbPlug:
-        return self._usb_plug
+    def switch(self) -> Switch:
+        return self._switch
 
     @property
     def micropython_pin(self) -> str:
-        return f"pin_{self.usb_plug.name}"
+        return f"pin_{self.switch.name}"
 
     def set(self, on: bool) -> bool:
         assert isinstance(on, bool)
         # self._tentacle_infra.pico_infra_load_base_code()
         # if self._tentacle_infra.usb_tentacle.serial is None:
         #     logger.warning(
-        #         f"{self._tentacle_infra.usb_tentacle.hub4_location.short}: May not switch '{self.usb_plug}' as rp_infra is not visible."
+        #         f"{self._tentacle_infra.usb_tentacle.hub4_location.short}: May not switch '{self.switch}' as rp_infra is not visible."
         #     )
         #     return False
 
@@ -303,7 +303,7 @@ class TentacleInfraSwitch(SwitchABC):
 
         # if self._tentacle_infra.usb_tentacle.serial is None:
         #     logger.warning(
-        #         f"{self._tentacle_infra.usb_tentacle.hub4_location.short}: May not switch '{self.usb_plug}' as rp_infra is not visible."
+        #         f"{self._tentacle_infra.usb_tentacle.hub4_location.short}: May not switch '{self.switch}' as rp_infra is not visible."
         #     )
         #     return False
 
@@ -318,12 +318,12 @@ class TentacleInfraSwitch(SwitchABC):
 class TentacleInfraSwitchDUT(TentacleInfraSwitch):
     def set(self, on: bool) -> bool:
         # Tentacle v0.3
-        self._tentacle_infra.usb_tentacle.switches[self.usb_plug].set(on=on)
+        self._tentacle_infra.usb_tentacle.switches[self.switch].set(on=on)
         # Tentacle >= v0.5
         return super().set(on=on)
 
     def get(self) -> bool:
-        return self._tentacle_infra.usb_tentacle.switches[self.usb_plug].get()
+        return self._tentacle_infra.usb_tentacle.switches[self.switch].get()
 
 
 class TentacleInfraSwitchRelays(TentacleInfraSwitch):
@@ -334,9 +334,9 @@ class TentacleInfraSwitchRelays(TentacleInfraSwitch):
         relays_open = []
 
         if on:
-            relays_close = [self.usb_plug.relay_number]
+            relays_close = [self.switch.relay_number]
         else:
-            relays_open = [self.usb_plug.relay_number]
+            relays_open = [self.switch.relay_number]
 
         return self.relays(
             tentacle_infra=self._tentacle_infra,
@@ -347,11 +347,11 @@ class TentacleInfraSwitchRelays(TentacleInfraSwitch):
     def get(self) -> bool:
         self._tentacle_infra.mcu_infra.assert_base_code_loaded()
         closed = self._tentacle_infra.mp_remote.exec_bool(
-            cmd=f"print(get_relays({self.usb_plug.relay_number}))"
+            cmd=f"print(get_relays({self.switch.relay_number}))"
         )
         return closed
 
-        return self._tentacle_infra.usb_tentacle.switches[self.usb_plug].get()
+        return self._tentacle_infra.usb_tentacle.switches[self.switch].get()
 
     @staticmethod
     def relays(
@@ -402,10 +402,10 @@ class TentacleInfraSwitchDelegate(TentacleInfraSwitch):
     """
 
     def set(self, on: bool) -> bool:
-        return self._tentacle_infra.usb_tentacle.switches[self.usb_plug].set(on=on)
+        return self._tentacle_infra.usb_tentacle.switches[self.switch].set(on=on)
 
     def get(self) -> bool:
-        return self._tentacle_infra.usb_tentacle.switches[self.usb_plug].get()
+        return self._tentacle_infra.usb_tentacle.switches[self.switch].get()
 
 
 class TentacleInfraSwitchProperty(property):
@@ -413,78 +413,78 @@ class TentacleInfraSwitchProperty(property):
     A custom property descriptor that hides the switch on/off logic.
     """
 
-    def __init__(self, usb_plug: UsbPlug):
-        self._usb_plug = usb_plug
+    def __init__(self, switch: Switch):
+        self._switch = switch
         super().__init__()
 
     def __get__(self, tentacle_infra_switches, owner=None) -> typing.Any:
         assert isinstance(tentacle_infra_switches, TentacleInfraSwitches)
-        tentacle_infra_switches[self._usb_plug].get()
+        tentacle_infra_switches[self._switch].get()
 
     def __set__(self, tentacle_infra_switches, on: bool) -> None:
         assert isinstance(tentacle_infra_switches, TentacleInfraSwitches)
-        tentacle_infra_switches[self._usb_plug].set(on=on)
+        tentacle_infra_switches[self._switch].set(on=on)
 
 
-class TentacleInfraSwitches(dict[UsbPlug, TentacleInfraSwitch]):
-    infra = TentacleInfraSwitchProperty(usb_plug=UsbPlug.PICO_INFRA)
-    infraboot = TentacleInfraSwitchProperty(usb_plug=UsbPlug.PICO_INFRA_BOOT)
-    proberun = TentacleInfraSwitchProperty(usb_plug=UsbPlug.PICO_PROBE_RUN)
-    probeboot = TentacleInfraSwitchProperty(usb_plug=UsbPlug.PICO_PROBE_BOOT)
-    dut = TentacleInfraSwitchProperty(usb_plug=UsbPlug.DUT)
-    led_error = TentacleInfraSwitchProperty(usb_plug=UsbPlug.LED_ERROR)
-    led_active = TentacleInfraSwitchProperty(usb_plug=UsbPlug.LED_ACTIVE)
-    relay1 = TentacleInfraSwitchProperty(usb_plug=UsbPlug.RELAY1)
-    relay2 = TentacleInfraSwitchProperty(usb_plug=UsbPlug.RELAY2)
-    relay3 = TentacleInfraSwitchProperty(usb_plug=UsbPlug.RELAY3)
-    relay4 = TentacleInfraSwitchProperty(usb_plug=UsbPlug.RELAY4)
-    relay5 = TentacleInfraSwitchProperty(usb_plug=UsbPlug.RELAY5)
-    relay6 = TentacleInfraSwitchProperty(usb_plug=UsbPlug.RELAY6)
-    relay7 = TentacleInfraSwitchProperty(usb_plug=UsbPlug.RELAY7)
+class TentacleInfraSwitches(dict[Switch, TentacleInfraSwitch]):
+    infra = TentacleInfraSwitchProperty(switch=Switch.PICO_INFRA)
+    infraboot = TentacleInfraSwitchProperty(switch=Switch.PICO_INFRA_BOOT)
+    proberun = TentacleInfraSwitchProperty(switch=Switch.PICO_PROBE_RUN)
+    probeboot = TentacleInfraSwitchProperty(switch=Switch.PICO_PROBE_BOOT)
+    dut = TentacleInfraSwitchProperty(switch=Switch.DUT)
+    led_error = TentacleInfraSwitchProperty(switch=Switch.LED_ERROR)
+    led_active = TentacleInfraSwitchProperty(switch=Switch.LED_ACTIVE)
+    relay1 = TentacleInfraSwitchProperty(switch=Switch.RELAY1)
+    relay2 = TentacleInfraSwitchProperty(switch=Switch.RELAY2)
+    relay3 = TentacleInfraSwitchProperty(switch=Switch.RELAY3)
+    relay4 = TentacleInfraSwitchProperty(switch=Switch.RELAY4)
+    relay5 = TentacleInfraSwitchProperty(switch=Switch.RELAY5)
+    relay6 = TentacleInfraSwitchProperty(switch=Switch.RELAY6)
+    relay7 = TentacleInfraSwitchProperty(switch=Switch.RELAY7)
 
     def __init__(self, tentacle_infra: TentacleInfra) -> None:
         self._tentacle_infra = tentacle_infra
 
         def add(tentacle_infra_switch: TentacleInfraSwitch) -> None:
-            self[tentacle_infra_switch.usb_plug] = tentacle_infra_switch
+            self[tentacle_infra_switch.switch] = tentacle_infra_switch
 
-        for usb_plug_generic in (
-            UsbPlug.LED_ACTIVE,
-            UsbPlug.PICO_PROBE_RUN,
-            UsbPlug.PICO_PROBE_BOOT,
+        for switch in (
+            Switch.LED_ACTIVE,
+            Switch.PICO_PROBE_RUN,
+            Switch.PICO_PROBE_BOOT,
         ):
             add(
                 TentacleInfraSwitch(
-                    usb_plug=usb_plug_generic,
+                    switch=switch,
                     tentacle_infra=tentacle_infra,
                 )
             )
 
-        for usb_plug_relay in UsbPlug.RELAYS():
+        for switch_relay in Switch.RELAYS():
             add(
                 TentacleInfraSwitchRelays(
-                    usb_plug=usb_plug_relay,
+                    switch=switch_relay,
                     tentacle_infra=tentacle_infra,
                 )
             )
 
         add(
             TentacleInfraSwitchDUT(
-                usb_plug=UsbPlug.DUT,
+                switch=Switch.DUT,
                 tentacle_infra=tentacle_infra,
             )
         )
         add(
             TentacleInfraSwitchLED_ERROR(
-                usb_plug=UsbPlug.LED_ERROR,
+                switch=Switch.LED_ERROR,
                 tentacle_infra=tentacle_infra,
             )
         )
 
-        for usb_plug_delegate in (UsbPlug.PICO_INFRA, UsbPlug.PICO_INFRA_BOOT):
+        for switch_delegate in (Switch.PICO_INFRA, Switch.PICO_INFRA_BOOT):
             add(
                 TentacleInfraSwitchDelegate(
-                    usb_plug=usb_plug_delegate,
+                    switch=switch_delegate,
                     tentacle_infra=tentacle_infra,
                 )
             )

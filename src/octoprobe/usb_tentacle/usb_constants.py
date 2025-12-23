@@ -64,17 +64,13 @@ class TyperPowerCycle(str, enum.Enum):
     """
 
 
-class UsbPlug(str, enum.Enum):
+class Switch(str, enum.Enum):
     """
-    TODO(Hans):
-    Before:
-      This matched to the usb ports.
-    Now:
-      This matches to on/off functionality which may be implemented differently on different tentacle hardware versions.
-      It matches TyperUsbPlug
-
-    Every tentacle has a USB hub.
-    Every port of this hub as a function, we call it 'UsbPlug'.
+    Items which may be switched:
+    * Relay: False: open, True: closed
+    * LED:   False: off, True: on
+    * Power: False: unpowered, True: powered
+    * Boot:  False: LED on - boot in programming mode, True: LED off - boot in application mode
     """
 
     PICO_INFRA = "infra"
@@ -111,41 +107,41 @@ class UsbPlug(str, enum.Enum):
         """
         Return true if control is (on all hardware versions of the tentacles) via USB plugs
         """
-        return self in (UsbPlug.PICO_INFRA, UsbPlug.PICO_INFRA_BOOT)
+        return self in (Switch.PICO_INFRA, Switch.PICO_INFRA_BOOT)
 
     @staticmethod
-    def RELAYS() -> list[UsbPlug]:
+    def RELAYS() -> list[Switch]:
         return [
-            UsbPlug.RELAY1,
-            UsbPlug.RELAY2,
-            UsbPlug.RELAY3,
-            UsbPlug.RELAY4,
-            UsbPlug.RELAY5,
-            UsbPlug.RELAY6,
-            UsbPlug.RELAY7,
+            Switch.RELAY1,
+            Switch.RELAY2,
+            Switch.RELAY3,
+            Switch.RELAY4,
+            Switch.RELAY5,
+            Switch.RELAY6,
+            Switch.RELAY7,
         ]
 
     @property
     def is_relay(self) -> bool:
-        return UsbPlug.RELAY1 <= self <= UsbPlug.RELAY7
+        return Switch.RELAY1 <= self <= Switch.RELAY7
 
     @property
     def relay_number(self) -> int:
         """
         Returns 5 for RELAY5
         """
-        assert UsbPlug.RELAY1 <= self <= UsbPlug.RELAY7
+        assert Switch.RELAY1 <= self <= Switch.RELAY7
         return int(self.name[5])
 
 
-def usb_plug_typer_names() -> list[str]:
-    return [usb_plug.name.lower() for usb_plug in UsbPlug]
+def switches_typer_names() -> list[str]:
+    return [switch.name.lower() for switch in Switch]
 
 
 class SwitchABC(abc.ABC):
     @property
     @abc.abstractmethod
-    def usb_plug(self) -> UsbPlug: ...
+    def switch(self) -> Switch: ...
 
     @abc.abstractmethod
     def set(self, on: bool) -> bool:

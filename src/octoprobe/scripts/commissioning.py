@@ -5,7 +5,7 @@ import pathlib
 import time
 
 from ..lib_tentacle_infra import TentacleInfra
-from ..usb_tentacle.usb_constants import UsbPlug
+from ..usb_tentacle.usb_constants import Switch
 from ..usb_tentacle.usb_tentacle import UsbTentacle, UsbTentacles
 from ..util_firmware_spec import FirmwareDownloadSpec
 from ..util_pyudev import UdevPoller
@@ -132,21 +132,21 @@ class Commissioning:
         relays_open, relays_close = relays_even, relays_odd
 
         switches = self.tentacle_infra.switches
-        for on, usb_plug in (
-            # (True, UsbPlug.PICO_INFRA),
-            # (True, UsbPlug.PICO_INFRA_BOOT),
-            (True, UsbPlug.LED_ERROR),
-            (True, UsbPlug.LED_ACTIVE),
-            (True, UsbPlug.DUT),
-            (True, UsbPlug.PICO_PROBE_RUN),
-            (False, UsbPlug.PICO_PROBE_BOOT),
+        for on, switch in (
+            # (True, Switch.PICO_INFRA),
+            # (True, Switch.PICO_INFRA_BOOT),
+            (True, Switch.LED_ERROR),
+            (True, Switch.LED_ACTIVE),
+            (True, Switch.DUT),
+            (True, Switch.PICO_PROBE_RUN),
+            (False, Switch.PICO_PROBE_BOOT),
         ):
             # Toggle relays
             switches.relays(relays_close=relays_close, relays_open=relays_open)
             relays_close, relays_open = relays_open, relays_close
 
             # circle LEDs
-            switch = switches[usb_plug]
-            switch.set(on=on)
+            _switch = switches[switch]
+            _switch.set(on=on)
             time.sleep(2.0)
-            switch.set(on=not on)
+            _switch.set(on=not on)
