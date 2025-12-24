@@ -3,25 +3,25 @@ import time
 from octoprobe.usb_tentacle.usb_tentacle import UsbTentacles
 
 
-def test_power_default_infra_on():
+def test_power_default_infra_on() -> None:
     usb_tentacles = UsbTentacles.query(poweron=False)
     for usb_tentacle in usb_tentacles:
         usb_tentacle.switches.default_off_infra_on()
 
 
-def test_power_default_off():
+def test_power_default_off() -> None:
     usb_tentacles = UsbTentacles.query(poweron=False)
     for usb_tentacle in usb_tentacles:
         usb_tentacle.switches.default_off()
 
 
-def test_query_serial():
+def test_query_serial() -> None:
     usb_tentacles = UsbTentacles.query(poweron=True)
     for usb_tentacle in usb_tentacles:
         print(repr(usb_tentacle))
 
 
-def test_blib():
+def test_blib() -> None:
     """
     This test provoked:
       usb 3-1.1.4: reset high-speed USB device number 68 using xhci_hcd
@@ -58,7 +58,7 @@ def test_blib():
         usb_tentacle.switches.default_off_infra_on()
 
 
-def test_blib2():
+def test_blib2() -> None:
     """
     Same error provoked as above
     """

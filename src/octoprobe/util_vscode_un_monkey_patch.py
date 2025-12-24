@@ -35,7 +35,7 @@ import logging
 logger = logging.getLogger(__file__)
 
 
-def un_monkey_patch():
+def un_monkey_patch() -> None:
     """
     Prevent vstudio by debugging subprocesses.
     This will be applied for ALL SUBSEQUENT subprocesses!

@@ -6,7 +6,7 @@ import logging
 import pathlib
 import typing
 
-import pyudev  # type: ignore
+import pyudev
 
 from .lib_tentacle import TentacleBase
 from .util_baseclasses import BootApplicationUsbID, UsbID

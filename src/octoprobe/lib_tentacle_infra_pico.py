@@ -4,9 +4,8 @@ import contextlib
 import logging
 import typing
 
-from .lib_tentacle import TentacleInfra
-from .lib_tentacle_infra import Switch
-from .usb_tentacle.usb_constants import HwVersion
+from .lib_tentacle_infra import TentacleInfra
+from .usb_tentacle.usb_constants import HwVersion, Switch
 from .util_jinja2 import render
 
 logger = logging.getLogger(__name__)
@@ -93,7 +92,7 @@ def set_relays_pulse(relays, initial_closed, durations_ms) -> None:
     def base_code_lost(self) -> None:
         self._base_code_loaded_counter = -1
 
-    def is_base_code_loaded(self, will_load=False) -> bool:
+    def is_base_code_loaded(self, will_load: bool = False) -> bool:
         """
         Return True if the base code has been loaded into PICO_INFRA.
         Return False if not, for example after a powercycle.

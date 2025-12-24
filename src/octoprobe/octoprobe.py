@@ -7,7 +7,7 @@ import time
 import typing
 
 from .lib_tentacle import TentacleBase
-from .lib_tentacle_infra import Switch
+from .usb_tentacle.usb_constants import Switch
 from .usb_tentacle.usb_tentacle import UsbTentacles
 from .util_baseclasses import OctoprobeAppExitException
 from .util_pyudev import UdevPoller
@@ -116,7 +116,7 @@ class CtxTestRun:
             for tentacle in active_tentacles:
                 tentacle.power_dut_off_and_wait()
 
-        def ping_tentacle_infra(tentacle: TentacleBase, tag: str):
+        def ping_tentacle_infra(tentacle: TentacleBase, tag: str) -> None:
             try:
                 tentacle.infra.mp_remote.read_bool("True")
                 logger.debug(f"{tentacle.label_short}: {tag}: Ping succeeded")

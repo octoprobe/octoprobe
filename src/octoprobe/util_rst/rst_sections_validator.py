@@ -29,7 +29,7 @@ class RstValidator:
     def __init__(self) -> None:
         self.errors = 0
 
-    def parse_rst_file(self, filename: pathlib.Path):
+    def parse_rst_file(self, filename: pathlib.Path) -> None:
         filename_relative = filename.relative_to(CURRENT_DIRECTORY)
         content = filename.read_text()
 
@@ -41,18 +41,17 @@ class RstValidator:
         last_level_idx0 = 0
 
         for i, line in enumerate(lines):
-
             if SECTION_PATTERN.match(line):
                 level_char = line[0]
                 level_idx0 = LEVEL_VALID.find(level_char)
 
-                def warning(msg):
+                def warning(msg: str) -> None:
                     print(
-                        f"{filename_relative}:{i+1} Error: Found {level_char}. {msg}",
+                        f"{filename_relative}:{i + 1} Error: Found {level_char}. {msg}",
                         file=sys.stderr,
                     )
 
-                def error(msg):
+                def error(msg: str) -> None:
                     self.errors += 1
                     warning(msg)
 

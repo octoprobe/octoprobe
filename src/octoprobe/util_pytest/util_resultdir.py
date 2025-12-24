@@ -93,7 +93,7 @@ class ResultFile:
         _file.parent.mkdir(parents=True, exist_ok=True)
         return _file
 
-    def make_unique(self, i=0) -> None:
+    def make_unique(self, i: int = 0) -> None:
         """Make filename unique by adding a number to it if it already exists"""
         if self.filename.is_file():
             root, ext = os.path.splitext(self._filename)

@@ -13,7 +13,7 @@ class RstUpDown:
     def __init__(self) -> None:
         self.errors = 0
 
-    def level_up(self, filename: pathlib.Path, level_up: int):
+    def level_up(self, filename: pathlib.Path, level_up: int) -> None:
         content = filename.read_text()
         lines = content.splitlines()
 

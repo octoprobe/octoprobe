@@ -12,7 +12,7 @@ from octoprobe.lib_mpremote import ExceptionCmdFailed
 
 from .lib_mpremote import MpRemote
 from .util_baseclasses import OctoprobeTestException, VersionMismatchException
-from .util_constants import TAG_PROGRAMMER
+from .util_constants import TAG_MCU, TAG_PROGRAMMER
 from .util_dut_programmers import dut_programmer_factory
 from .util_firmware_spec import FirmwareSpecBase
 from .util_pyudev import UdevPoller, UdevTimoutException
@@ -37,7 +37,7 @@ class TentacleDut:
     def __init__(self, label: str, tentacle: TentacleBase) -> None:
         # pylint: disable=import-outside-toplevel
         from .lib_tentacle import TentacleBase
-        from .util_dut_mcu import TAG_MCU, dut_mcu_factory
+        from .util_dut_mcu import dut_mcu_factory
 
         assert isinstance(label, str)
         assert isinstance(tentacle, TentacleBase)
@@ -74,6 +74,7 @@ class TentacleDut:
         Frees the tty by calling: self.mp_remote_close()
         """
         tty = self.mp_remote.state.transport.device_name
+        assert isinstance(tty, str), tty
         self.mp_remote_close()
         return tty
 
@@ -211,7 +212,7 @@ print('{VERSION_IMPLEMENTATION_SEPARATOR}'.join(l))
         except (UdevTimoutException, TransportError) as e:
             logger.warning(f"{self.label}: Seems not to have firmware installed: {e!r}")
 
-        with tentacle.active_led_on:  # type: ignore[attr-defined]
+        with tentacle.active_led_on:
             logger.info(
                 f"{self.label}: About to flash '{firmware_spec.board_variant.name_normalized}'!"
             )

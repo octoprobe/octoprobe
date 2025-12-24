@@ -8,6 +8,7 @@ import re
 import select
 import syslog
 import time
+import typing
 from collections.abc import Iterator
 from typing import Any, Self
 
@@ -297,7 +298,7 @@ class UdevPollerLazy:
     def __enter__(self) -> UdevPollerLazy:
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback) -> None:
+    def __exit__(self, exc_type:typing.Any, exc_value:typing.Any, traceback:typing.Any) -> None:
         self.close()
 
 

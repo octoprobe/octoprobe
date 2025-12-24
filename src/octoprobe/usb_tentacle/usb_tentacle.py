@@ -335,14 +335,18 @@ def _query_pico_serial() -> list[UsbPico]:
     Query all pico in application mode which provide the serial number.
     This will return also pico which are not soldered on the tentacles.
     """
+
     return [
         UsbPico.factory_sysfs(
             port=port,
             serial=port.serial_number,
-            serial_port=port.device,  # type: ignore[arg-type]
+            serial_port=port.device,
         )
         for port in list_ports.comports()
-        if (PICO_VENDOR == port.vid) and (PICO_PRODUCT_APPLICATION_MODE == port.pid)
+        if (PICO_VENDOR == port.vid)
+        and (PICO_PRODUCT_APPLICATION_MODE == port.pid)
+        and (port.serial_number is not None)
+        and port.device is not None
     ]
 
 
@@ -457,11 +461,15 @@ class UsbTentacleSwitchProperty(property):
         self._switch = switch
         super().__init__()
 
-    def __get__(self, usb_tentacle_switches, owner=None) -> typing.Any:
+    def __get__(
+        self,
+        usb_tentacle_switches: typing.Any,
+        owner: typing.Any = None,
+    ) -> typing.Any:
         assert isinstance(usb_tentacle_switches, UsbTentacleSwitches)
         return usb_tentacle_switches[self._switch].get()
 
-    def __set__(self, usb_tentacle_switches, on: bool):
+    def __set__(self, usb_tentacle_switches: typing.Any, on: bool) -> None:
         assert isinstance(usb_tentacle_switches, UsbTentacleSwitches)
         usb_tentacle_switches[self._switch].set(on=on)
 
@@ -590,7 +598,7 @@ class UsbTentacles(list[UsbTentacle]):
         #
         hub4_locations = _query_hubs()
 
-        def set_power(hub_port: HubPortNumber | None, on: bool):
+        def set_power(hub_port: HubPortNumber | None, on: bool) -> None:
             if hub_port is None:
                 return
             for hub4_location in hub4_locations:

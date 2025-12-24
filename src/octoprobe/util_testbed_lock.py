@@ -55,7 +55,7 @@ class TestbedLock:
                 time.sleep(1.0)
         os.write(self._fd, f"Testinfrastructure locked by pid {os.getpid()}\n".encode())
 
-    def unlink(self):
+    def unlink(self) -> None:
         if self._fd != -1:
             os.close(self._fd)
         if self._lockfile is not None:

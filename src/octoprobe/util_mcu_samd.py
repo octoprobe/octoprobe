@@ -32,7 +32,7 @@ import pathlib
 import time
 import typing
 
-import pyudev  # type: ignore
+import pyudev
 
 from .lib_tentacle import TentacleBase
 from .util_baseclasses import BootApplicationUsbID, UsbID

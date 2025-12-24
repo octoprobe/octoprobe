@@ -417,11 +417,15 @@ class TentacleInfraSwitchProperty(property):
         self._switch = switch
         super().__init__()
 
-    def __get__(self, tentacle_infra_switches, owner=None) -> typing.Any:
+    def __get__(
+        self,
+        tentacle_infra_switches: typing.Any,
+        owner: type | None = None,
+    ) -> typing.Any:
         assert isinstance(tentacle_infra_switches, TentacleInfraSwitches)
         tentacle_infra_switches[self._switch].get()
 
-    def __set__(self, tentacle_infra_switches, on: bool) -> None:
+    def __set__(self, tentacle_infra_switches: typing.Any, on: bool) -> None:
         assert isinstance(tentacle_infra_switches, TentacleInfraSwitches)
         tentacle_infra_switches[self._switch].set(on=on)
 

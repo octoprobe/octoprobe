@@ -4,6 +4,7 @@ import json
 import logging
 import logging.config
 import pathlib
+import typing
 
 from octoprobe.util_pytest.util_logging_handler_color import ColorFormatter
 
@@ -68,7 +69,12 @@ class Log:
     def __enter__(self) -> None:
         pass
 
-    def __exit__(self, exc_type, exc_value, traceback) -> None:
+    def __exit__(
+        self,
+        exc_type: typing.Any,
+        exc_value: typing.Any,
+        traceback: typing.Any,
+    ) -> None:
         self.remove()
 
 
@@ -117,7 +123,9 @@ class Logs:
     def __enter__(self) -> Logs:
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback) -> None:
+    def __exit__(
+        self, exc_type: typing.Any, exc_value: typing.Any, traceback: typing.Any
+    ) -> None:
         self.close()
 
 

@@ -1,9 +1,10 @@
 import sys
+import typing
 
 import pytest
 
 
-def pytest_break_into_debugger(dict_module: dict) -> None:
+def pytest_break_into_debugger(dict_module: dict[typing.Any, typing.Any]) -> None:
     """
     pytest by default catches exceptions and logs them later.
     However, in vscode, we prefer to break into the debugger.
@@ -15,11 +16,15 @@ def pytest_break_into_debugger(dict_module: dict) -> None:
     """
 
     @pytest.hookimpl(tryfirst=True)
-    def pytest_exception_interact(node, call, report):
+    def pytest_exception_interact(
+        node: typing.Any,
+        call: typing.Any,
+        report: typing.Any,
+    ) -> None:
         raise call.excinfo.value
 
     @pytest.hookimpl(tryfirst=True)
-    def pytest_internalerror(excrepr, excinfo):
+    def pytest_internalerror(excrepr: typing.Any, excinfo: typing.Any) -> None:
         raise excinfo.value
 
     dict_module["pytest_exception_interact"] = pytest_exception_interact
@@ -34,6 +39,6 @@ def is_debugger_connected() -> bool:
     return debugger is not None
 
 
-def break_into_debugger_on_exception(dict_module: dict) -> None:
+def break_into_debugger_on_exception(dict_module: dict[typing.Any, typing.Any]) -> None:
     if is_debugger_connected():
         pytest_break_into_debugger(dict_module)

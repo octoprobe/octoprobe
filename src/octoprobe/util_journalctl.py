@@ -219,14 +219,15 @@ class JournalctlObserver:
         an the main thread killed.
         """
 
-        def observer():
+        def observer() -> None:
             while True:
                 time.sleep(1)
 
                 for tentacle_usb_port, warning in self.get_warnings():
-                    if tentacle_usb_port.is_dut:
-                        logger.info(warning)
-                        continue
+                    if tentacle_usb_port is not None:
+                        if tentacle_usb_port.is_dut:
+                            logger.info(warning)
+                            continue
 
                     logger.error(warning)
                     if self._debug_skip_usb_error:

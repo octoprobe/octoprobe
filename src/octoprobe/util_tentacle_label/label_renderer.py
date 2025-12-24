@@ -60,7 +60,7 @@ class LayoutLabelBolzoneDue:
             ),
         ):
             yield shapes.PolyLine(
-                polyline,# type: ignore[arg-type]
+                polyline,  # type: ignore[arg-type]
                 strokeWidth=0.1,
                 strokeColor=colors.black,
             )
@@ -156,7 +156,7 @@ def create_report(
     doc.build([table])
 
 
-def main():
+def main() -> None:
     labels = LabelsData(
         [
             LabelData(

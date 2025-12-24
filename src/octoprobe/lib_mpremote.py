@@ -4,6 +4,7 @@ import contextlib
 import datetime
 import logging
 import pathlib
+import typing
 from collections.abc import Generator
 from typing import Any, Self
 
@@ -151,7 +152,7 @@ class MpRemote:
             mpy=mpy,
         )
 
-    def exec_render(self, micropython_code: str, follow: bool = True, **kwargs) -> str:
+    def exec_render(self, micropython_code: str, follow: bool = True, **kwargs: Any) -> str:
         mp_program = render(micropython_code=micropython_code, **kwargs)
         return self.exec_raw(cmd=mp_program, follow=follow)
 
@@ -178,7 +179,7 @@ class MpRemote:
             self.state.transport.exec_raw_no_follow(cmd)
             if follow:
                 # ret, ret_err = state.transport.follow(timeout=None, data_consumer=stdout_write_bytes)
-                ret, ret_err = self.state.transport.follow(timeout=timeout)  # type: ignore
+                ret, ret_err = self.state.transport.follow(timeout=timeout)
                 if ret_err:
                     lines = [
                         ret_err.decode("ascii"),
@@ -233,7 +234,7 @@ class MpRemote:
         assert isinstance(v, bytes)
         return v
 
-    def exec_list(self, cmd: str) -> list:
+    def exec_list(self, cmd: str) -> list[typing.Any]:
         "last statment in 'cmd' must be print(xxx)"
         v = self._exec(cmd)
         assert isinstance(v, list | tuple)
@@ -271,7 +272,7 @@ class MpRemote:
         assert isinstance(v, bytes)
         return v
 
-    def read_list(self, name: str) -> list:
+    def read_list(self, name: str) -> list[typing.Any]:
         v = self._read_var(name)
         assert isinstance(v, list | tuple)
         return list(v)

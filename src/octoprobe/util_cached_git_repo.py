@@ -32,6 +32,7 @@ import logging
 import pathlib
 import re
 import shutil
+import typing
 
 import slugify
 
@@ -141,7 +142,7 @@ class GitMetadata:
         return f"{git_spec.url_without_git}/commit/{self.commit_hash}"
 
     @classmethod
-    def from_dict(cls, json_dict: dict) -> GitMetadata:
+    def from_dict(cls, json_dict: dict[typing.Any, typing.Any]) -> GitMetadata:
         for key in ("command_describe", "command_log"):
             json_dict[key] = MetadataGitCommand(**json_dict[key])
         return GitMetadata(**json_dict)
@@ -309,7 +310,7 @@ class CachedGitRepo:
     def directory_git_work_repo(self) -> pathlib.Path:
         return self._directory_work / f"{self.prefix}{self.slugify}"
 
-    def clone(self, git_clean: bool, submodules=False) -> GitMetadata:
+    def clone(self, git_clean: bool, submodules: bool = False) -> GitMetadata:
         """
         Clone or update the git repo.
         """
@@ -524,7 +525,7 @@ class CachedGitRepo:
         )
 
     @staticmethod
-    def clean_directory_work_repo(directory_cache=pathlib.Path) -> None:
+    def clean_directory_work_repo(directory_cache: pathlib.Path) -> None:
         """
         Before we start cloning/checkout: Remove all git-cache/work directories!
         """

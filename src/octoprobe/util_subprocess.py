@@ -4,6 +4,7 @@ import logging
 import pathlib
 import subprocess
 import time
+import typing
 
 logger = logging.getLogger(__file__)
 
@@ -103,7 +104,7 @@ def subprocess_run(
         # logger.exception(e)
         raise
 
-    def log(f) -> None:
+    def log(f: typing.Callable[[str], None]) -> None:
         f(f"EXEC {args_text}")
         f(f"  cwd={cwd}")
         f(f"  returncode: {proc.returncode}")

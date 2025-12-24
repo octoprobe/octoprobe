@@ -2,7 +2,7 @@
 This file implements generic logic for all boards
 """
 
-import pyudev  # type: ignore
+import pyudev
 
 from .util_baseclasses import UsbID
 from .util_pyudev import UdevEventBase, UdevFilter

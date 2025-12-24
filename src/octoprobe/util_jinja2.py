@@ -1,4 +1,5 @@
 import pathlib
+import typing
 
 import jinja2
 
@@ -14,12 +15,12 @@ class JinjaEnv:
 
         self.env.filters["hexy"] = lambda value: f"0x{value:08X}"
 
-    def render_file(self, filename: pathlib.Path, **kwargs) -> str:
+    def render_file(self, filename: pathlib.Path, **kwargs: typing.Any) -> str:
         template = self.env.get_template(str(filename))
         rendered_text = template.render(kwargs=kwargs)
         return rendered_text
 
-    def render_string(self, micropython_code: str, **kwargs) -> str:
+    def render_string(self, micropython_code: str, **kwargs: typing.Any) -> str:
         template = self.env.from_string(micropython_code)
         rendered_text = template.render(**kwargs)
         return rendered_text
