@@ -83,7 +83,10 @@ class TentacleDut:
         """
         if self._mp_remote is None:
             return None
-        serial_port = self._mp_remote.close()
+        try:
+            serial_port = self._mp_remote.close()
+        except OSError as e:
+            logger.debug(f"{self._tentacle.label}: mp_remote.close() raised {e!r}")
         self._mp_remote = None
         return serial_port
 
