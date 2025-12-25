@@ -67,7 +67,7 @@ class MpRemote:
     def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         self.close()
 
-    def close(self) -> str | None:
+    def close(self) -> str:
         """
         Return the serial port which was closed.
         """

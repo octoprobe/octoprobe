@@ -12,7 +12,8 @@ FILENAME_FLASHING = "flashing_stout.txt"
 
 class UdevApplicationModeEvent(UdevEventBase):
     def __init__(self, device: pyudev.Device):
-        self.tty = device.device_node
+        self.tty: str = device.device_node
+        assert isinstance(self.tty, str)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(tty={self.tty})"

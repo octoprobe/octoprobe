@@ -78,18 +78,19 @@ class TentacleDut:
         self.mp_remote_close()
         return tty
 
-    def mp_remote_close(self) -> str | None:
+    def mp_remote_close(self) -> None:
         """
         Return the serial port which was closed.
+        Errors will be silently ignored.
         """
         if self._mp_remote is None:
-            return None
+            return
         try:
-            serial_port = self._mp_remote.close()
+            self._mp_remote.close()
         except OSError as e:
             logger.debug(f"{self._tentacle.label}: mp_remote.close() raised {e!r}")
-        self._mp_remote = None
-        return serial_port
+        finally:
+            self._mp_remote = None
 
     def boot_and_init_mp_remote_dut(
         self,
@@ -103,7 +104,6 @@ class TentacleDut:
         from .lib_tentacle import TentacleBase
 
         assert isinstance(tentacle, TentacleBase)
-        assert self._mp_remote is None
         tty = self.dut_mcu.application_mode_power_up(tentacle=tentacle, udev=udev)
         self.application_mode_power_up_delay()
         self._mp_remote = MpRemote(tty=tty)
