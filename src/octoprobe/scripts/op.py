@@ -214,15 +214,13 @@ def power(
     ] = False,
     poweron: _PoweronAnnotation = False,
 ) -> None:
-    if on is None:
-        on = []
-    if off is None:
-        off = []
+    _on: list[Switch] = [] if on is None else on
+    _off:list[Switch] = [] if off is None else off
 
     switches_text = ""
-    for switch in on:
+    for switch in _on:
         switches_text += f"+{switch.value}"
-    for switch in off:
+    for switch in _off:
         switches_text += f"+{switch.value}"
 
     for usb_tentacle in iter_usb_tentacles(
@@ -234,10 +232,9 @@ def power(
         tentacle_infra.load_base_code_if_needed()
         if set_off:
             tentacle_infra.switches.default_off_infra_on()
-        switch: Switch
-        for switch in on:
+        for switch in _on:
             tentacle_infra.power_usb_switch(switch=switch, on=True)
-        for switch in off:
+        for switch in _off:
             tentacle_infra.power_usb_switch(switch=switch, on=False)
 
 

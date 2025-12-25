@@ -49,8 +49,6 @@ class TentacleInfra:
         self._mp_remote: MpRemote | None = None
         self.mcu_infra: InfraPico = InfraPico(self)
         self.switches = TentacleInfraSwitches(tentacle_infra=self)
-        self.power = self.switches
-        # self.power.dut = False
 
     def is_valid_relay_index(self, i: int) -> bool:
         return i in self.list_all_relays
@@ -212,13 +210,13 @@ class TentacleInfra:
 
         # Power off PICO_INFRA and press Boot Button
         self.usb_tentacle.switches.infra = False
-        self.power.infraboot = False
+        self.switches.infraboot = False
         time.sleep(0.1)
 
         with udev.guard as guard:
             # Power on Pico
             # print("Power on Pico")
-            self.power.infra = True
+            self.switches.infra = True
 
             udev_filter = pico_udev_filter_boot_mode(
                 RPI_PICO_USB_ID.boot,
@@ -232,7 +230,7 @@ class TentacleInfra:
             )
 
             # Release Boot Button
-            self.power.infraboot = True
+            self.switches.infraboot = True
 
         with udev.guard as guard:
             picotool_flash_micropython(
