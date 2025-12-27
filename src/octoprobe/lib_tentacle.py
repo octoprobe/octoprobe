@@ -195,10 +195,6 @@ class TentacleBase(abc.ABC):
         return self.infra.switches
 
     @property
-    def power(self) -> TentacleInfraSwitches:
-        return self.infra.switches
-
-    @property
     def description_short(self) -> str:
         f = io.StringIO()
         f.write(f"Label {self.tentacle_spec_base.tentacle_tag}\n")

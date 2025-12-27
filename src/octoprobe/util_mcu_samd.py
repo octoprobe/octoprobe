@@ -73,12 +73,14 @@ class DutProgrammerSamdBossac(DutProgrammerABC):
 
         # Initial condition: Power and RESET pressed
         logger.debug("Close relay and power DUT")
-        tentacle.power.dut = False
+        tentacle.switches.dut = False
         # This pause is required to make sure that a previous mount is removed
         # Try to lower 'duration_on_s' but make sure that the DUT is previously powered and a drive is mounted.
         time.sleep(0.1)
-        with tentacle.infra.mcu_infra.relays_ctx("Press boot button", relays_close=[IDX1_RELAYS_DUT_BOOT]):
-            tentacle.power.dut = True
+        with tentacle.infra.mcu_infra.relays_ctx(
+            "Press boot button", relays_close=[IDX1_RELAYS_DUT_BOOT]
+        ):
+            tentacle.switches.dut = True
             logger.debug("Enter boot pulse section")
 
             with udev.guard as guard:

@@ -131,10 +131,10 @@ class CtxTestRun:
                 tentacle.dut.mp_remote_close()
                 if do_ping:
                     ping_tentacle_infra(tentacle=tentacle, tag="a")
-                tentacle.power.dut = False
+                tentacle.switches.dut = False
                 if do_ping:
                     ping_tentacle_infra(tentacle=tentacle, tag="b")
-                tentacle.power.led_error = False
+                tentacle.switches.led_error = False
                 if do_ping:
                     ping_tentacle_infra(tentacle=tentacle, tag="c")
 

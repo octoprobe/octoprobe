@@ -38,7 +38,7 @@ class DutMicropythonSTM32(DutMcu):
         tentacle.power_dut_off_and_wait()
 
         with udev.guard as guard:
-            tentacle.power.dut = True
+            tentacle.switches.dut = True
 
             assert tentacle.tentacle_spec_base.mcu_usb_id is not None
             udev_filter = udev_filter_application_mode(
@@ -74,7 +74,7 @@ class DutMicropythonPico(DutMcu):
         tentacle.power_dut_off_and_wait()
 
         with udev.guard as guard:
-            tentacle.power.dut = True
+            tentacle.switches.dut = True
 
             assert tentacle.tentacle_spec_base.mcu_usb_id is not None
             udev_filter = udev_filter_application_mode(
@@ -110,7 +110,7 @@ class DutMicropythonEsp8266(DutMcu):
         tentacle.power_dut_off_and_wait()
 
         with udev.guard as guard:
-            tentacle.power.dut = True
+            tentacle.switches.dut = True
 
             assert tentacle.tentacle_spec_base.mcu_usb_id is None
             udev_filter = udev_filter_application_mode(
@@ -146,7 +146,7 @@ class DutMicropythonEsp32(DutMcu):
         tentacle.power_dut_off_and_wait()
 
         with udev.guard as guard:
-            tentacle.power.dut = True
+            tentacle.switches.dut = True
 
             mcu_usb_id = tentacle.tentacle_spec_base.mcu_usb_id
             udev_filter = udev_filter_application_mode(
@@ -183,7 +183,7 @@ class DutMicropythonNrf(DutMcu):
         tentacle.power_dut_off_and_wait()
 
         with udev.guard as guard:
-            tentacle.power.dut = True
+            tentacle.switches.dut = True
 
             assert tentacle.tentacle_spec_base.mcu_usb_id is not None
             udev_filter = udev_filter_application_mode(
@@ -221,7 +221,7 @@ class DutMicropythonMimxrt(DutMcu):
         tentacle.power_dut_off_and_wait()
 
         with udev.guard as guard:
-            tentacle.power.dut = True
+            tentacle.switches.dut = True
 
             udev_filter = udev_filter_application_mode(
                 usb_location=tentacle.infra.usb_location_dut,
@@ -258,7 +258,7 @@ class DutMicropythonSamd(DutMcu):
         tentacle.power_dut_off_and_wait()
 
         with udev.guard as guard:
-            tentacle.power.dut = True
+            tentacle.switches.dut = True
 
             udev_filter = udev_filter_application_mode(
                 usb_location=tentacle.infra.usb_location_dut,

@@ -139,7 +139,7 @@ class DutProgrammerPicotool(DutProgrammerABC):
             "Press boot button", relays_close=[IDX1_RELAYS_DUT_BOOT]
         ):
             with udev.guard as guard:
-                tentacle.power.dut = True
+                tentacle.switches.dut = True
 
                 assert tentacle.tentacle_spec_base.mcu_usb_id is not None
                 udev_filter = pico_udev_filter_boot_mode(
