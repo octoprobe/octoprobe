@@ -31,15 +31,17 @@ classifiers = [
 ]
 
 dependencies = [
-    "pyusb",
-    "pyudev",
+    "esptool",
+    "Jinja2",
     # "mpremote@git+https://github.com/micropython/micropython@master#egg=mpremote&subdirectory=tools/mpremote",
     "mpremote>=1.25.0",
-    "esptool",
-    "typer-slim",
-    "Jinja2",
-    "reportlab",
+    "pyserial",
     "python-slugify",
+    "pyudev",
+    "pyusb",
+    "reportlab",
+    "typer-slim",
+    "types-pyserial",
 ]
 
 [project.urls]
