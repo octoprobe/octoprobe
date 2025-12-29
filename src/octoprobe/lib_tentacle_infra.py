@@ -6,6 +6,11 @@ import pathlib
 import time
 import typing
 
+from octoprobe.util_constants_uart_flakiness import (
+    DUT_POWER_OFF_TIME_MIN_S,
+    ENABLE_DUT_POWER_OFF_TIME_MIN,
+)
+
 from .lib_mpremote import MpRemote
 from .usb_tentacle.usb_constants import (
     Switch,
@@ -253,10 +258,6 @@ class TentacleInfra:
         with self._mp_remote.borrow_tty() as tty:
             yield tty
 
-    def power_usb_switch(self, switch: Switch, on: bool) -> None:
-        assert isinstance(switch, Switch)
-        self.switches[switch].set(on=on)
-
 
 class TentacleInfraSwitch(SwitchABC):
     def __init__(
@@ -318,7 +319,11 @@ class TentacleInfraSwitchDUT(TentacleInfraSwitch):
         # Tentacle v0.3
         self._tentacle_infra.usb_tentacle.switches[self.switch].set(on=on)
         # Tentacle >= v0.5
-        return super().set(on=on)
+        changed = super().set(on=on)
+        if ENABLE_DUT_POWER_OFF_TIME_MIN:
+            if changed:
+                self._tentacle_infra.switches.delay_set_dut_on(on=on)
+        return changed
 
     def get(self) -> bool:
         return self._tentacle_infra.usb_tentacle.switches[self.switch].get()
@@ -447,6 +452,7 @@ class TentacleInfraSwitches(dict[Switch, TentacleInfraSwitch]):
 
     def __init__(self, tentacle_infra: TentacleInfra) -> None:
         self._tentacle_infra = tentacle_infra
+        self._dut_off_time_s = 0.0
 
         def add(tentacle_infra_switch: TentacleInfraSwitch) -> None:
             self[tentacle_infra_switch.switch] = tentacle_infra_switch
@@ -491,6 +497,23 @@ class TentacleInfraSwitches(dict[Switch, TentacleInfraSwitch]):
                     tentacle_infra=tentacle_infra,
                 )
             )
+
+    def delay_set_dut_on(self, on: bool) -> None:
+        """
+        When the DUT is powercycled, it should be powered off for at least a few seconds so the usb
+        stack may recover.
+        """
+        if on:
+            duration_off_s = time.monotonic() - self._dut_off_time_s
+            delay_remaining_s = DUT_POWER_OFF_TIME_MIN_S - duration_off_s
+            if delay_remaining_s > 0.0:
+                msg = f"{self._tentacle_infra.label}: The tentacle was switched off {duration_off_s:0.1f}s ago. Wait for another {delay_remaining_s:0.1f}s."
+                logger.debug(msg)
+                time.sleep(delay_remaining_s)
+            return
+
+        # Remember when switched off
+        self._dut_off_time_s = time.monotonic()
 
     def relays(
         self,

@@ -233,9 +233,9 @@ def power(
         if set_off:
             tentacle_infra.switches.default_off_infra_on()
         for switch in _on:
-            tentacle_infra.power_usb_switch(switch=switch, on=True)
+            tentacle_infra.switches[switch].set(on=True)
         for switch in _off:
-            tentacle_infra.power_usb_switch(switch=switch, on=False)
+            tentacle_infra.switches[switch].set(on=False)
 
 
 @app.command(help="Query connected tentacles.")
