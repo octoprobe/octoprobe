@@ -41,11 +41,13 @@ class MpRemote:
     def __init__(
         self,
         tty: str,
+        label: str,
         baudrate: int = 115200,
         wait_s: int = 5,
         timeout_s: float | None = 2.0,
     ) -> None:
         self._tty = tty
+        self._label = label
         self._baudrate = baudrate
         self._wait_s = wait_s
         self._timeout_s = timeout_s
@@ -188,9 +190,10 @@ class MpRemote:
                         cmd,
                         "^" * 20,
                     ]
-                    raise ExceptionCmdFailed("\n".join(lines))
+                    cmd = "\n".join(lines)
+                    raise ExceptionCmdFailed(f"{self._label}: {cmd}")
         except TransportError as er:
-            logger.warning(er)
+            logger.warning(f"{self._label}: {er!r}")
             raise ExceptionTransport(er) from er
 
         assert isinstance(ret, bytes)

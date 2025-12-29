@@ -143,7 +143,7 @@ class TentacleInfra:
             logger.error(msg)
             raise OctoprobeAppExitException(msg)
 
-        self._mp_remote = MpRemote(tty=serial_port)
+        self._mp_remote = MpRemote(tty=serial_port, label=self.label)
 
     def setup_infra(self, udev: UdevPoller) -> None:
         self.load_base_code_if_needed()
@@ -250,7 +250,7 @@ class TentacleInfra:
 
         assert isinstance(event, UdevApplicationModeEvent)
         assert event.tty is not None
-        self._mp_remote = MpRemote(tty=event.tty)
+        self._mp_remote = MpRemote(tty=event.tty, label=self.label)
 
     @contextlib.contextmanager
     def borrow_tty(self) -> typing.Generator[str]:

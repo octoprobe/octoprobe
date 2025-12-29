@@ -106,7 +106,7 @@ class TentacleDut:
         assert isinstance(tentacle, TentacleBase)
         tty = self.dut_mcu.application_mode_power_up(tentacle=tentacle, udev=udev)
         self.application_mode_power_up_delay()
-        self._mp_remote = MpRemote(tty=tty)
+        self._mp_remote = MpRemote(tty=tty, label=self.label)
 
     def dut_installed_firmware_full_version_text(self) -> str:
         """
@@ -235,7 +235,7 @@ print('{VERSION_IMPLEMENTATION_SEPARATOR}'.join(l))
             )
 
             self.application_mode_power_up_delay()
-            self._mp_remote = MpRemote(tty=tty)
+            self._mp_remote = MpRemote(tty=tty, label=self.label)
             self.is_dut_required_firmware_already_installed(
                 firmware_spec=firmware_spec,
                 exception_text=f"{self.label}: After installing {firmware_spec.filename}",
