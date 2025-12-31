@@ -552,3 +552,59 @@ class CachedGitRepo:
         except Exception as e:
             logger.debug(f"{filename_metadata}: {e}")
             return None
+
+
+def log_git_describe(label: str, git_directory: pathlib.Path) -> None:
+    """
+    Creates some log output which describes 'git_repo_directory'.
+    Example 'label': 'python package octoprobe'.
+    """
+    assert isinstance(label, str)
+    assert isinstance(git_directory, pathlib.Path)
+
+    if not git_directory.is_dir():
+        if git_directory.name != ".git":
+            logger.info(f"{label}: No git commit info available for: {git_directory}")
+        return
+    git_directory = git_directory.parent
+
+    def git_describe() -> None:
+        args = [
+            "git",
+            "describe",
+            "--all",
+            "--long",
+            "--dirty",
+            "--always",
+        ]
+
+        git_describe = subprocess_run(
+            args=args,
+            cwd=git_directory,
+            timeout_s=GIT_CLONE_TIMEOUT_S,
+        )
+        assert git_describe is not None
+        return git_describe.strip()
+
+    def git_log() -> None:
+        args = [
+            "git",
+            "log",
+            "--oneline",
+            "--decorate",
+            "-n 1",
+        ]
+        git_log = subprocess_run(
+            args=args,
+            cwd=git_directory,
+            timeout_s=GIT_CLONE_TIMEOUT_S,
+        )
+        assert git_log is not None
+        return git_log.strip()
+        # We do not need to print, 'subprocess_run' already logs to 'logger.debug'
+        # for line in git_log.splitlines():
+        #     logger.debug(f"  {line}")
+
+    describe = git_describe()
+    last_commit_text = git_log()
+    logger.info(f"{label}: {describe}: {last_commit_text}")

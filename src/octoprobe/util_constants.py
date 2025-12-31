@@ -43,6 +43,19 @@ DIRECTORY_OCTOPROBE_GIT_CACHE = DIRECTORY_OCTOPROBE_DOWNLOADS / "git-cache"
 DIRECTORY_OCTOPROBE_GIT_CACHE.mkdir(parents=True, exist_ok=True)
 assert DIRECTORY_OCTOPROBE_GIT_CACHE.is_dir()
 
+DIRECTORY_OCTOPROBE_SRC_GIT = pathlib.Path(__file__).parent.parent.parent / ".git"
+"""
+If octoprobe is installed via 'pip install -e .', __file__ will point to
+
+/home/octoprobe/work_octoprobe/octoprobe/src/octoprobe/util_constants.py
+
+This variable will point to
+/home/octoprobe/work_octoprobe/octoprobe/.git
+
+If this does NOT resolve to a directory, it was probably install via 'pip install .'.
+In this case, we lost the information about the git commit.
+"""
+
 
 class DirectoryTag(enum.StrEnum):
     """
@@ -50,15 +63,15 @@ class DirectoryTag(enum.StrEnum):
     """
 
     F = "F"
-    # Firmware Source Git Repo
+    "Firmware Source Git Repo"
     R = "R"
-    # Results (Testresults direcory)
+    "Results (Testresults direcory)"
     T = "T"
-    # Tests Source Git Repo
+    "Tests Source Git Repo"
     P = "P"
-    # Python venv directory
+    "Python venv directory"
     W = "W"
-    # Working directory
+    "Working directory"
 
     def description(self) -> str:
         return {
