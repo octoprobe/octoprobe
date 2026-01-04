@@ -219,6 +219,8 @@ class TentacleInfra:
             picotool_flash_micropython,
         )
 
+        self.mp_remote_close()
+
         # Power off PICO_INFRA and press Boot Button
         self.usb_tentacle.switches.infra = False
         self.switches.infraboot = False
@@ -256,7 +258,8 @@ class TentacleInfra:
 
         assert isinstance(event, UdevApplicationModeEvent)
         assert event.tty is not None
-        self._mp_remote = MpRemote(tty=event.tty, label=self.label)
+        self.usb_tentacle.update_serial_port(event.tty)
+        self.load_base_code_if_needed()
 
     @contextlib.contextmanager
     def borrow_tty(self) -> typing.Generator[str]:

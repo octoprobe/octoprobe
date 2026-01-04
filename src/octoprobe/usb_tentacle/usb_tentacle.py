@@ -135,6 +135,10 @@ class UsbPico:
     None: pico is in boot mode and the serial is not known.
     """
     serial_port: str | None
+    """
+    Important: 'serial_port' is only valid just after the query.
+    After the INFRA_PICO has been rebooted or reflashed, this will most probably change!
+    """
 
     @property
     def application_mode(self) -> bool:
@@ -203,6 +207,14 @@ class UsbTentacle:
     def pico_probe(self) -> UsbPico:
         return self.pico_infra.as_pico_probe
 
+    def update_serial_port(self, serial_port: str) -> None:
+        """
+        The serial_port/pico_infra is initialized during the query.
+
+        However, the serial_port may change. For example after flashing.
+        """
+        self.pico_infra = dataclasses.replace(self.pico_infra, serial_port=serial_port)
+
     def get_power_hub_port(self, hub_port: HubPortNumber) -> bool:
         assert isinstance(hub_port, HubPortNumber)
         on = self.hub4_location.get_power(
@@ -257,12 +269,14 @@ class UsbTentacle:
 
     @property
     def serial_short(self) -> str:
-        assert self.serial is not None
+        if self.serial is None:
+            return "?"
         return self.serial[-SERIALNUMBER_SHORT:]
 
     @property
     def serial_delimited(self) -> str:
-        assert self.serial is not None
+        if self.serial is None:
+            return "?"
         return get_serial_delimited(serial=self.serial)
 
     @property

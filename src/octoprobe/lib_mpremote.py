@@ -202,12 +202,14 @@ class MpRemote:
                     ]
                     cmd = "\n".join(lines)
                     raise ExceptionCmdFailed(f"{self._label}: {cmd}")
-        except TransportError as er:
-            logger.warning(f"{self._label}: {er!r}")
-            FTRACE_MARKER.print(
-                f"{self._label}: mpremote {self._tty} exec_raw() {cmd}: ERROR {er!r}"
+        except TransportError as ex:
+            logger.warning(
+                f"{self._label}: tty={self._tty}, cmd='{cmd}': exception={ex!r}"
             )
-            raise ExceptionTransport(er) from er
+            FTRACE_MARKER.print(
+                f"{self._label}: mpremote {self._tty} exec_raw() {cmd}: ERROR {ex!r}"
+            )
+            raise ExceptionTransport(ex) from ex
 
         assert isinstance(ret, bytes)
         return ret.decode("utf-8")

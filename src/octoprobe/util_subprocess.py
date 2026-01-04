@@ -56,7 +56,7 @@ def subprocess_run(
             )
         else:
             logger.info(f"EXEC {args_text}")
-            logger.info(f"EXEC     cwd={cwd}")
+            logger.info(f"EXEC     cwd: {cwd}")
             logger.info(f"EXEC     stdout: {logfile}")
             logfile.parent.mkdir(parents=True, exist_ok=True)
             with logfile.open("w") as f:
@@ -106,7 +106,7 @@ def subprocess_run(
 
     def log(f: typing.Callable[[str], None]) -> None:
         f(f"EXEC {args_text}")
-        f(f"  cwd={cwd}")
+        f(f"  cwd: {cwd}")
         f(f"  returncode: {proc.returncode}")
         f(f"  success_codes: {success_returncodes}")
         f(f"  duration: {time.monotonic() - begin_s:0.3f}s")
