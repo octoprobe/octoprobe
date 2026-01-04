@@ -13,6 +13,7 @@ from mpremote.commands import do_filesystem_cp  # type: ignore
 from mpremote.main import State  # type: ignore
 from mpremote.transport_serial import SerialTransport, TransportError  # type: ignore
 
+from .util_ftrace_marker import FTRACE_MARKER
 from .util_jinja2 import render
 
 # pylint: disable=W0123 # Use of eval (eval-used)
@@ -53,6 +54,7 @@ class MpRemote:
         self._timeout_s = timeout_s
         self.state: State
         self._init()
+        FTRACE_MARKER.print(f"{self._label}: mpremote {self._tty} open()")
 
     def _init(self) -> None:
         self.state = State()
@@ -75,6 +77,7 @@ class MpRemote:
         """
         if self.state.transport is not None:
             try:
+                FTRACE_MARKER.print(f"{self._label}: mpremote {self._tty} close()")
                 self.state.transport.close()
             finally:
                 self.state.transport = None
@@ -154,7 +157,12 @@ class MpRemote:
             mpy=mpy,
         )
 
-    def exec_render(self, micropython_code: str, follow: bool = True, **kwargs: Any) -> str:
+    def exec_render(
+        self,
+        micropython_code: str,
+        follow: bool = True,
+        **kwargs: Any,
+    ) -> str:
         mp_program = render(micropython_code=micropython_code, **kwargs)
         return self.exec_raw(cmd=mp_program, follow=follow)
 
@@ -171,6 +179,8 @@ class MpRemote:
         assert isinstance(cmd, str)
         assert isinstance(follow, bool)
         assert isinstance(timeout, int | None)
+
+        FTRACE_MARKER.print(f"{self._label}: mpremote {self._tty} exec_raw() {cmd}")
 
         self.state.ensure_raw_repl(soft_reset=soft_reset)
         self.state.did_action()
@@ -194,6 +204,9 @@ class MpRemote:
                     raise ExceptionCmdFailed(f"{self._label}: {cmd}")
         except TransportError as er:
             logger.warning(f"{self._label}: {er!r}")
+            FTRACE_MARKER.print(
+                f"{self._label}: mpremote {self._tty} exec_raw() {cmd}: ERROR {er!r}"
+            )
             raise ExceptionTransport(er) from er
 
         assert isinstance(ret, bytes)

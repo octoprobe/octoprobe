@@ -116,6 +116,7 @@ def iter_usb_tentacles(
 
     usb_tentacles = UsbTentacles.query(poweron=poweron)
     usb_tentacles = usb_tentacles.select(serials=serials)
+    usb_tentacles.sort(key=lambda t: str(t.serial))
     for usb_tentacle in usb_tentacles:
         print(usb_tentacle.label_long)
         yield usb_tentacle
@@ -215,7 +216,7 @@ def power(
     poweron: _PoweronAnnotation = False,
 ) -> None:
     _on: list[Switch] = [] if on is None else on
-    _off:list[Switch] = [] if off is None else off
+    _off: list[Switch] = [] if off is None else off
 
     switches_text = ""
     for switch in _on:

@@ -568,7 +568,7 @@ def log_git_describe(label: str, git_directory: pathlib.Path) -> None:
         return
     git_directory = git_directory.parent
 
-    def git_describe() -> None:
+    def git_describe() -> str:
         args = [
             "git",
             "describe",
@@ -586,7 +586,7 @@ def log_git_describe(label: str, git_directory: pathlib.Path) -> None:
         assert git_describe is not None
         return git_describe.strip()
 
-    def git_log() -> None:
+    def git_log() -> str:
         args = [
             "git",
             "log",

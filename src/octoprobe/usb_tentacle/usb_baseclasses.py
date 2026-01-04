@@ -14,6 +14,8 @@ import pathlib
 import usb.core
 from serial.tools import list_ports_linux
 
+from ..util_ftrace_marker import FTRACE_MARKER
+
 logger = logging.getLogger(__file__)
 
 
@@ -180,16 +182,22 @@ class Location:
             f"/sys/bus/usb/devices/{self.short}:1.0/{self.short}-port{hub_port.value}/disable"
         )
 
-    def set_power(self, hub_port: HubPortNumber, on: bool) -> None:
+    def set_power(self, hub_port: HubPortNumber, on: bool, label: str) -> None:
         assert isinstance(hub_port, HubPortNumber)
+
+        FTRACE_MARKER.print(f"{label}: power {self.short}: {hub_port.name} set {on}")
 
         path = self.sysfs_path(hub_port=hub_port)
         value = "0" if on else "1"
-        path.write_text(value)
+        chars = path.write_text(value)
+        assert chars == len(value)
 
-    def get_power(self, hub_port: HubPortNumber) -> bool:
+    def get_power(self, hub_port: HubPortNumber, label: str) -> bool:
         assert isinstance(hub_port, HubPortNumber)
         path = self.sysfs_path(hub_port=hub_port)
         value = path.read_text().strip()
         assert value in ("0", "1")
+
+        FTRACE_MARKER.print(f"{label}: power {self.short}: {hub_port.name} get {value}")
+
         return value == "0"

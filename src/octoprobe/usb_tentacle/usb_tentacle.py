@@ -205,7 +205,10 @@ class UsbTentacle:
 
     def get_power_hub_port(self, hub_port: HubPortNumber) -> bool:
         assert isinstance(hub_port, HubPortNumber)
-        on = self.hub4_location.get_power(hub_port=hub_port)
+        on = self.hub4_location.get_power(
+            hub_port=hub_port,
+            label=self.serial_short,
+        )
         return on
 
     def __repr__(self) -> str:
@@ -439,7 +442,11 @@ class UsbTentacleSwitch(usb_constants.SwitchABC):
             return False
 
         self.changed_counter += 1
-        self._usb_tentacle.hub4_location.set_power(hub_port=self._hub_port, on=on)
+        self._usb_tentacle.hub4_location.set_power(
+            hub_port=self._hub_port,
+            on=on,
+            label=self._usb_tentacle.serial_short,
+        )
 
         logger.debug(f"{self.switch_text} set({on})")
         return True
@@ -602,7 +609,7 @@ class UsbTentacles(list[UsbTentacle]):
             if hub_port is None:
                 return
             for hub4_location in hub4_locations:
-                hub4_location.set_power(hub_port=hub_port, on=on)
+                hub4_location.set_power(hub_port=hub_port, on=on, label="?")
 
         timeout_poweron_s = 0.0
         if poweron:

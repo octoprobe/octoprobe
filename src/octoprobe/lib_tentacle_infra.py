@@ -132,9 +132,15 @@ class TentacleInfra:
             # We are already connected
             if changed_counter == self._mpremote_connected_counter:
                 # We have not been powercycled, so the connection should be still ok
+                # logger.info(
+                #     f"{self.label}: connect_mpremote_if_needed(): We have not been powercycled, so the connection should be still ok."
+                # )
                 return
 
         # We have been powercycled, so reconnect!
+        # logger.info(
+        #     f"{self.label}: connect_mpremote_if_needed(): We have been powercycled, so reconnect!"
+        # )
         self._mpremote_connected_counter = changed_counter
 
         serial_port = self.usb_tentacle.serial_port
@@ -320,9 +326,10 @@ class TentacleInfraSwitchDUT(TentacleInfraSwitch):
         self._tentacle_infra.usb_tentacle.switches[self.switch].set(on=on)
         # Tentacle >= v0.5
         changed = super().set(on=on)
-        if ENABLE_DUT_POWER_OFF_TIME_MIN:
-            if changed:
-                self._tentacle_infra.switches.delay_set_dut_on(on=on)
+        if self.switch is Switch.DUT:
+            if ENABLE_DUT_POWER_OFF_TIME_MIN:
+                if changed:
+                    self._tentacle_infra.switches.delay_set_dut_on(on=on)
         return changed
 
     def get(self) -> bool:
@@ -508,7 +515,7 @@ class TentacleInfraSwitches(dict[Switch, TentacleInfraSwitch]):
             delay_remaining_s = DUT_POWER_OFF_TIME_MIN_S - duration_off_s
             if delay_remaining_s > 0.0:
                 msg = f"{self._tentacle_infra.label}: The tentacle was switched off {duration_off_s:0.1f}s ago. Wait for another {delay_remaining_s:0.1f}s."
-                logger.debug(msg)
+                # logger.info(msg)
                 time.sleep(delay_remaining_s)
             return
 
@@ -537,7 +544,7 @@ class TentacleInfraSwitches(dict[Switch, TentacleInfraSwitch]):
     def default_off_infra_on(self) -> None:
         # First USB controlled switches
         self._tentacle_infra.usb_tentacle.switches.default_off_infra_on()
-        # Second PICO_INFRA controlled switches
+        # Second PICO_INFRA controlled switches on tentacles v0.5+.
         self.probeboot = True
         self.proberun = False
         self.dut = False
