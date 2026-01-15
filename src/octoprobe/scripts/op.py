@@ -8,6 +8,7 @@ from typing import Optional
 import typer
 import typing_extensions
 
+from octoprobe.util_baseclasses import OctoprobeAppExitException
 from octoprobe.util_cached_git_repo import CachedGitRepo
 from octoprobe.util_constants import DIRECTORY_OCTOPROBE_GIT_CACHE
 
@@ -243,7 +244,10 @@ def power(
 def query(poweron: _PoweronAnnotation = False) -> None:
     for usb_tentacle in iter_usb_tentacles(poweron=poweron, serials=None):
         tentacle_infra = TentacleInfra.factory_usb_tentacle(usb_tentacle=usb_tentacle)
-        tentacle_infra.load_base_code_if_needed()
+        try:
+            tentacle_infra.load_base_code_if_needed()
+        except OctoprobeAppExitException:
+            continue
 
         def log(label: str, value: str) -> bool:
             if value != "-":
