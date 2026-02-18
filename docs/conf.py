@@ -33,7 +33,8 @@ extensions = [
     "sphinx.ext.intersphinx",
     "sphinx.ext.todo",
     "sphinx.ext.viewcode",
-    "sphinxmermaid",
+    # "sphinxmermaid",
+    "sphinxcontrib.mermaid",
 ]
 
 todo_include_todos = True
@@ -52,8 +53,9 @@ pygments_style = "default"
 
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
-    "micropython": ("https://docs.micropython.org/en/latest/", None),
+    # "micropython": ("https://docs.micropython.org/en/latest/", None),
     "octoprobe": ("http://docs.octoprobe.org/octoprobe/", None),
+    "octohub4": ("http://docs.octoprobe.org/octohub4/", None),
     "tentacle": ("http://docs.octoprobe.org/tentacle/", None),
     "testbed_showcase": ("http://docs.octoprobe.org/testbed_showcase/", None),
     "testbed_micropython": ("http://docs.octoprobe.org/testbed_micropython/", None),
