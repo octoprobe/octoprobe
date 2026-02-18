@@ -191,11 +191,11 @@ class UsbTentacle:
     This class allows to set_power()/get_power() of on tentacle board.
     """
 
-    def __init__(self, hub4_location: Location, pico_infra: UsbPico) -> None:
-        assert isinstance(hub4_location, Location)
+    def __init__(self, tentacle_hub_location: Location, pico_infra: UsbPico) -> None:
+        assert isinstance(tentacle_hub_location, Location)
         assert isinstance(pico_infra, UsbPico)
 
-        self.hub4_location = hub4_location
+        self.tentacle_hub_location = tentacle_hub_location
         """
         The usb-location of the hub on the tentacle pcb.
         """
@@ -217,14 +217,14 @@ class UsbTentacle:
 
     def get_power_hub_port(self, hub_port: HubPortNumber) -> bool:
         assert isinstance(hub_port, HubPortNumber)
-        on = self.hub4_location.get_power(
+        on = self.tentacle_hub_location.get_power(
             hub_port=hub_port,
             label=self.serial_short,
         )
         return on
 
     def __repr__(self) -> str:
-        repr_text = f"UsbTentacle({self.hub4_location.short}"
+        repr_text = f"UsbTentacle({self.tentacle_hub_location.short}"
         if self.pico_infra is not None:
             repr_text += f"pico(application_mode={self.pico_infra.application_mode}"
             if self.pico_infra.application_mode:
@@ -243,11 +243,11 @@ class UsbTentacle:
         tentacle 3-1.2: v0.4 de646cc20b92-5425 /dev/ttyACM1
         """
         if self.pico_infra is None:
-            return f"usb hub {self.hub4_location.short}"
+            return f"usb hub {self.tentacle_hub_location.short}"
 
         words = [
             "tentacle",
-            self.hub4_location.short + ":",
+            self.tentacle_hub_location.short + ":",
             "v4711",  # self.tentacle_version.version,
         ]
         if self.pico_infra.application_mode:
@@ -286,7 +286,7 @@ class UsbTentacle:
             words.append(self.serial_delimited)
         else:
             words.append("in boot mode")
-        words.append(f"on USB {self.hub4_location.short}")
+        words.append(f"on USB {self.tentacle_hub_location.short}")
         if self.serial_port is not None:
             words.append(self.serial_port)
         return " ".join(words)
@@ -304,27 +304,27 @@ class UsbTentacle:
     @property
     def usb_port_infra(self) -> UsbPort:
         return UsbPort(
-            usb_location=f"{self.hub4_location.short}.{HubPortNumber.PORT1_INFRA}"
+            usb_location=f"{self.tentacle_hub_location.short}.{HubPortNumber.PORT1_INFRA}"
         )
 
     @property
     def usb_port_probe(self) -> UsbPort:
         return UsbPort(
-            usb_location=f"{self.hub4_location.short}.{HubPortNumber.PORT4_PROBE_LEDERROR}"
+            usb_location=f"{self.tentacle_hub_location.short}.{HubPortNumber.PORT4_PROBE_LEDERROR}"
         )
 
     @property
     def usb_port_dut(self) -> UsbPort:
         return UsbPort(
-            usb_location=f"{self.hub4_location.short}.{HubPortNumber.PORT3_DUT}"
+            usb_location=f"{self.tentacle_hub_location.short}.{HubPortNumber.PORT3_DUT}"
         )
 
 
-def _query_hubs() -> list[Location]:
+def _query_hubs() -> tuple[list[Location], list[Location]]:
     """
     Return all connected tentacle hubs.
     """
-    return [
+    all_hub_locations = [
         Location.factory_device(device=device)  # type: ignore[arg-type]
         for device in usb.core.find(  # type: ignore[misc]
             find_all=True,
@@ -333,6 +333,31 @@ def _query_hubs() -> list[Location]:
             idProduct=HUB4_PRODUCT,
         )
     ]
+
+    # all_hubs
+    # * all tentacle hubs
+    # * all octohub4
+    def is_octohub4(hub: Location) -> bool:
+        for other_hub in all_hub_locations:
+            if other_hub.short == hub.short:
+                continue
+            if other_hub.short.startswith(hub.short):
+                # Example:
+                #  other_hub.short: 3-5.3.2.1
+                #  hub.short:       3-5.3.2
+                # This indicates that otherhub is connected to one port of hub.
+                # So this hub must be a tentacle.
+                return True
+        return False
+
+    tentacle_hub_locations = []
+    octohub4_locations = []
+    for hub in all_hub_locations:
+        if is_octohub4(hub):
+            octohub4_locations.append(hub)
+        else:
+            tentacle_hub_locations.append(hub)
+    return tentacle_hub_locations, octohub4_locations
 
 
 def _query_pico_boot_mode() -> list[UsbPico]:
@@ -368,23 +393,23 @@ def _query_pico_serial() -> list[UsbPico]:
 
 
 def _combine_hubs_and_pico(
-    hub4_locations: list[Location],
+    tentacle_hub_locations: list[Location],
     list_pico: list[UsbPico],
 ) -> tuple[UsbTentacles, list[Location]]:
     """
     Now we combine 'hubs' and 'list_pico'
     """
 
-    def get_valid_tentacle(hub4_location: Location) -> UsbTentacle | None:
+    def get_valid_tentacle(tentacle_hub_location: Location) -> UsbTentacle | None:
         """
         There might be pico connected, but we are only intersted in the pico infra!
         """
 
         dict_usb_pico: dict[int, UsbPico] = {}
         for pico in list_pico:
-            if pico.location.bus != hub4_location.bus:
+            if pico.location.bus != tentacle_hub_location.bus:
                 return None
-            if pico.location.path[:-1] != hub4_location.path:
+            if pico.location.path[:-1] != tentacle_hub_location.path:
                 continue
             hub_port = pico.location.path[-1]
             if hub_port == HubPortNumber.PORT2_INFRABOOT:
@@ -405,16 +430,16 @@ def _combine_hubs_and_pico(
             return None
 
         return UsbTentacle(
-            hub4_location=hub4_location,
+            tentacle_hub_location=tentacle_hub_location,
             pico_infra=dict_usb_pico[HubPortNumber.PORT1_INFRA],
         )
 
     tentacles = UsbTentacles()
     unresolved_hub4_locations: list[Location] = []
-    for hub4_location in hub4_locations:
-        usb_tentacle = get_valid_tentacle(hub4_location)
+    for tentacle_hub_location in tentacle_hub_locations:
+        usb_tentacle = get_valid_tentacle(tentacle_hub_location)
         if usb_tentacle is None:
-            unresolved_hub4_locations.append(hub4_location)
+            unresolved_hub4_locations.append(tentacle_hub_location)
         else:
             tentacles.append(usb_tentacle)
     return tentacles, unresolved_hub4_locations
@@ -456,7 +481,7 @@ class UsbTentacleSwitch(usb_constants.SwitchABC):
             return False
 
         self.changed_counter += 1
-        self._usb_tentacle.hub4_location.set_power(
+        self._usb_tentacle.tentacle_hub_location.set_power(
             hub_port=self._hub_port,
             on=on,
             label=self._usb_tentacle.serial_short,
@@ -470,7 +495,7 @@ class UsbTentacleSwitch(usb_constants.SwitchABC):
 
     @property
     def switch_text(self) -> str:
-        return f"switch {self._hub_port.name} {self._usb_tentacle.hub4_location.short} port {self._hub_port}"
+        return f"switch {self._hub_port.name} {self._usb_tentacle.tentacle_hub_location.short} port {self._hub_port}"
 
 
 class UsbTentacleSwitchProperty(property):
@@ -617,16 +642,20 @@ class UsbTentacles(list[UsbTentacle]):
         # Identify all tentalces by getting a list of all hubs.
         # Power on all pico infra to be able to read the serial numbers.
         #
-        hub4_locations = _query_hubs()
+        tentacle_hub_locations, _octohub4_locations = _query_hubs()
 
         def set_power(hub_port: HubPortNumber | None, on: bool) -> None:
             if hub_port is None:
                 return
-            for hub4_location in hub4_locations:
-                hub4_location.set_power(hub_port=hub_port, on=on, label="?")
+            for tentacle_hub_location in tentacle_hub_locations:
+                tentacle_hub_location.set_power(hub_port=hub_port, on=on, label="?")
 
-        timeout_poweron_s = 0.0
-        if poweron:
+        def do_poweron() -> None:
+            """
+            This code must recover pico_infra from these situations:
+              * pico_infra was powered off
+              * pico_infra is in programming mode (PORT2_INFRABOOT)
+            """
             # Release Boot Button
             set_power(HubPortNumber.PORT2_INFRABOOT, on=True)
             # set_power(TENTACLE_VERSION_V04.portnumber_error, on=False)
@@ -638,6 +667,10 @@ class UsbTentacles(list[UsbTentacle]):
             # Power ON pico_infra and pico_probe
             set_power(HubPortNumber.PORT1_INFRA, on=True)
             set_power(HubPortNumber.PORT4_PROBE_LEDERROR, on=True)
+
+        timeout_poweron_s = 0.0
+        if poweron:
+            do_poweron()
             timeout_poweron_s = 1.5  # 0.8: failed, 1.0: ok
 
         begin_s = time.monotonic()
@@ -652,7 +685,7 @@ class UsbTentacles(list[UsbTentacle]):
             list_pico.extend(_query_pico_boot_mode())
 
             usb_tentacles, unresolved_hub4_locations = _combine_hubs_and_pico(
-                hub4_locations=hub4_locations,
+                tentacle_hub_locations=tentacle_hub_locations,
                 list_pico=list_pico,
             )
             duration_s = time.monotonic() - begin_s
@@ -660,12 +693,12 @@ class UsbTentacles(list[UsbTentacle]):
                 if len(unresolved_hub4_locations) > 0:
                     hubs_text = ", ".join([x.short for x in unresolved_hub4_locations])
                     logging.info(
-                        f"These hubs could not be accociated with a tentacle: {hubs_text}! "
-                        "If there are tentacles with unpowered picos, this will fix the problem: op query --poweron"
+                        f"detected octohub4: {hubs_text}! "
+                        "Note: A tentacle with unpowered PICO_INFRA will seen on the usb bus like a octohub4. To power PICO_INFRA on all connected tentacles use: op query --poweron"
                     )
                 return usb_tentacles
 
-            if len(usb_tentacles) == len(hub4_locations):
+            if len(usb_tentacles) == len(tentacle_hub_locations):
                 # We found all tentacles
                 return usb_tentacles
 

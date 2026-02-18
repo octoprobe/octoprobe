@@ -14,6 +14,7 @@ class HwVersion(enum.StrEnum):
     V03 = "v0.3"
     V05 = "v0.5"
     V06 = "v0.6"
+    V07 = "v0.7"
 
     @staticmethod
     def is_V05or_newer(version: str) -> bool:
@@ -33,7 +34,7 @@ class HwVersion(enum.StrEnum):
             ) from e
 
 
-class TyperPowerCycle(str, enum.Enum):
+class TyperPowerCycle(enum.Enum):
     """
     Used as command line argument (Typer)
     """
@@ -64,7 +65,7 @@ class TyperPowerCycle(str, enum.Enum):
     """
 
 
-class Switch(str, enum.Enum):
+class Switch(enum.Enum):
     """
     Items which may be switched:
     * Relay: False: open, True: closed
@@ -123,14 +124,14 @@ class Switch(str, enum.Enum):
 
     @property
     def is_relay(self) -> bool:
-        return Switch.RELAY1 <= self <= Switch.RELAY7
+        return Switch.RELAY1.value <= self.value <= Switch.RELAY7.value
 
     @property
     def relay_number(self) -> int:
         """
         Returns 5 for RELAY5
         """
-        assert Switch.RELAY1 <= self <= Switch.RELAY7
+        assert Switch.RELAY1.value <= self.value <= Switch.RELAY7.value
         return int(self.name[5])
 
 

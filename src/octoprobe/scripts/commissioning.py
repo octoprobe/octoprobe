@@ -73,7 +73,7 @@ class Commissioning:
             usb_tentacle=connected_tentacle,
         )
         logger.info(
-            f"Tentacle detected at usb location: {connected_tentacle.hub4_location.short}"
+            f"Tentacle detected at usb location: {connected_tentacle.tentacle_hub_location.short}"
         )
         time.sleep(1.0)
 

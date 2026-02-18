@@ -7,6 +7,7 @@ from typing import Optional
 
 import typer
 import typing_extensions
+from mpremote.transport_serial import TransportError
 
 from octoprobe.util_baseclasses import OctoprobeAppExitException
 from octoprobe.util_cached_git_repo import CachedGitRepo
@@ -246,7 +247,7 @@ def query(poweron: _PoweronAnnotation = False) -> None:
         tentacle_infra = TentacleInfra.factory_usb_tentacle(usb_tentacle=usb_tentacle)
         try:
             tentacle_infra.load_base_code_if_needed()
-        except OctoprobeAppExitException:
+        except (TransportError, OctoprobeAppExitException):
             continue
 
         def log(label: str, value: str) -> bool:

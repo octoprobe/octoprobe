@@ -517,7 +517,7 @@ class TentacleInfraSwitches(dict[Switch, TentacleInfraSwitch]):
             duration_off_s = time.monotonic() - self._dut_off_time_s
             delay_remaining_s = DUT_POWER_OFF_TIME_MIN_S - duration_off_s
             if delay_remaining_s > 0.0:
-                msg = f"{self._tentacle_infra.label}: The tentacle was switched off {duration_off_s:0.1f}s ago. Wait for another {delay_remaining_s:0.1f}s."
+                _msg = f"{self._tentacle_infra.label}: The tentacle was switched off {duration_off_s:0.1f}s ago. Wait for another {delay_remaining_s:0.1f}s."
                 # logger.info(msg)
                 time.sleep(delay_remaining_s)
             return

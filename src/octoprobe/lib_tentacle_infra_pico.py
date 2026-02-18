@@ -136,9 +136,12 @@ def set_relays_pulse(relays, initial_closed, durations_ms) -> None:
     @property
     def hw_version(self) -> str:
         try:
-            return {0: HwVersion.V03, 1: HwVersion.V05, 2: HwVersion.V06}[
-                self.gpio_hw_version
-            ]
+            return {
+                0: HwVersion.V03,
+                1: HwVersion.V05,
+                2: HwVersion.V06,
+                3: HwVersion.V07,
+            }[self.gpio_hw_version]
         except KeyError as e:
             raise ValueError(
                 f"Unknown tentacle version with gpio_hw_version=0x{self.gpio_hw_version:02X}"
