@@ -61,8 +61,9 @@ def get_device_debug(device_event: pyudev.Device, subsystem_filtered: str) -> st
         if subsystem_filtered == "block":
             # We only log the mount point if we also filtered for "block".
             # For example the pico would not get here, as we filter for "tty"
+            assert isinstance(device_event.device_node, str)
             mount_point = UdevFilter.get_mount_point(
-                device_event.device_node, allow_partition_mount=True
+                device_node=device_event.device_node, allow_partition_mount=True
             )
             lines.append(f"  mount_point={mount_point}")
 
@@ -103,9 +104,11 @@ class UdevFilter:
         return f"{self.id_product:04x}"
 
     @staticmethod
-    def parse_usb_location(sys_path: str) -> str:
+    def parse_usb_location(sys_path: str) -> str | None:
         match = _RE_USB_LOCATION.match(sys_path)
-        assert match is not None, sys_path
+        # assert match is not None, sys_path
+        if match is None:
+            return None
         # Example 'match': '3-5.2.3'
         usb_location = match.group("location")
         assert usb_location != "0000"
@@ -298,7 +301,9 @@ class UdevPollerLazy:
     def __enter__(self) -> UdevPollerLazy:
         return self
 
-    def __exit__(self, exc_type:typing.Any, exc_value:typing.Any, traceback:typing.Any) -> None:
+    def __exit__(
+        self, exc_type: typing.Any, exc_value: typing.Any, traceback: typing.Any
+    ) -> None:
         self.close()
 
 
