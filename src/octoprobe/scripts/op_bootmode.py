@@ -35,6 +35,7 @@ def do_bootmode(
 
     if not is_infra:
         tentacle_infra.connect_mpremote_if_needed()
+        tentacle_infra.mcu_infra.load_base_code()
         hw_version = tentacle_infra.mcu_infra.hw_version
         if hw_version == HwVersion.V03:
             # This is a v0.3 tentacle without a PICO_PROBE
