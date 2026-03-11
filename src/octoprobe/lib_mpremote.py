@@ -231,6 +231,46 @@ class MpRemote:
         assert isinstance(ret, bytes)
         return ret.decode("utf-8")
 
+    def exec_raw_result(
+        self,
+        expr: str,
+        timeout: int | None = 2,
+    ) -> str:
+        """
+        Example expr: 1+3
+        Executes 1+3 on micropython by calling 'print(1+3)' and capturing its output.
+        However, the textoutput may contain text which was emitted bevor the the result.
+        Therefore a tag '[RESULT]' is inserted.
+        """
+        RESULT_TAG = "[RESULT]"
+
+        # Example expr: '1+3'
+        cmd = f"_v=repr({expr}); print('{RESULT_TAG}' + _v)"
+        """
+        First evaluate expr which may produce unwanted debug text output.
+        _v is of datatype str and therefor this print will have no sideeffects: print('{RESULT_TAG}' + _v)
+        """
+        # Example cmd: print('[RESULT]' + repr(1+3))
+        full_output = self.exec_raw(cmd=cmd, timeout=timeout)
+        # Example full_output: DebugXYZ[RESULT]4
+        list_elements = full_output.split(RESULT_TAG)
+        if len(list_elements) != 2:
+            raise ExceptionCmdFailed(
+                f"{self._label}: '{expr}': Expected '{RESULT_TAG}' exactly once but got: {full_output}"
+            )
+        _program_output, expression_result = list_elements
+        # Example _program_output: DebugXYZ
+        # Example expression_result: 4
+        return expression_result
+
+    def exec_raw_result_eval(
+        self,
+        expr: str,
+        timeout: int | None = 2,
+    ) -> Any:
+        expression_result = self.exec_raw_result(expr=expr, timeout=timeout)
+        return eval(expression_result)
+
     def _exec(self, cmd: str) -> Any:
         "last statment in 'cmd' must be print(xxx)"
         value_text = self.exec_raw(cmd)
@@ -275,39 +315,32 @@ class MpRemote:
         assert isinstance(v, list | tuple)
         return list(v)
 
-    def _read_var(self, name: str) -> Any:
-        value_text = self.exec_raw(f"print({name})")
-        return eval(value_text)
-
-    def read_bool(self, name: str) -> int:
-        v = self._read_var(name)
+    def read_bool(self, expr: str) -> int:
+        v = self.exec_raw_result_eval(expr)
         assert isinstance(v, bool)
         return v
 
-    def read_int(self, name: str) -> int:
-        v = self._read_var(name)
+    def read_int(self, expr: str) -> int:
+        v = self.exec_raw_result_eval(expr)
         assert isinstance(v, int)
         return v
 
-    def read_float(self, name: str) -> float:
-        v = self._read_var(name)
+    def read_float(self, expr: str) -> float:
+        v = self.exec_raw_result_eval(expr)
         assert isinstance(v, float)
         return v
 
-    def read_str(self, name: str) -> str:
-        v = self.exec_raw(f"print({name})")
+    def read_str(self, expr: str) -> str:
+        v = self.exec_raw_result_eval(expr=expr)
         assert isinstance(v, str)
-        # Remove '\n\r' at the end of the string
-        assert v.endswith("\r\n")
-        v = v[:-2]
         return v
 
-    def read_bytes(self, name: str) -> bytes:
-        v = self._read_var(name)
+    def read_bytes(self, expr: str) -> bytes:
+        v = self.exec_raw_result_eval(expr)
         assert isinstance(v, bytes)
         return v
 
-    def read_list(self, name: str) -> list[typing.Any]:
-        v = self._read_var(name)
+    def read_list(self, expr: str) -> list[typing.Any]:
+        v = self.exec_raw_result_eval(expr)
         assert isinstance(v, list | tuple)
         return list(v)
