@@ -166,6 +166,23 @@ class MpRemote:
         mp_program = render(micropython_code=micropython_code, **kwargs)
         return self.exec_raw(cmd=mp_program, follow=follow)
 
+    def exec_file(
+        self,
+        filename: pathlib.Path,
+        follow: bool = True,
+        timeout: int | None = 2,
+        soft_reset: bool | None = None,
+    ) -> str:
+        assert isinstance(filename, pathlib.Path)
+
+        cmd = filename.read_text()
+        return self.exec_raw(
+            cmd=cmd,
+            follow=follow,
+            timeout=timeout,
+            soft_reset=soft_reset,
+        )
+
     def exec_raw(
         self,
         cmd: str,
