@@ -28,6 +28,10 @@ class ExceptionCmdFailed(ExceptionMpRemote):
     pass
 
 
+class ExceptionCmdError(ExceptionMpRemote):
+    pass
+
+
 class ExceptionTransport(ExceptionMpRemote):
     pass
 
@@ -38,6 +42,9 @@ class MpRemote:
     Not sure if this is the best solution?
     Are there other ways to access micropython on a remote MCU?
     """
+
+    RESULT_TAG = "[RESULT]"
+    ERROR_TAG = "[ERROR]"
 
     def __init__(
         self,
@@ -183,9 +190,28 @@ class MpRemote:
             soft_reset=soft_reset,
         )
 
+    def exec_file_result(
+        self,
+        filename: pathlib.Path,
+        follow: bool = True,
+        timeout: int | None = 2,
+        soft_reset: bool | None = None,
+    ) -> str:
+        assert isinstance(filename, pathlib.Path)
+
+        cmd = filename.read_text()
+        return self.exec_raw(
+            cmd=cmd,
+            timeout=timeout,
+            check_result=True,
+            follow=follow,
+            soft_reset=soft_reset,
+        )
+
     def exec_raw(
         self,
         cmd: str,
+        check_result: bool = False,
         follow: bool = True,
         timeout: int | None = 2,
         soft_reset: bool | None = None,
@@ -217,8 +243,8 @@ class MpRemote:
                         cmd,
                         "^" * 20,
                     ]
-                    cmd = "\n".join(lines)
-                    raise ExceptionCmdFailed(f"{self._label}: {cmd}")
+                    result = "\n".join(lines)
+                    raise ExceptionCmdFailed(f"{self._label}: {result}")
         except TransportError as ex:
             logger.warning(
                 f"{self._label}: tty={self._tty}, cmd='{cmd}': exception={ex!r}"
@@ -229,118 +255,90 @@ class MpRemote:
             raise ExceptionTransport(ex) from ex
 
         assert isinstance(ret, bytes)
-        return ret.decode("utf-8")
+        full_output = ret.decode("utf-8")
 
-    def exec_raw_result(
-        self,
-        expr: str,
-        timeout: int | None = 2,
-    ) -> str:
+        if check_result:
+            return self._extract_result(cmd=cmd, full_output=full_output)
+        return full_output
+
+    def _extract_result(self, cmd: str, full_output: str) -> str:
         """
+        Find '[RESULT]' result and returns the consecutive text.
+        If '[ERROR]' is found and throw ExceptionCmdError().
+
         Example expr: 1+3
         Executes 1+3 on micropython by calling 'print(1+3)' and capturing its output.
         However, the textoutput may contain text which was emitted bevor the the result.
         Therefore a tag '[RESULT]' is inserted.
         """
-        RESULT_TAG = "[RESULT]"
-
-        # Example expr: '1+3'
-        cmd = f"_v=repr({expr}); print('{RESULT_TAG}' + _v)"
-        """
-        First evaluate expr which may produce unwanted debug text output.
-        _v is of datatype str and therefor this print will have no sideeffects: print('{RESULT_TAG}' + _v)
-        """
-        # Example cmd: print('[RESULT]' + repr(1+3))
-        full_output = self.exec_raw(cmd=cmd, timeout=timeout)
-        # Example full_output: DebugXYZ[RESULT]4
-        list_elements = full_output.split(RESULT_TAG)
+        # Example full_output: DebugXYZ[ERROR]'I2C_EIO'[RESULT]4
+        list_elements = full_output.split(self.RESULT_TAG)
         if len(list_elements) != 2:
             raise ExceptionCmdFailed(
-                f"{self._label}: '{expr}': Expected '{RESULT_TAG}' exactly once but got: {full_output}"
+                f"{self._label}: '{cmd}': Expected '{self.RESULT_TAG}' exactly once but got: {full_output}"
             )
-        _program_output, expression_result = list_elements
+
+        program_output, expression_result = list_elements
+        # Example program_output: DebugXYZ[ERROR]'I2C_EIO'
+        list_elements = program_output.split(self.ERROR_TAG)
+        if len(list_elements) == 2:
+            # We found an error tag
+            _program_output, error_result = list_elements
+            raise ExceptionCmdError(eval(error_result))
+
         # Example _program_output: DebugXYZ
         # Example expression_result: 4
         return expression_result
 
-    def exec_raw_result_eval(
+    def eval_expression(
         self,
         expr: str,
+        check_result: bool,
         timeout: int | None = 2,
     ) -> Any:
-        expression_result = self.exec_raw_result(expr=expr, timeout=timeout)
+        # Example expr: '1+3'
+        # First evaluate expr which may produce unwanted debug text output.
+        # _v is of datatype str and therefor this print will have no sideeffects: print('{RESULT_TAG}' + _v)
+        cmd = f"_v=repr({expr}); print('{self.RESULT_TAG}' + _v)"
+
+        expression_result = self.exec_raw(
+            cmd=cmd,
+            timeout=timeout,
+            check_result=check_result,
+        )
+
         return eval(expression_result)
 
-    def _exec(self, cmd: str) -> Any:
-        "last statment in 'cmd' must be print(xxx)"
-        value_text = self.exec_raw(cmd)
-        return eval(value_text)
+    def read_None(self, expr: str) -> None:
+        v = self.eval_expression(expr, check_result=True)
+        assert v is None
 
-    def exec_bool(self, cmd: str) -> bool:
-        "last statment in 'cmd' must be print(xxx)"
-        v = self._exec(cmd)
-        assert isinstance(v, bool)
-        return v
-
-    def exec_int(self, cmd: str) -> int:
-        "last statment in 'cmd' must be print(xxx)"
-        v = self._exec(cmd)
-        assert isinstance(v, int)
-        return v
-
-    def exec_float(self, cmd: str) -> float:
-        "last statment in 'cmd' must be print(xxx)"
-        v = self._exec(cmd)
-        assert isinstance(v, float)
-        return v
-
-    def exec_str(self, cmd: str) -> str:
-        "last statment in 'cmd' must be print(xxx)"
-        v = self._exec(cmd)
-        assert isinstance(v, str)
-        # Remove '\n\r' at the end of the string
-        assert v.endswith("\r\n")
-        v = v[:-2]
-        return v
-
-    def exec_bytes(self, cmd: str) -> bytes:
-        "last statment in 'cmd' must be print(xxx)"
-        v = self._exec(cmd)
-        assert isinstance(v, bytes)
-        return v
-
-    def exec_list(self, cmd: str) -> list[typing.Any]:
-        "last statment in 'cmd' must be print(xxx)"
-        v = self._exec(cmd)
-        assert isinstance(v, list | tuple)
-        return list(v)
-
-    def read_bool(self, expr: str) -> int:
-        v = self.exec_raw_result_eval(expr)
+    def read_bool(self, expr: str) -> bool:
+        v = self.eval_expression(expr, check_result=True)
         assert isinstance(v, bool)
         return v
 
     def read_int(self, expr: str) -> int:
-        v = self.exec_raw_result_eval(expr)
+        v = self.eval_expression(expr, check_result=True)
         assert isinstance(v, int)
         return v
 
     def read_float(self, expr: str) -> float:
-        v = self.exec_raw_result_eval(expr)
+        v = self.eval_expression(expr, check_result=True)
         assert isinstance(v, float)
         return v
 
     def read_str(self, expr: str) -> str:
-        v = self.exec_raw_result_eval(expr=expr)
+        v = self.eval_expression(expr=expr, check_result=True)
         assert isinstance(v, str)
         return v
 
     def read_bytes(self, expr: str) -> bytes:
-        v = self.exec_raw_result_eval(expr)
+        v = self.eval_expression(expr, check_result=True)
         assert isinstance(v, bytes)
         return v
 
     def read_list(self, expr: str) -> list[typing.Any]:
-        v = self.exec_raw_result_eval(expr)
+        v = self.eval_expression(expr, check_result=True)
         assert isinstance(v, list | tuple)
         return list(v)

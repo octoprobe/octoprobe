@@ -301,8 +301,8 @@ class TentacleInfraSwitch(SwitchABC):
 
         self._tentacle_infra.mcu_infra.assert_base_code_loaded()
 
-        changed = self._tentacle_infra.mp_remote.exec_bool(
-            cmd=f"print(set_switch({self.micropython_pin}, on={int(on)}))"
+        changed = self._tentacle_infra.mp_remote.read_bool(
+            expr=f"set_switch({self.micropython_pin}, on={int(on)})"
         )
         return changed
 
@@ -317,8 +317,8 @@ class TentacleInfraSwitch(SwitchABC):
 
         # self._tentacle_infra.load_base_code_if_needed()
 
-        changed = self._tentacle_infra.mp_remote.exec_bool(
-            cmd=f"print({self.micropython_pin}.value())"
+        changed = self._tentacle_infra.mp_remote.read_bool(
+            expr=f"{self.micropython_pin}.value()"
         )
         return changed
 
@@ -359,8 +359,8 @@ class TentacleInfraSwitchRelays(TentacleInfraSwitch):
 
     def get(self) -> bool:
         self._tentacle_infra.mcu_infra.assert_base_code_loaded()
-        closed = self._tentacle_infra.mp_remote.exec_bool(
-            cmd=f"print(get_relays({self.switch.relay_number}))"
+        closed = self._tentacle_infra.mp_remote.read_bool(
+            expr=f"get_relays({self.switch.relay_number})"
         )
         return closed
 
@@ -399,9 +399,7 @@ class TentacleInfraSwitchRelays(TentacleInfraSwitch):
         list_relays = list(dict_relays.items())
 
         tentacle_infra.mcu_infra.assert_base_code_loaded()
-        changed = tentacle_infra.mp_remote.exec_bool(
-            cmd=f"print(set_relays({list_relays}))"
-        )
+        changed = tentacle_infra.mp_remote.read_bool(expr=f"set_relays({list_relays})")
         return changed
 
 
