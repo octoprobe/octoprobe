@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import contextlib
 import datetime
+import hashlib
 import logging
 import pathlib
 import typing
@@ -123,11 +124,31 @@ class MpRemote:
         cmd = f"import machine; machine.RTC().datetime({timetuple})"
         self.exec_raw(cmd)
 
-    def cp(self, src: pathlib.Path, dest: str) -> None:
+    def cp(self, src: pathlib.Path, dest: str, multiple: bool = True) -> None:
         assert isinstance(src, pathlib.Path)
         assert isinstance(dest, str)
+        assert isinstance(multiple, bool)
+
+        self.state.ensure_raw_repl(soft_reset=False)
+        self.state.did_action()
+
         # def do_filesystem_cp(state, src, dest, multiple, check_hash=False):
-        do_filesystem_cp(self.state, str(src), dest, multiple=True, check_hash=False)
+        do_filesystem_cp(self.state, str(src), dest, multiple=multiple, check_hash=True)
+
+    def file_equal(self, src: pathlib.Path, dest: str) -> bool:
+        """
+        return False if the src and dest are equal and therefore do not have to be copied.
+        """
+        assert isinstance(src, pathlib.Path)
+        assert isinstance(dest, str)
+        assert dest.startswith(":")
+
+        self.state.ensure_raw_repl(soft_reset=False)
+        self.state.did_action()
+
+        remote_hash = self.state.transport.fs_hashfile(dest[1:], "sha256")
+        source_hash = hashlib.sha256(src.read_bytes()).digest()
+        return remote_hash == source_hash
 
     def mip_install_package(self, package: str) -> None:
         assert isinstance(package, str)
@@ -228,7 +249,7 @@ class MpRemote:
         self.state.ensure_raw_repl(soft_reset=soft_reset)
         self.state.did_action()
 
-        ret = None
+        ret = b"follow=False"
         try:
             assert self.state.transport is not None
             self.state.transport.exec_raw_no_follow(cmd)
