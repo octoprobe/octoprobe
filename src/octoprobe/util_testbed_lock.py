@@ -59,4 +59,4 @@ class TestbedLock:
         if self._fd != -1:
             os.close(self._fd)
         if self._lockfile is not None:
-            self._lockfile.unlink()
+            self._lockfile.unlink(missing_ok=True)

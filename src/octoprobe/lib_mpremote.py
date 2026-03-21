@@ -336,30 +336,30 @@ class MpRemote:
 
     def read_bool(self, expr: str) -> bool:
         v = self.eval_expression(expr, check_result=True)
-        assert isinstance(v, bool)
+        assert isinstance(v, bool), v
         return v
 
     def read_int(self, expr: str) -> int:
         v = self.eval_expression(expr, check_result=True)
-        assert isinstance(v, int)
+        assert isinstance(v, int), v
         return v
 
     def read_float(self, expr: str) -> float:
         v = self.eval_expression(expr, check_result=True)
-        assert isinstance(v, float)
+        assert isinstance(v, float), v
         return v
 
     def read_str(self, expr: str) -> str:
         v = self.eval_expression(expr=expr, check_result=True)
-        assert isinstance(v, str)
+        assert isinstance(v, str), v
         return v
 
     def read_bytes(self, expr: str) -> bytes:
         v = self.eval_expression(expr, check_result=True)
-        assert isinstance(v, bytes)
+        assert isinstance(v, bytes), v
         return v
 
     def read_list(self, expr: str) -> list[typing.Any]:
         v = self.eval_expression(expr, check_result=True)
-        assert isinstance(v, list | tuple)
+        assert isinstance(v, list | tuple), v
         return list(v)

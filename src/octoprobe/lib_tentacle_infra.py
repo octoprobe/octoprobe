@@ -27,6 +27,8 @@ DIRECTORY_OF_THIS_FILE = pathlib.Path(__file__).parent
 
 logger = logging.getLogger(__file__)
 
+FILENAME_FIRMWARE_SPEC = DIRECTORY_OF_THIS_FILE / "util_tentacle_infra_firmware.json"
+
 
 class TentacleInfra:
     """
@@ -38,8 +40,7 @@ class TentacleInfra:
 
     @staticmethod
     def get_firmware_spec() -> FirmwareDownloadSpec:
-        json_filename = DIRECTORY_OF_THIS_FILE / "util_tentacle_infra_firmware.json"
-        return FirmwareDownloadSpec.factory2(filename=json_filename)
+        return FirmwareDownloadSpec.factory2(filename=FILENAME_FIRMWARE_SPEC)
 
     def __init__(self, label: str, usb_tentacle: UsbTentacle) -> None:
         assert isinstance(label, str)

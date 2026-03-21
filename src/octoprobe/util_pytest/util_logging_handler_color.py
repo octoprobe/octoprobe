@@ -1,5 +1,5 @@
+import enum
 import logging
-import logging.config
 import re
 import typing
 
@@ -13,12 +13,28 @@ logger = logging.getLogger(__file__)
 
 _STYLE_FALLBACK = Style(color="purple")
 
-_DICT_STYLES = {
-    "COLOR_INFO": Style(color="blue"),
-    "COLOR_SUCCESS": Style(color="green"),
-    "COLOR_FAILED": Style(color="orange1"),
-    "COLOR_ERROR": Style(color="red"),
-}
+
+class EnumColors(enum.Enum):
+    _value_: Style
+    COLOR_INFO = Style(color="blue")
+    COLOR_SUCCESS = Style(color="green")
+    COLOR_FAILED = Style(color="orange1")
+    COLOR_ERROR = Style(color="red")
+    COLOR_SKIPPED = Style(color="light_slate_gray")
+
+    @property
+    def with_brackets(self) -> str:
+        """
+        Example: [COLOR_INFO]
+        """
+        return f"[{self.name}]"
+
+    @classmethod
+    def get_style(cls, color: str) -> Style:
+        try:
+            return cls[color].value
+        except KeyError:
+            return _STYLE_FALLBACK
 
 
 class ColorFormatter(logging.Formatter):
@@ -46,7 +62,7 @@ class ColorFormatter(logging.Formatter):
         msg_before = record.msg
         try:
             record.msg = msg
-            color = _DICT_STYLES.get(tag, _STYLE_FALLBACK)
+            color = EnumColors.get_style(tag)
 
             message = super().format(record)
             return color.render(message)
