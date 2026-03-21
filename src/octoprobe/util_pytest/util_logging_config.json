@@ -3,11 +3,11 @@
     "disable_existing_loggers": false,
     "formatters": {
         "simple": {
-            "format": "%(levelname)-8s - %(message)s"
+            "format": "%(levelname)-8s %(message)s"
         },
         "simple_color": {
             "class": "octoprobe.util_pytest.util_logging_handler_color.ColorFormatter",
-            "format": "%(levelname)-8s - %(message)s"
+            "format": "%(levelname)-8s %(message)s"
         }
     },
     "handlers": {

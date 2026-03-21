@@ -34,12 +34,12 @@
 	"extensions": {
 		"recommendations": [
 			"charliermarsh.ruff",
-			"njpwerner.autodocstring",
 			"hediet.vscode-drawio",
-			"swyddfa.esbonio",
-			"ms-python.python",
 			"lextudio.restructuredtext",
-			"trond-snekvik.simple-rst"
+			"ms-python.python",
+			"njpwerner.autodocstring",
+			"swyddfa.esbonio",
+			"trond-snekvik.simple-rst",
 		]
 	}
 }

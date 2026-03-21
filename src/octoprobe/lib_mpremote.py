@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import contextlib
 import datetime
+import functools
 import hashlib
+import inspect
 import logging
 import pathlib
 import typing
@@ -13,6 +15,8 @@ from mpremote import mip  # type: ignore
 from mpremote.commands import do_filesystem_cp  # type: ignore
 from mpremote.main import State  # type: ignore
 from mpremote.transport_serial import SerialTransport, TransportError  # type: ignore
+
+from octoprobe.util_pytest.util_logging_handler_color import EnumColors
 
 from .util_ftrace_marker import FTRACE_MARKER
 from .util_jinja2 import render
@@ -35,6 +39,74 @@ class ExceptionCmdError(ExceptionMpRemote):
 
 class ExceptionTransport(ExceptionMpRemote):
     pass
+
+
+CALL_LOGGER_MAX_LINE_LENGTH = 256
+
+
+class CallLogger:
+    def __init__(self, label: str) -> None:
+        self._level = 0
+        self._label = label
+
+    @property
+    def indent(self) -> str:
+        return (
+            EnumColors.COLOR_MP_REMOTE.with_brackets
+            + self._label
+            + " "
+            + "    " * self._level
+        )
+
+    def enter(self) -> None:
+        self._level += 1
+
+    def leave(self) -> None:
+        self._level -= 1
+
+    def _format(self, sep: str, text: str) -> str:
+        assert isinstance(sep, str)
+        assert isinstance(text, str)
+        if len(text) > CALL_LOGGER_MAX_LINE_LENGTH:
+            text = text[:CALL_LOGGER_MAX_LINE_LENGTH] + "..."
+        return f"{self.indent}{sep} {text}"
+
+    def log_call(self, func_text: str) -> None:
+        logger.debug(self._format(">>", func_text))
+
+    def log_return(self, result: str) -> None:
+        logger.debug(self._format("<=", result))
+
+    def log_exception(self, e: Exception) -> None:
+        logger.exception(msg=self._format("!!", repr(e)), exc_info=e)
+
+
+def call_logger(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        mp_remote = args[0]  # Remove the self parameter
+        assert isinstance(mp_remote, MpRemote)
+        call_logger = mp_remote.call_logger
+
+        bound = inspect.signature(func).bind(*args, **kwargs)
+        bound.apply_defaults()
+
+        mp_remote.call_logger.enter()
+        params = ", ".join(
+            f"{k}={v!r}" for k, v in bound.arguments.items() if k != "self"
+        )
+        call_logger.log_call(func_text=f"{func.__name__}({params})")
+        try:
+            result = func(*args, **kwargs)
+            call_logger.log_return(result=repr(result))
+            return result
+        except Exception as e:
+            call_logger.log_exception(e)
+            raise
+        finally:
+            call_logger.leave()
+
+    return wrapper
 
 
 class MpRemote:
@@ -60,13 +132,14 @@ class MpRemote:
         self._baudrate = baudrate
         self._wait_s = wait_s
         self._timeout_s = timeout_s
+        self.call_logger = CallLogger(label=label)
         self.state: State
         self._init()
         FTRACE_MARKER.print(f"{self._label}: mpremote {self._tty} open()")
 
     def _init(self) -> None:
         self.state = State()
-        self.state.transport = SerialTransport(
+        self.state.transport = SerialTransport(  # type: ignore
             self._tty,
             baudrate=self._baudrate,
             wait=self._wait_s,
@@ -107,6 +180,7 @@ class MpRemote:
             # self.exec_raw(cmd="print('hello pico')", soft_reset=True)
             self.state.ensure_raw_repl(soft_reset=True)
 
+    @call_logger
     def set_rtc(self, now: datetime.datetime | None = None) -> None:
         assert isinstance(now, datetime.datetime | None)
         if now is None:
@@ -124,6 +198,7 @@ class MpRemote:
         cmd = f"import machine; machine.RTC().datetime({timetuple})"
         self.exec_raw(cmd)
 
+    @call_logger
     def cp(self, src: pathlib.Path, dest: str, multiple: bool = True) -> None:
         assert isinstance(src, pathlib.Path)
         assert isinstance(dest, str)
@@ -135,6 +210,7 @@ class MpRemote:
         # def do_filesystem_cp(state, src, dest, multiple, check_hash=False):
         do_filesystem_cp(self.state, str(src), dest, multiple=multiple, check_hash=True)
 
+    @call_logger
     def file_equal(self, src: pathlib.Path, dest: str) -> bool:
         """
         return False if the src and dest are equal and therefore do not have to be copied.
@@ -150,6 +226,7 @@ class MpRemote:
         source_hash = hashlib.sha256(src.read_bytes()).digest()
         return remote_hash == source_hash
 
+    @call_logger
     def mip_install_package(self, package: str) -> None:
         assert isinstance(package, str)
 
@@ -185,6 +262,7 @@ class MpRemote:
             mpy=mpy,
         )
 
+    @call_logger
     def exec_render(
         self,
         micropython_code: str,
@@ -194,6 +272,7 @@ class MpRemote:
         mp_program = render(micropython_code=micropython_code, **kwargs)
         return self.exec_raw(cmd=mp_program, follow=follow)
 
+    @call_logger
     def exec_file(
         self,
         filename: pathlib.Path,
@@ -211,6 +290,7 @@ class MpRemote:
             soft_reset=soft_reset,
         )
 
+    @call_logger
     def exec_file_result(
         self,
         filename: pathlib.Path,
@@ -229,6 +309,7 @@ class MpRemote:
             soft_reset=soft_reset,
         )
 
+    @call_logger
     def exec_raw(
         self,
         cmd: str,
@@ -255,7 +336,7 @@ class MpRemote:
             self.state.transport.exec_raw_no_follow(cmd)
             if follow:
                 # ret, ret_err = state.transport.follow(timeout=None, data_consumer=stdout_write_bytes)
-                ret, ret_err = self.state.transport.follow(timeout=timeout)
+                ret, ret_err = self.state.transport.follow(timeout=timeout)  # type: ignore
                 if ret_err:
                     lines = [
                         ret_err.decode("ascii"),
@@ -311,6 +392,7 @@ class MpRemote:
         # Example expression_result: 4
         return expression_result
 
+    @call_logger
     def eval_expression(
         self,
         expr: str,
@@ -330,35 +412,42 @@ class MpRemote:
 
         return eval(expression_result)
 
+    @call_logger
     def read_None(self, expr: str) -> None:
         v = self.eval_expression(expr, check_result=True)
         assert v is None
 
+    @call_logger
     def read_bool(self, expr: str) -> bool:
         v = self.eval_expression(expr, check_result=True)
         assert isinstance(v, bool), v
         return v
 
+    @call_logger
     def read_int(self, expr: str) -> int:
         v = self.eval_expression(expr, check_result=True)
         assert isinstance(v, int), v
         return v
 
+    @call_logger
     def read_float(self, expr: str) -> float:
         v = self.eval_expression(expr, check_result=True)
         assert isinstance(v, float), v
         return v
 
+    @call_logger
     def read_str(self, expr: str) -> str:
         v = self.eval_expression(expr=expr, check_result=True)
         assert isinstance(v, str), v
         return v
 
+    @call_logger
     def read_bytes(self, expr: str) -> bytes:
         v = self.eval_expression(expr, check_result=True)
         assert isinstance(v, bytes), v
         return v
 
+    @call_logger
     def read_list(self, expr: str) -> list[typing.Any]:
         v = self.eval_expression(expr, check_result=True)
         assert isinstance(v, list | tuple), v
