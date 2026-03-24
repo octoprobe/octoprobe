@@ -7,6 +7,9 @@
 			"path": "../testbed_micropython"
 		},
 		{
+			"path": "../testbed_heatguard"
+		},
+		{
 			"path": "../testbed_showcase"
 		},
 		{
