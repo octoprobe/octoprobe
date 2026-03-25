@@ -45,7 +45,7 @@ REPOS: list[Repo] = [
     REPO_ORIGIN,
     Repo("tentacle", name="Tentacle"),
     Repo("octohub4", name="Octohub4"),
-    Repo("testbed_heatguard", automodule=True),
+    Repo("testbed_heatguard", entry="/introduction/index"),
     Repo("testbed_showcase", automodule=True, entry="/introduction/index"),
     Repo("testbed_micropython", entry="/user_guide/index"),
 ]
