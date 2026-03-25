@@ -213,7 +213,7 @@ class MpRemote:
     @call_logger
     def file_equal(self, src: pathlib.Path, dest: str) -> bool:
         """
-        return False if the src and dest are equal and therefore do not have to be copied.
+        return True if the src and dest are equal and therefore do not have to be copied.
         """
         assert isinstance(src, pathlib.Path)
         assert isinstance(dest, str)
@@ -222,7 +222,10 @@ class MpRemote:
         self.state.ensure_raw_repl(soft_reset=False)
         self.state.did_action()
 
-        remote_hash = self.state.transport.fs_hashfile(dest[1:], "sha256")
+        try:
+            remote_hash = self.state.transport.fs_hashfile(dest[1:], "sha256")
+        except FileNotFoundError:
+            return False
         source_hash = hashlib.sha256(src.read_bytes()).digest()
         return remote_hash == source_hash
 
@@ -310,22 +313,18 @@ class MpRemote:
         )
 
     @call_logger
-    def exec_raw(
+    def exec_raw2(
         self,
         cmd: str,
-        check_result: bool = False,
-        follow: bool = True,
-        timeout: int | None = 2,
-        soft_reset: bool | None = None,
+        follow: bool,
+        timeout: int | None,
+        soft_reset: bool | None,
     ) -> str:
-        """
-        Derived from mpremote.commands.do_exec / do_execbuffer
-        """
         assert isinstance(cmd, str)
         assert isinstance(follow, bool)
         assert isinstance(timeout, int | None)
 
-        FTRACE_MARKER.print(f"{self._label}: mpremote {self._tty} exec_raw() {cmd}")
+        FTRACE_MARKER.print(f"{self._label}: mpremote {self._tty} _exec_raw() {cmd}")
 
         self.state.ensure_raw_repl(soft_reset=soft_reset)
         self.state.did_action()
@@ -357,7 +356,26 @@ class MpRemote:
             raise ExceptionTransport(ex) from ex
 
         assert isinstance(ret, bytes)
-        full_output = ret.decode("utf-8")
+        return ret.decode("utf-8")
+
+    @call_logger
+    def exec_raw(
+        self,
+        cmd: str,
+        check_result: bool = False,
+        follow: bool = True,
+        timeout: int | None = 2,
+        soft_reset: bool | None = None,
+    ) -> str:
+        """
+        Derived from mpremote.commands.do_exec / do_execbuffer
+        """
+        full_output = self.exec_raw2(
+            cmd=cmd,
+            follow=follow,
+            timeout=timeout,
+            soft_reset=soft_reset,
+        )
 
         if check_result:
             return self._extract_result(cmd=cmd, full_output=full_output)
