@@ -7,7 +7,7 @@ import pyudev
 from .util_baseclasses import UsbID
 from .util_pyudev import UdevEventBase, UdevFilter
 
-FILENAME_FLASHING = "flashing_stout.txt"
+FILENAME_FLASHING = "flashing_stdout.txt"
 
 
 class UdevApplicationModeEvent(UdevEventBase):

@@ -23,8 +23,7 @@ def do_flash(usb_tentacle: UsbTentacle, is_infra: bool, firmware: pathlib.Path) 
         if usb_tentacle.pico_probe is None:
             # This is a v0.3 tentacle without a PICO_PROBE
             print(
-                DELIM
-                + f"SKIPPED: Tentacle {usb_tentacle.tentacle_version.version} does not have a PICO_PROBE."
+                DELIM + "SKIPPED: Tentacle version 'v0.3' does not have a PICO_PROBE."
             )
             return
 

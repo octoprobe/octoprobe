@@ -170,6 +170,7 @@ def flash_infra(
     serials: _SerialsAnnotation = None,
     poweron: _PoweronAnnotation = False,
 ) -> None:
+    firmware = firmware.resolve().absolute()
     for usb_tentacle in iter_usb_tentacles(poweron=poweron, serials=serials):
         op_flash.do_flash(usb_tentacle=usb_tentacle, is_infra=True, firmware=firmware)
 
@@ -180,6 +181,7 @@ def flash_probe(
     serials: _SerialsAnnotation = None,
     poweron: _PoweronAnnotation = False,
 ) -> None:
+    firmware = firmware.resolve().absolute()
     for usb_tentacle in iter_usb_tentacles(poweron=poweron, serials=serials):
         op_flash.do_flash(usb_tentacle=usb_tentacle, is_infra=False, firmware=firmware)
 
