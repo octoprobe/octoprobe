@@ -48,8 +48,12 @@ class Rp2UdevBootModeEvent2(UdevEventBase):
     """
 
     def __init__(self, device: pyudev.Device):
+        assert isinstance(device, pyudev.Device)
+        device_node = device.device_node
+        assert isinstance(device_node, str)
+
         self.mount_point = UdevFilter.get_mount_point(
-            device.device_node, allow_partition_mount=True
+            device_node, allow_partition_mount=True
         )
 
     def __repr__(self) -> str:

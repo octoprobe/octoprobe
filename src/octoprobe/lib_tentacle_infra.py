@@ -319,7 +319,7 @@ class TentacleInfraSwitch(SwitchABC):
         # self._tentacle_infra.load_base_code_if_needed()
 
         changed = self._tentacle_infra.mp_remote.read_bool(
-            expr=f"{self.micropython_pin}.value()"
+            expr=f"bool({self.micropython_pin}.value())"
         )
         return changed
 

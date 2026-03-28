@@ -5,7 +5,6 @@ import typing
 from typing import Optional
 
 import typer
-import typing_extensions
 from mpremote.transport_serial import TransportError
 
 from octoprobe.util_baseclasses import OctoprobeAppExitException
@@ -24,7 +23,7 @@ from .op_logging import init_logging
 
 # 'typer' does not work correctly with typing.Annotated
 # Required is: typing_extensions.Annotated
-TyperAnnotated = typing_extensions.Annotated
+TyperAnnotated = typing.Annotated
 
 # mypy: disable-error-code="valid-type"
 # This will disable this warning:

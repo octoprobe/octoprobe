@@ -16,11 +16,11 @@ logger = logging.getLogger(__file__)
 
 def _get_programmers() -> list[type[DutProgrammerABC]]:
     # pylint: disable=import-outside-toplevel
+    from .util_mcu_debugprobe import DutProgrammerDebugprobe
     from .util_mcu_esp import DutProgrammerEsptool
     from .util_mcu_mimxrt import DutProgrammerTeensyLoaderCli
     from .util_mcu_nrf import DutProgrammerBossac
     from .util_mcu_pico import DutProgrammerPicotool
-    from .util_mcu_picoprobe import DutProgrammerPicoprobe
     from .util_mcu_pyboard import DutProgrammerDfuUtil
     from .util_mcu_samd import DutProgrammerSamdBossac
 
@@ -31,7 +31,7 @@ def _get_programmers() -> list[type[DutProgrammerABC]]:
         DutProgrammerPicotool,
         DutProgrammerSamdBossac,
         DutProgrammerTeensyLoaderCli,
-        DutProgrammerPicoprobe,
+        DutProgrammerDebugprobe,
     ]
 
 

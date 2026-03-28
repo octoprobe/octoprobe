@@ -10,12 +10,13 @@ import pathlib
 import textwrap
 import typing
 
+from .lib_tentacle_debugprobe import TentacleDebugprobe
 from .lib_tentacle_dut import TentacleDut
 from .lib_tentacle_infra import TentacleInfra, TentacleInfraSwitches
 from .usb_tentacle.usb_baseclasses import UsbPort
 from .usb_tentacle.usb_tentacle import SERIALNUMBER_SHORT, UsbTentacle
 from .util_baseclasses import TentacleInstance, TentacleSpecBase
-from .util_constants import DELIMITER_SERIAL_BOARD
+from .util_constants import DELIMITER_SERIAL_BOARD, TAG_PROBE
 from .util_firmware_spec import FirmwareSpecBase
 from .util_pyudev import UdevPoller
 
@@ -128,22 +129,33 @@ class TentacleBase(abc.ABC):
         self.tentacle_serial_number = tentacle_serial_number
         self.tentacle_instance = tentacle_instance
 
-        def _label(dut_or_infra: str) -> str:
-            # return f"Tentacle {dut_or_infra}{tentacle_serial_number}({tentacle_spec.label})"
-            return f"Tentacle {dut_or_infra}{self.label_short}"
-
-        self.label = _label(dut_or_infra="")
+        self.label = self.build_label("")
         self.infra = TentacleInfra(
-            label=_label(dut_or_infra="INFRA "),
+            label=self.build_label("INFRA"),
             usb_tentacle=usb_tentacle,
         )
 
+        self._probe: TentacleDebugprobe | None = None
+        self.init_probe()
+
         def get_dut() -> TentacleDut | None:
             if self.is_mcu:
-                return TentacleDut(label=_label(dut_or_infra="DUT "), tentacle=self)
+                return TentacleDut(label=self.build_label("DUT"), tentacle=self)
             return None
 
         self._dut = get_dut()
+
+    def init_probe(self) -> None:
+        probe = self.get_tag(tag=TAG_PROBE)
+        if probe == TentacleDebugprobe.TAG:
+            self._probe = TentacleDebugprobe(
+                label=self.build_label("PROBE"), tentacle=self
+            )
+
+    def build_label(self, dut_or_infra_or_probe: str) -> str:
+        # return f"Tentacle {dut_or_infra}{tentacle_serial_number}({tentacle_spec.label})"
+        space = "" if (dut_or_infra_or_probe == "") else " "
+        return f"Tentacle {dut_or_infra_or_probe}{space}{self.label_short}"
 
     def __repr__(self) -> str:
         return self.label
