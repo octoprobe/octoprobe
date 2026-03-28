@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-import pathlib
 import typing
 from typing import Optional
 
@@ -166,24 +165,30 @@ def bootmode_probe(
 
 @app.command(help="Flash firmware to PICO_INFRA.")
 def flash_infra(
-    firmware: pathlib.Path,
+    firmware_url: str = "https://micropython.org/resources/firmware/RPI_PICO-20251209-v1.27.0.uf2",
     serials: _SerialsAnnotation = None,
     poweron: _PoweronAnnotation = False,
 ) -> None:
-    firmware = firmware.resolve().absolute()
     for usb_tentacle in iter_usb_tentacles(poweron=poweron, serials=serials):
-        op_flash.do_flash(usb_tentacle=usb_tentacle, is_infra=True, firmware=firmware)
+        op_flash.do_flash(
+            usb_tentacle=usb_tentacle,
+            is_infra=True,
+            firmware_url=firmware_url,
+        )
 
 
 @app.command(help="Flash firmware to PICO_PROBE.")
 def flash_probe(
-    firmware: pathlib.Path,
+    firmware_url: str = "https://github.com/raspberrypi/debugprobe/releases/download/debugprobe-v2.3.0/debugprobe_on_pico.uf2",
     serials: _SerialsAnnotation = None,
     poweron: _PoweronAnnotation = False,
 ) -> None:
-    firmware = firmware.resolve().absolute()
     for usb_tentacle in iter_usb_tentacles(poweron=poweron, serials=serials):
-        op_flash.do_flash(usb_tentacle=usb_tentacle, is_infra=False, firmware=firmware)
+        op_flash.do_flash(
+            usb_tentacle=usb_tentacle,
+            is_infra=False,
+            firmware_url=firmware_url,
+        )
 
 
 @app.command(help="Execute micropython code on pico-infra.")

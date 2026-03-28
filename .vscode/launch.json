@@ -132,7 +132,7 @@
             "cwd": "${workspaceFolder}",
             "args": [
                 "flash-infra",
-                "${userHome}/octoprobe_downloads/firmware-cache/RPI_PICO-20250809-v1.26.0.uf2",
+                // "${userHome}/octoprobe_downloads/firmware-cache/RPI_PICO-20250809-v1.26.0.uf2",
             ],
             "env": {
                 "PYTHONPATH": "${workspaceFolder}/src"
@@ -148,7 +148,8 @@
             "cwd": "${workspaceFolder}",
             "args": [
                 "flash-probe",
-                "${userHome}/Downloads/debugprobe_on_pico.uf2",
+                // "https://github.com/raspberrypi/debugprobe/releases/download/debugprobe-v2.3.0/debugprobe_on_pico.uf2"
+                // "${userHome}/Downloads/debugprobe_on_pico.uf2",
             ],
             "env": {
                 "PYTHONPATH": "${workspaceFolder}/src"

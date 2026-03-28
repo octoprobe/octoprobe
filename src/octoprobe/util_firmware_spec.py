@@ -167,24 +167,43 @@ class FirmwareDownloadSpec(FirmwareSpecBase):
     def download(self) -> pathlib.Path:
         return self.filename
 
+    @staticmethod
+    def file_or_http_download(url: str, use_cache: bool = False) -> pathlib.Path:
+        """
+        If url is a file path, return the file.
+        If url starts with 'http', download and return the file
+        """
+        if url.startswith("http"):
+            logger.info(f"Downloading: {url}")
+            return FirmwareDownloadSpec.http_download(url=url, use_cache=use_cache)
+        return pathlib.Path(url)
+
+    @staticmethod
+    def http_download(url: str, use_cache: bool = False) -> pathlib.Path:
+        """
+        Download firmware if not already there
+        """
+        parse_result = urlparse(url)
+        _directory, _separator, _filename = parse_result.path.rpartition("/")
+
+        filename = DIRECTORY_OCTOPROBE_CACHE_FIRMWARE / _filename
+        if use_cache:
+            if filename.exists():
+                return filename
+        try:
+            tmp_filename, _headers = urlretrieve(url=url)
+        except HTTPError as e:
+            raise ValueError(f"{url}: {e}") from e
+
+        shutil.move(src=tmp_filename, dst=filename)
+        return filename
+
     @property
     def filename(self) -> pathlib.Path:
         """
         Download firmware if not already there
         """
-        parse_result = urlparse(self.url)
-        _directory, _separator, _filename = parse_result.path.rpartition("/")
-
-        filename = DIRECTORY_OCTOPROBE_CACHE_FIRMWARE / _filename
-        if filename.exists():
-            return filename
-        try:
-            tmp_filename, _headers = urlretrieve(url=self.url)
-        except HTTPError as e:
-            raise ValueError(f"{self.url}: {e}") from e
-
-        shutil.move(src=tmp_filename, dst=filename)
-        return filename
+        return self.http_download(url=self.url)
 
     @staticmethod
     def factory(filename: str) -> FirmwareDownloadSpec:

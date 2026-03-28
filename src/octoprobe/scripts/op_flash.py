@@ -5,16 +5,21 @@ import time
 
 import typer
 
+from octoprobe.util_firmware_spec import FirmwareDownloadSpec
+
 from .. import util_mcu_pico
 from ..usb_tentacle.usb_tentacle import UsbTentacle
 from ..util_mcu_pico import picotool_flash_micropython
 from .op_bootmode import DELIM, do_bootmode
 
 
-def do_flash(usb_tentacle: UsbTentacle, is_infra: bool, firmware: pathlib.Path) -> None:
+def do_flash(usb_tentacle: UsbTentacle, is_infra: bool, firmware_url: str) -> None:
     assert isinstance(usb_tentacle, UsbTentacle)
-    assert isinstance(firmware, pathlib.Path)
+    assert isinstance(firmware_url, str)
     assert isinstance(is_infra, bool)
+
+    firmware = FirmwareDownloadSpec.file_or_http_download(url=firmware_url)
+
     if not firmware.is_file():
         print(f"Firmware does not exist: {firmware}")
         raise typer.Exit()
