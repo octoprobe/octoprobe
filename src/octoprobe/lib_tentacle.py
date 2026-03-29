@@ -14,11 +14,12 @@ from .lib_tentacle_debugprobe import TentacleDebugprobe
 from .lib_tentacle_dut import TentacleDut
 from .lib_tentacle_infra import TentacleInfra, TentacleInfraSwitches
 from .usb_tentacle.usb_baseclasses import UsbPort
-from .usb_tentacle.usb_tentacle import SERIALNUMBER_SHORT, UsbTentacle
+from .usb_tentacle.usb_tentacle import UsbTentacle
 from .util_baseclasses import TentacleInstance, TentacleSpecBase
 from .util_constants import DELIMITER_SERIAL_BOARD, TAG_PROBE
 from .util_firmware_spec import FirmwareSpecBase
 from .util_pyudev import UdevPoller
+from .util_serialnumber import SERIALNUMBER_SHORT
 
 logger = logging.getLogger(__file__)
 

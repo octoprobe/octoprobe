@@ -27,7 +27,7 @@
         {
             "label": "ruff",
             "type": "shell",
-            "command": ". .venv/bin/activate && ruff check --config pyproject.toml --fix || true",
+            "command": ". .venv/bin/activate && ruff format --config pyproject.toml && ruff check --config pyproject.toml --fix || true",
             "options": {
                 "cwd": "${workspaceFolder}"
             },

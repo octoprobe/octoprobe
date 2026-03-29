@@ -60,7 +60,7 @@ class TentacleDut:
     @property
     def mp_remote(self) -> MpRemote:
         if self._mp_remote is None:
-            print("TODO")
+            print("Expect self._mp_remote not to be None")
         assert self._mp_remote is not None
         return self._mp_remote
 

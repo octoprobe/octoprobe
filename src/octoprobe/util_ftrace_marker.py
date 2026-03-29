@@ -35,7 +35,7 @@ sudo trace-cmd report
 
     @classmethod
     def init(cls) -> None:
-        cls.f = pathlib.Path("/sys/kernel/tracing/trace_marker").open("w")
+        cls.f = pathlib.Path("/sys/kernel/tracing/trace_marker").open("w")  # pylint: disable=consider-using-with
 
     @classmethod
     def print(cls, msg: str) -> None:

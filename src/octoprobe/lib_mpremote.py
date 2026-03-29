@@ -8,7 +8,7 @@ import inspect
 import logging
 import pathlib
 import typing
-from collections.abc import Generator
+from collections.abc import Callable, Generator
 from typing import Any, Self
 
 from mpremote import mip  # type: ignore
@@ -81,30 +81,30 @@ class CallLogger:
         logger.exception(msg=self._format("!!", repr(e)), exc_info=e)
 
 
-def call_logger(func):
+def call_logger[**P, R](func: Callable[P, R]) -> Callable[P, R]:
     @functools.wraps(func)
-    def wrapper(*args, **kwargs):
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
         mp_remote = args[0]  # Remove the self parameter
         assert isinstance(mp_remote, MpRemote)
-        call_logger = mp_remote.call_logger
+        _call_logger = mp_remote.call_logger
 
         bound = inspect.signature(func).bind(*args, **kwargs)
         bound.apply_defaults()
 
-        mp_remote.call_logger.enter()
+        _call_logger.enter()
         params = ", ".join(
             f"{k}={v!r}" for k, v in bound.arguments.items() if k != "self"
         )
-        call_logger.log_call(func_text=f"{func.__name__}({params})")
+        _call_logger.log_call(func_text=f"{func.__name__}({params})")
         try:
             result = func(*args, **kwargs)
-            call_logger.log_return(result=repr(result))
+            _call_logger.log_return(result=repr(result))
             return result
         except Exception as e:
-            call_logger.log_exception(e)
+            _call_logger.log_exception(e)
             raise
         finally:
-            call_logger.leave()
+            _call_logger.leave()
 
     return wrapper
 
@@ -224,6 +224,7 @@ class MpRemote:
 
         try:
             remote_hash = self.state.transport.fs_hashfile(dest[1:], "sha256")
+            assert isinstance(remote_hash, bytes)
         except FileNotFoundError:
             return False
         source_hash = hashlib.sha256(src.read_bytes()).digest()

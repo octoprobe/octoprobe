@@ -2,20 +2,20 @@ import functools
 import inspect
 import logging
 import pathlib
+from collections.abc import Callable
 
 from octoprobe.util_pytest.util_logging_handler_color import EnumColors
 
 logger = logging.getLogger(__file__)
 
 
-def func_logger(func):
+def func_logger[**P, R](func: Callable[P, R]) -> Callable[P, R]:
     """
     log this call
     """
 
     @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
         bound = inspect.signature(func).bind(*args, **kwargs)
         bound.apply_defaults()
 

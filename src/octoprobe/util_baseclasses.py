@@ -6,8 +6,11 @@ import enum
 import pathlib
 
 from octoprobe.usb_tentacle.usb_constants import HwVersion
-from octoprobe.usb_tentacle.usb_tentacle import serial_short_from_delimited
 
+from .util_serialnumber import (
+    is_serialdelimtied_valid,
+    serial_short_from_delimited,
+)
 from .util_tentacle_label.label_data import LabelData, LabelsData
 
 TENTACLE_TYPE_MCU = "tentacle_mcu"
@@ -45,6 +48,10 @@ class VersionMismatchException(OctoprobeTestException):
         self.version_expected = version_expected
         full_msg = f"{self.msg}: Version installed: '{self.version_installed}' but expected: '{self.version_expected}'!"
         super().__init__(full_msg)
+
+
+class TentacleNotFoundInInventory(Exception):
+    pass
 
 
 def assert_micropython_repo(directory: pathlib.Path) -> None:
@@ -200,6 +207,10 @@ class TentacleInstance:
     testbed_name: str
     testbed_instance: str
 
+    # @property
+    # def serial_delimited(self) -> str:
+    #     return get_serial_delimited(serial=self.serial)
+
     @property
     def label_data(self) -> LabelData:
         return LabelData(
@@ -220,6 +231,19 @@ class TentaclesInventory(dict[str, TentacleInstance]):
     @property
     def labels_data(self) -> LabelsData:
         return LabelsData([instance.label_data for instance in self.values()])
+
+    def get_by_serial_delimited(self, serial_delimited: str) -> TentacleInstance:
+        """
+        Returns an instance but raises a formatted exception
+        """
+        assert isinstance(serial_delimited, str)
+        is_serialdelimtied_valid(serial_delimited=serial_delimited)
+        try:
+            return self[serial_delimited]
+        except KeyError as e:
+            raise TentacleNotFoundInInventory(
+                f"Tentacle with serial {serial_delimited} is not specified in TENTACLES_INVENTORY."
+            ) from e
 
 
 class TentaclesCollector:

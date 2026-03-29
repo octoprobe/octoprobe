@@ -15,11 +15,9 @@ from ..util_constants import (
 logger = logging.getLogger(__file__)
 
 
-
 URL_RELEASE_DEFAULT = (
     "https://github.com/octoprobe/build_binaries/releases/latest/download/binaries.tgz"
 )
-
 
 
 def do_install(url: str) -> None:

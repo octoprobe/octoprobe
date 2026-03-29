@@ -57,9 +57,11 @@ class TentacleDebugprobe:
             changed = self._tentacle.switches[Switch.PICO_PROBE_RUN].set(on=True)
             if not changed:
                 # The debugprobe was already powererd
-                self._tty = (
-                    self._tentacle.infra.usb_tentacle.usb_port_probe.device_sysfs.device
+                device_sysfs = (
+                    self._tentacle.infra.usb_tentacle.usb_port_probe.device_sysfs
                 )
+                assert device_sysfs is not None
+                self._tty = device_sysfs.device
                 assert self._tty is not None
                 return
 
