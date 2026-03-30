@@ -41,7 +41,7 @@ class TentacleDebugprobe:
         assert self._tty is not None, "Need to call 'power_on()' first!"
         return self._tty
 
-    def power_on(self, udev: UdevPoller, directory_logs: pathlib.Path) -> None:
+    def power_on(self, udev: UdevPoller) -> None:
         """
         Power on PICO_PROBE.
         As a side effect self._tty will be set.
@@ -50,7 +50,6 @@ class TentacleDebugprobe:
         from . import util_mcu, util_mcu_debugprobe
 
         assert isinstance(udev, UdevPoller)
-        assert isinstance(directory_logs, pathlib.Path)
 
         with udev.guard as guard:
             # Power on

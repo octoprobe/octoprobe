@@ -117,17 +117,16 @@ class TentacleBase(abc.ABC):
     def __init__(
         self,
         tentacle_instance: TentacleInstance,
-        tentacle_serial_number: str,
         usb_tentacle: UsbTentacle,
     ) -> None:
         assert isinstance(tentacle_instance, TentacleInstance)
-        assert isinstance(tentacle_serial_number, str)
-        assert tentacle_serial_number == tentacle_serial_number.lower(), (
-            f"Must not contain upper case letters: {tentacle_serial_number}"
-        )
         assert isinstance(usb_tentacle, UsbTentacle)
         self.tentacle_state = TentacleState()
-        self.tentacle_serial_number = tentacle_serial_number
+        self.tentacle_serial_number = tentacle_instance.serial
+        assert self.tentacle_serial_number == self.tentacle_serial_number.lower(), (
+            f"Must not contain upper case letters: {self.tentacle_serial_number}"
+        )
+
         self.tentacle_instance = tentacle_instance
 
         self.label = self.build_label("")
@@ -176,7 +175,7 @@ class TentacleBase(abc.ABC):
 
     def flash_dut(
         self,
-        udev_poller: UdevPoller,
+        udev: UdevPoller,
         firmware_spec: FirmwareSpecBase,
         directory_logs: pathlib.Path,
     ) -> None:
@@ -185,7 +184,7 @@ class TentacleBase(abc.ABC):
 
         self.dut.flash_dut(
             tentacle=self,
-            udev=udev_poller,
+            udev=udev,
             directory_logs=directory_logs,
             firmware_spec=firmware_spec,
         )
