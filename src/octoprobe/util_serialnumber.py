@@ -68,7 +68,7 @@ def assert_serial_valid(serial: str) -> None:
         )
 
 
-def assert_serialdelimtied_valid(serial_delimited: str) -> None:
+def assert_serialdelimted_valid(serial_delimited: str) -> None:
     if not is_serialdelimtied_valid(serial_delimited=serial_delimited):
         raise ValueError(
             f"Serial '{serial_delimited}' is not valid. Expected: {REGEX_SERIAL_DELIMITED.pattern}"
