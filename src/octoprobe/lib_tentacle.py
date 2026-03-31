@@ -227,10 +227,17 @@ class TentacleBase(abc.ABC):
         Example: 1331-DAQ
         """
         return (
-            self.tentacle_serial_number[-SERIALNUMBER_SHORT:]
+            self.tentacle_serial_short
             + DELIMITER_SERIAL_BOARD
             + self.tentacle_spec_base.tentacle_tag
         )
+
+    @property
+    def tentacle_serial_short(self) -> str:
+        """
+        Example: 1831
+        """
+        return self.tentacle_serial_number[-SERIALNUMBER_SHORT:]
 
     @property
     @abc.abstractmethod

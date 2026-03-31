@@ -13,6 +13,7 @@ from octoprobe.util_constants_uart_flakiness import (
 
 from .lib_mpremote import MpRemote
 from .usb_tentacle.usb_constants import (
+    HwVersion,
     Switch,
     SwitchABC,
     TyperPowerCycle,
@@ -326,14 +327,18 @@ class TentacleInfraSwitch(SwitchABC):
 
 class TentacleInfraSwitchDUT(TentacleInfraSwitch):
     def set(self, on: bool) -> bool:
-        # Tentacle v0.3
-        self._tentacle_infra.usb_tentacle.switches[self.switch].set(on=on)
-        # Tentacle >= v0.5
-        changed = super().set(on=on)
+        if self._tentacle_infra.mcu_infra.hw_version is HwVersion.V03:
+            # Tentacle v0.3
+            changed = self._tentacle_infra.usb_tentacle.switches[self.switch].set(on=on)
+        else:
+            # Tentacle >= v0.5
+            changed = super().set(on=on)
+
         if self.switch is Switch.DUT:
             if ENABLE_DUT_POWER_OFF_TIME_MIN:
                 if changed:
                     self._tentacle_infra.switches.delay_set_dut_on(on=on)
+
         return changed
 
     def get(self) -> bool:

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-import pathlib
 import typing
 
 from .usb_tentacle.usb_constants import Switch
@@ -45,6 +44,7 @@ class TentacleDebugprobe:
         """
         Power on PICO_PROBE.
         As a side effect self._tty will be set.
+        We are only allowed to call this once!
         """
         # pylint: disable=import-outside-toplevel
         from . import util_mcu, util_mcu_debugprobe
@@ -52,17 +52,11 @@ class TentacleDebugprobe:
         assert isinstance(udev, UdevPoller)
 
         with udev.guard as guard:
+            assert self._tty is None
+
             # Power on
             changed = self._tentacle.switches[Switch.PICO_PROBE_RUN].set(on=True)
-            if not changed:
-                # The debugprobe was already powererd
-                device_sysfs = (
-                    self._tentacle.infra.usb_tentacle.usb_port_probe.device_sysfs
-                )
-                assert device_sysfs is not None
-                self._tty = device_sysfs.device
-                assert self._tty is not None
-                return
+            assert changed
 
             udev_filter = util_mcu.udev_filter_application_mode(
                 usb_id=util_mcu_debugprobe.RPI_DEBUGPROBE_USB_ID.application,
