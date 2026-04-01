@@ -154,7 +154,7 @@ class DutProgrammerPicotool(DutProgrammerABC):
                 return guard.expect_event(
                     udev_filter=udev_filter,
                     text_where=tentacle.dut.label,
-                    text_expect="Expect  to become visible on udev after power on",
+                    text_expect="Expect to become visible on udev after power on",
                     timeout_s=2.0,
                 )
 

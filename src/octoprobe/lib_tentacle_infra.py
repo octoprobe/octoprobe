@@ -327,17 +327,32 @@ class TentacleInfraSwitch(SwitchABC):
 
 class TentacleInfraSwitchDUT(TentacleInfraSwitch):
     def set(self, on: bool) -> bool:
+        assert self.switch is Switch.DUT
+        # Tentacle v0.3
+        changed = self._tentacle_infra.usb_tentacle.switches[self.switch].set(on=on)
+        if self._tentacle_infra.mcu_infra.hw_version is not HwVersion.V03:
+            # Tentacle >= v0.5
+            changed = super().set(on=on)
+
+        if ENABLE_DUT_POWER_OFF_TIME_MIN:
+            if changed:
+                self._tentacle_infra.switches.delay_set_dut_on(on=on)
+
+        return changed
+
+    def get(self) -> bool:
+        return self._tentacle_infra.usb_tentacle.switches[self.switch].get()
+
+
+class TentacleInfraSwitchLED_ERROR(TentacleInfraSwitch):
+    def set(self, on: bool) -> bool:
+        assert self.switch is Switch.LED_ERROR
         if self._tentacle_infra.mcu_infra.hw_version is HwVersion.V03:
             # Tentacle v0.3
             changed = self._tentacle_infra.usb_tentacle.switches[self.switch].set(on=on)
         else:
             # Tentacle >= v0.5
             changed = super().set(on=on)
-
-        if self.switch is Switch.DUT:
-            if ENABLE_DUT_POWER_OFF_TIME_MIN:
-                if changed:
-                    self._tentacle_infra.switches.delay_set_dut_on(on=on)
 
         return changed
 
@@ -407,10 +422,6 @@ class TentacleInfraSwitchRelays(TentacleInfraSwitch):
         tentacle_infra.mcu_infra.assert_base_code_loaded()
         changed = tentacle_infra.mp_remote.read_bool(expr=f"set_relays({list_relays})")
         return changed
-
-
-class TentacleInfraSwitchLED_ERROR(TentacleInfraSwitchDUT):
-    pass
 
 
 class TentacleInfraSwitchDelegate(TentacleInfraSwitch):
