@@ -334,7 +334,7 @@ def _combine_hubs_and_pico(
         dict_usb_pico: dict[int, UsbPico] = {}
         for pico in list_pico:
             if pico.location.bus != tentacle_hub_location.bus:
-                return None
+                continue
             if pico.location.path[:-1] != tentacle_hub_location.path:
                 continue
             hub_port = pico.location.path[-1]
