@@ -10,6 +10,7 @@ from .lib_tentacle import TentacleBase
 from .usb_tentacle.usb_constants import Switch
 from .usb_tentacle.usb_tentacle import UsbTentacles
 from .util_baseclasses import OctoprobeAppExitException
+from .util_constants_uart_flakiness import TIMEOUT_AFTER_DUT_OFF_S
 from .util_pyudev import UdevPoller
 
 logger = logging.getLogger(__file__)
@@ -132,6 +133,9 @@ class CtxTestRun:
                 if do_ping:
                     ping_tentacle_infra(tentacle=tentacle, tag="a")
                 tentacle.switches.dut = False
+                if isinstance(TIMEOUT_AFTER_DUT_OFF_S, float):
+                    logger.info(f"{TIMEOUT_AFTER_DUT_OFF_S=}")
+                    time.sleep(TIMEOUT_AFTER_DUT_OFF_S)
                 if do_ping:
                     ping_tentacle_infra(tentacle=tentacle, tag="b")
                 tentacle.switches.led_error = False

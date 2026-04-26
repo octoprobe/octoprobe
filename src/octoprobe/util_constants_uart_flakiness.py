@@ -13,9 +13,10 @@ SUBPROCESS_TENTACLE_DUT_TIMEOUT = True
 Switch the power of the DUT of before the subprocess gets killed.
 """
 
-ENABLE_DUT_POWER_OFF_TIME_MIN = True
-
-DUT_POWER_OFF_TIME_MIN_S = 20.0
+DUT_POWER_OFF_TIME_MIN_S: float | None = 2.0
 """
 If a DUT is powered off, it should remain unpowered for some time.
 """
+
+# TIMEOUT_AFTER_DUT_OFF_S: float | None = 2.0
+TIMEOUT_AFTER_DUT_OFF_S: float | None = None

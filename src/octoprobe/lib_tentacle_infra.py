@@ -6,10 +6,7 @@ import pathlib
 import time
 import typing
 
-from octoprobe.util_constants_uart_flakiness import (
-    DUT_POWER_OFF_TIME_MIN_S,
-    ENABLE_DUT_POWER_OFF_TIME_MIN,
-)
+from octoprobe.util_constants_uart_flakiness import DUT_POWER_OFF_TIME_MIN_S
 
 from .lib_mpremote import MpRemote
 from .usb_tentacle.usb_constants import (
@@ -334,7 +331,7 @@ class TentacleInfraSwitchDUT(TentacleInfraSwitch):
             # Tentacle >= v0.5
             changed = super().set(on=on)
 
-        if ENABLE_DUT_POWER_OFF_TIME_MIN:
+        if DUT_POWER_OFF_TIME_MIN_S is not None:
             if changed:
                 self._tentacle_infra.switches.delay_set_dut_on(on=on)
 
@@ -528,12 +525,13 @@ class TentacleInfraSwitches(dict[Switch, TentacleInfraSwitch]):
         When the DUT is powercycled, it should be powered off for at least a few seconds so the usb
         stack may recover.
         """
+        assert DUT_POWER_OFF_TIME_MIN_S is not None
         if on:
             duration_off_s = time.monotonic() - self._dut_off_time_s
             delay_remaining_s = DUT_POWER_OFF_TIME_MIN_S - duration_off_s
             if delay_remaining_s > 0.0:
                 _msg = f"{self._tentacle_infra.label}: The tentacle was switched off {duration_off_s:0.1f}s ago. Wait for another {delay_remaining_s:0.1f}s."
-                # logger.info(msg)
+                logger.info(_msg)
                 time.sleep(delay_remaining_s)
             return
 
