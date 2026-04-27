@@ -78,7 +78,9 @@ class CallLogger:
         logger.debug(self._format("<=", result))
 
     def log_exception(self, e: Exception) -> None:
-        logger.exception(msg=self._format("!!", repr(e)), exc_info=e)
+        if self._level <= 1:
+            # Only log in the outermost CallLogger-wrapper
+            logger.exception(msg=self._format("!!", repr(e)), exc_info=e)
 
 
 def call_logger[**P, R](func: Callable[P, R]) -> Callable[P, R]:
@@ -346,7 +348,12 @@ class MpRemote:
                         "^" * 20,
                     ]
                     result = "\n".join(lines)
-                    raise ExceptionCmdFailed(f"{self._label}: {result}")
+                    raise ExceptionCmdFailed(f"{self._label}:\n{result}")
+        except ExceptionCmdFailed as ex:
+            FTRACE_MARKER.print(
+                f"{self._label}: mpremote {self._tty} exec_raw() {cmd}: ERROR {ex!r}"
+            )
+            raise
         except TransportError as ex:
             logger.warning(
                 f"{self._label}: tty={self._tty}, cmd='{cmd}': exception={ex!r}"
