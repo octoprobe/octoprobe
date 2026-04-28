@@ -4,12 +4,13 @@ Octoprobe
 
 .. toctree::
 
-    big_picture.rst
-    design/terms.rst
-    design/op_command.rst
-    sphinx/index
-    rst_sandbox/index
-    license.rst
+    /big_picture.rst
+    /design/terms.rst
+    /design/op_command.rst
+    /usb/index
+    /sphinx/index
+    /rst_sandbox/index
+    /license.rst
 
 API Reference
 -------------

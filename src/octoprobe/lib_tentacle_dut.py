@@ -210,7 +210,7 @@ print('{VERSION_IMPLEMENTATION_SEPARATOR}'.join(l))
                         return
 
         except (UdevTimoutException, TransportError) as e:
-            logger.warning(f"{self.label}: Seems not to have firmware installed: {e!r}")
+            logger.warning(f"{self.label}: Seems to have NO firmware installed: {e!r}")
 
         with tentacle.active_led_on:
             logger.info(
