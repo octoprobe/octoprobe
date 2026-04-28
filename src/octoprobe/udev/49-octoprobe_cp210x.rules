@@ -1,0 +1,6 @@
+#
+# The ESP32_C3_DEVKIT and others use CP210x (USB to UART)
+# udev rule to keep hubs and CP210x forced power-on
+#
+ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="0424", ATTR{idProduct}=="2514", TEST=="power/control", ATTR{power/control}="on"
+ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="10c4", ATTR{idProduct}=="ea60", TEST=="power/control", ATTR{power/control}="on"

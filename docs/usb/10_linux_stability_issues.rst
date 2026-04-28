@@ -40,7 +40,7 @@ Add kernel boot parameter:
     sudo reboot
 
 
-keep hubs and CP210x forced on with udev
+udev rule to keep hubs and CP210x forced power-on
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 `/etc/udev/rules.d/82-octoprobe_cp210x.rules`
