@@ -48,6 +48,8 @@ REPOS: list[Repo] = [
     Repo("testbed_heatguard", entry="/introduction/index"),
     Repo("testbed_showcase", automodule=True, entry="/introduction/index"),
     Repo("testbed_micropython", entry="/user_guide/index"),
+    Repo("testbed_CB_JTAG_probe", entry="/introduction/index"),
+    # Repo("testbed_zephyr", entry="/user_guide/index"),
 ]
 
 BASE_DIR = Path.home() / "work_octoprobe"
@@ -66,7 +68,7 @@ _INDEX_TOP_TEMPLATE = jinja2.Template("""
 .. Restructured text comment: IGNORE_SECTION_CHECK
 
 {{ repo.name }}
-====================
+====================================
 
 {% if repo.automodule -%}
 .. automodule:: {{ repo.directory }}
