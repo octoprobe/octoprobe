@@ -22,7 +22,7 @@ slug = re.sub(r"\W+", "-", project.lower())
 # version = theme_version
 # release = theme_version_full
 author = "Hans Märki"
-copyright = "2024,2025 Hans Märki"
+copyright = "2024-2026 Hans Märki"
 language = "en"
 
 extensions = [
@@ -59,6 +59,8 @@ intersphinx_mapping = {
     "tentacle": ("http://docs.octoprobe.org/tentacle/", None),
     "testbed_showcase": ("http://docs.octoprobe.org/testbed_showcase/", None),
     "testbed_micropython": ("http://docs.octoprobe.org/testbed_micropython/", None),
+    "testbed_CB_JTAG_probe": ("http://docs.octoprobe.org/testbed_CB_JTAG_probe/", None),
+    "testbed_zephyr": ("http://docs.octoprobe.org/testbed_zephyr/", None),
     # "usbhubctl": ("http://docs.octoprobe.org/usbhubctl/", None),
 }
 
