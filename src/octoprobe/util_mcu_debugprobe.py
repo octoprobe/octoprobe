@@ -5,16 +5,21 @@ https://www.raspberrypi.com/documentation/microcontrollers/debug-probe.html
 https://github.com/raspberrypi/debugprobe
 """
 
+from __future__ import annotations
+
 import logging
 import pathlib
+import typing
 
 import pyudev
 
-from .lib_tentacle import TentacleBase
 from .util_baseclasses import BootApplicationUsbID, UsbID
 from .util_dut_programmer_abc import DutProgrammerABC
 from .util_firmware_spec import FirmwareBuildSpec, FirmwareSpecBase
 from .util_pyudev import UdevEventBase, UdevPoller
+
+if typing.TYPE_CHECKING:
+    from .lib_tentacle import TentacleBase
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +28,10 @@ _RPI_DEBUGPROBE_VENDOR = 0x2E8A
 RPI_DEBUGPROBE_USB_ID = BootApplicationUsbID(
     boot=UsbID(_RPI_DEBUGPROBE_VENDOR, 0x2E8A),
     application=UsbID(_RPI_DEBUGPROBE_VENDOR, 0x000C),
+)
+RPI_ULA_USB_ID = BootApplicationUsbID(
+    boot=UsbID(_RPI_DEBUGPROBE_VENDOR, 0x2E8A),
+    application=UsbID(0x16C0, 0x27DD),
 )
 
 
@@ -47,6 +56,9 @@ class DutProgrammerDebugprobe(DutProgrammerABC):
         firmware_spec: FirmwareSpecBase,
     ) -> None:
         """ """
+        # pylint: disable=import-outside-toplevel
+        from .lib_tentacle import TentacleBase
+
         assert isinstance(tentacle, TentacleBase)
         assert isinstance(directory_logs, pathlib.Path)
         assert isinstance(firmware_spec, FirmwareBuildSpec)

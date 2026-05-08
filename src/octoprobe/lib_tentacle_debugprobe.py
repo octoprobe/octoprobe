@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import typing
 
+from . import util_mcu, util_mcu_debugprobe
 from .usb_tentacle.usb_constants import Switch
 from .util_pyudev import UdevPoller
 
@@ -22,6 +23,7 @@ class TentacleDebugprobe:
     """
 
     TAG = "debugprobe"
+    USB_ID = util_mcu_debugprobe.RPI_DEBUGPROBE_USB_ID.application
 
     def __init__(self, label: str, tentacle: TentacleBase) -> None:
         # pylint: disable=import-outside-toplevel
@@ -46,9 +48,6 @@ class TentacleDebugprobe:
         As a side effect self._tty will be set.
         We are only allowed to call this once!
         """
-        # pylint: disable=import-outside-toplevel
-        from . import util_mcu, util_mcu_debugprobe
-
         assert isinstance(udev, UdevPoller)
 
         with udev.guard as guard:
@@ -59,7 +58,7 @@ class TentacleDebugprobe:
             assert changed
 
             udev_filter = util_mcu.udev_filter_application_mode(
-                usb_id=util_mcu_debugprobe.RPI_DEBUGPROBE_USB_ID.application,
+                usb_id=self.USB_ID,
                 usb_location=self._tentacle.infra.usb_location_probe,
             )
 
@@ -72,3 +71,8 @@ class TentacleDebugprobe:
             assert isinstance(event, util_mcu.UdevApplicationModeEvent)
             self._tty = event.tty
             assert self._tty is not None
+
+
+class TentacleSigrokULA(TentacleDebugprobe):
+    TAG = "sigrok-ula"
+    USB_ID = util_mcu_debugprobe.RPI_ULA_USB_ID.application

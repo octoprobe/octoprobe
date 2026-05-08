@@ -10,7 +10,7 @@ import pathlib
 import textwrap
 import typing
 
-from .lib_tentacle_debugprobe import TentacleDebugprobe
+from .lib_tentacle_debugprobe import TentacleDebugprobe, TentacleSigrokULA
 from .lib_tentacle_dut import TentacleDut
 from .lib_tentacle_infra import TentacleInfra, TentacleInfraSwitches
 from .usb_tentacle.usb_baseclasses import UsbPort
@@ -135,7 +135,7 @@ class TentacleBase(abc.ABC):
             usb_tentacle=usb_tentacle,
         )
 
-        self._probe: TentacleDebugprobe | None = None
+        self._probe: TentacleDebugprobe | TentacleSigrokULA | None = None
         self.init_probe()
 
         def get_dut() -> TentacleDut | None:
@@ -147,10 +147,12 @@ class TentacleBase(abc.ABC):
 
     def init_probe(self) -> None:
         probe = self.get_tag(tag=TAG_PROBE)
-        if probe == TentacleDebugprobe.TAG:
-            self._probe = TentacleDebugprobe(
-                label=self.build_label("PROBE"), tentacle=self
-            )
+        for cls in (TentacleDebugprobe, TentacleSigrokULA):
+            if probe == cls.TAG:
+                self._probe = cls(
+                    label=self.build_label("PROBE"),
+                    tentacle=self,
+                )
 
     def build_label(self, dut_or_infra_or_probe: str) -> str:
         # return f"Tentacle {dut_or_infra}{tentacle_serial_number}({tentacle_spec.label})"
