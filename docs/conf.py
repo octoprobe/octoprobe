@@ -59,7 +59,7 @@ intersphinx_mapping = {
     "tentacle": ("http://docs.octoprobe.org/tentacle/", None),
     "testbed_showcase": ("http://docs.octoprobe.org/testbed_showcase/", None),
     "testbed_micropython": ("http://docs.octoprobe.org/testbed_micropython/", None),
-    "testbed_CB_JTAG_probe": ("http://docs.octoprobe.org/testbed_CB_JTAG_probe/", None),
+    "testbed_cb_jtag_probe": ("http://docs.octoprobe.org/testbed_cb_jtag_probe/", None),
     "testbed_zephyr": ("http://docs.octoprobe.org/testbed_zephyr/", None),
     # "usbhubctl": ("http://docs.octoprobe.org/usbhubctl/", None),
 }

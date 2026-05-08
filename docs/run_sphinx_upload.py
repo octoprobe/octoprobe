@@ -48,7 +48,7 @@ REPOS: list[Repo] = [
     Repo("testbed_heatguard", entry="/introduction/index"),
     Repo("testbed_showcase", automodule=True, entry="/introduction/index"),
     Repo("testbed_micropython", entry="/user_guide/index"),
-    Repo("testbed_CB_JTAG_probe", entry="/introduction/index"),
+    Repo("testbed_cb_jtag_probe", entry="/introduction/index"),
     # Repo("testbed_zephyr", entry="/user_guide/index"),
 ]
 
