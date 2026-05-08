@@ -173,20 +173,34 @@ class TentacleBase(abc.ABC):
     def __hash__(self) -> int:
         return hash(self.tentacle_serial_number)
 
-    def flash_dut(
+    def flash_dut_micropython(
         self,
         udev: UdevPoller,
         firmware_spec: FirmwareSpecBase,
         directory_logs: pathlib.Path,
     ) -> None:
-        if self.dut is None:
-            return
+        assert self.dut is not None
 
-        self.dut.flash_dut(
+        self.dut.flash_dut_micropython(
             tentacle=self,
             udev=udev,
             directory_logs=directory_logs,
             firmware_spec=firmware_spec,
+        )
+
+    def flash_dut_picotool(
+        self,
+        udev: UdevPoller,
+        firmware_url: str,
+        directory_logs: pathlib.Path,
+    ) -> None:
+        assert self.dut is not None
+
+        self.dut.flash_dut_picotool(
+            tentacle=self,
+            udev=udev,
+            firmware_url=firmware_url,
+            directory_logs=directory_logs,
         )
 
     @property
@@ -217,6 +231,7 @@ class TentacleBase(abc.ABC):
     def power_dut_off_and_wait(self) -> None:
         if self.dut is None:
             return
+
         self.dut.mp_remote_close()
         self.infra.power_dut_off_and_wait()
 

@@ -14,7 +14,7 @@ from .lib_mpremote import MpRemote
 from .util_baseclasses import OctoprobeTestException, VersionMismatchException
 from .util_constants import TAG_MCU, TAG_PROGRAMMER
 from .util_dut_programmers import dut_programmer_factory
-from .util_firmware_spec import FirmwareSpecBase
+from .util_firmware_spec import FirmwareDownloadSpec, FirmwareSpecBase
 from .util_pyudev import UdevPoller, UdevTimoutException
 
 logger = logging.getLogger(__file__)
@@ -167,7 +167,41 @@ print('{VERSION_IMPLEMENTATION_SEPARATOR}'.join(l))
             )
             time.sleep(power_on_delay_s)
 
-    def flash_dut(
+    def flash_dut_picotool(
+        self,
+        tentacle: TentacleBase,
+        udev: UdevPoller,
+        firmware_url: str,
+        directory_logs: pathlib.Path,
+    ) -> None:
+        """
+        This assumes the relay 1 controls the powermode
+        """
+        # pylint: disable=import-outside-toplevel
+        from .lib_tentacle import TentacleBase
+        from .util_mcu_pico import DutProgrammerPicotool, picotool_flash
+
+        assert isinstance(tentacle, TentacleBase)
+        assert isinstance(udev, UdevPoller)
+        assert isinstance(firmware_url, str)
+        assert isinstance(directory_logs, pathlib.Path)
+
+        firmware = FirmwareDownloadSpec.file_or_http_download(url=firmware_url)
+
+        if not firmware.is_file():
+            logger.error(f"Firmware does not exist: {firmware}")
+            return
+
+        programmer = DutProgrammerPicotool()
+        event = programmer.enter_boot_mode(tentacle=tentacle, udev=udev)
+        picotool_flash(
+            event=event,
+            directory_logs=directory_logs,
+            filename_firmware=firmware,
+        )
+        return
+
+    def flash_dut_micropython(
         self,
         tentacle: TentacleBase,
         udev: UdevPoller,

@@ -27,6 +27,12 @@ FIRMWARE_DOWNLOAD_EXTENSION = ".json"
 MICROPYTHON_FULL_VERSION_TEXT_FORCE = "requires_firmware_flashing"
 
 
+class OctoprobeFirmwareDownloadException(Exception):
+    """
+    Could not download a firmware or file does not exist.
+    """
+
+
 @dataclasses.dataclass(frozen=True, repr=True)
 class FirmwareSpecBase(abc.ABC):
     board_variant: BoardVariant
@@ -121,11 +127,11 @@ class FirmwareBuildSpec(FirmwareSpecBase):
     @property
     def filename(self) -> pathlib.Path:
         if self._filename is None:
-            raise ValueError(
+            raise OctoprobeFirmwareDownloadException(
                 f"Firmware for '{self.board_variant.name_normalized}': Firmware filename is not defined. Probably the firmware has not been compiled yet."
             )
         if not self._filename.is_file():
-            raise ValueError(
+            raise OctoprobeFirmwareDownloadException(
                 f"Firmware for '{self.board_variant.name_normalized}': Firmware does not exist: {self._filename}"
             )
 
@@ -193,7 +199,7 @@ class FirmwareDownloadSpec(FirmwareSpecBase):
         try:
             tmp_filename, _headers = urlretrieve(url=url)
         except HTTPError as e:
-            raise ValueError(f"{url}: {e}") from e
+            raise OctoprobeFirmwareDownloadException(f"{url}: {e}") from e
 
         shutil.move(src=tmp_filename, dst=filename)
         return filename
@@ -220,7 +226,9 @@ class FirmwareDownloadSpec(FirmwareSpecBase):
                 json_obj = json.load(f)
             return FirmwareDownloadSpec.factory_json(json_obj=json_obj)
         except Exception as e:
-            raise ValueError(f"{filename}: Failed to read: {e!r}") from e
+            raise OctoprobeFirmwareDownloadException(
+                f"{filename}: Failed to read: {e!r}"
+            ) from e
 
     @staticmethod
     def factory_json(json_obj: dict[str, typing.Any]) -> FirmwareDownloadSpec:

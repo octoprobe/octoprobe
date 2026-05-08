@@ -104,7 +104,7 @@ class CtxTestRun:
             return
 
         # Flash the MCU
-        tentacle.flash_dut(
+        tentacle.flash_dut_micropython(
             udev=udev_poller,
             directory_logs=directory_logs,
             firmware_spec=tentacle.tentacle_state.firmware_spec,

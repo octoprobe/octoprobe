@@ -112,7 +112,7 @@ def picotool_cmd(event: UdevEventBase, filename_firmware: str) -> list[str]:
     ]
 
 
-def picotool_flash_micropython(
+def picotool_flash(
     event: UdevEventBase,
     directory_logs: pathlib.Path,
     filename_firmware: pathlib.Path,
@@ -176,7 +176,7 @@ class DutProgrammerPicotool(DutProgrammerABC):
         event = self.enter_boot_mode(tentacle=tentacle, udev=udev)
         assert isinstance(event, Rp2UdevBootModeEvent)
 
-        picotool_flash_micropython(
+        picotool_flash(
             event=event,
             directory_logs=directory_logs,
             filename_firmware=firmware_spec.filename,

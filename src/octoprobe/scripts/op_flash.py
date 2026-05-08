@@ -9,7 +9,7 @@ from octoprobe.util_firmware_spec import FirmwareDownloadSpec
 
 from .. import util_mcu_pico
 from ..usb_tentacle.usb_tentacle import UsbTentacle
-from ..util_mcu_pico import picotool_flash_micropython
+from ..util_mcu_pico import picotool_flash
 from .op_bootmode import DELIM, do_bootmode
 
 
@@ -42,7 +42,7 @@ def do_flash(usb_tentacle: UsbTentacle, is_infra: bool, firmware_url: str) -> No
         return
 
     assert isinstance(event, util_mcu_pico.Rp2UdevBootModeEvent)
-    picotool_flash_micropython(
+    picotool_flash(
         event=event,
         directory_logs=pathlib.Path("/tmp"),
         filename_firmware=firmware,

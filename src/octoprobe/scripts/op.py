@@ -33,7 +33,7 @@ TyperAnnotated = typing.Annotated
 app = typer.Typer()
 
 
-_SerialsAnnotation = TyperAnnotated[
+SerialsAnnotation = TyperAnnotated[
     Optional[list[str]],  # noqa: UP045
     typer.Option(help="Apply only to the selected tentacles"),
 ]
@@ -42,7 +42,7 @@ _ReposAnnotation = TyperAnnotated[
     typer.Option(help="Repos to be cloned"),
 ]
 
-_PoweronAnnotation = TyperAnnotated[
+PoweronAnnotation = TyperAnnotated[
     bool,
     typer.Option(
         help="If a PICO_INFRA is powered off, it will not be detected in a query. This option will detect all hubs and power on PICO_INFRA."
@@ -127,8 +127,8 @@ def iter_usb_tentacles(
 @app.command(help="Power cycle usb ports.")
 def powercycle(
     power_cycle: TyperPowerCycle,
-    serials: _SerialsAnnotation = None,
-    poweron: _PoweronAnnotation = False,
+    serials: SerialsAnnotation = None,
+    poweron: PoweronAnnotation = False,
 ) -> None:
     for usb_tentacle in iter_usb_tentacles(poweron=poweron, serials=serials):
         tentacle_infra = TentacleInfra.factory_usb_tentacle(usb_tentacle=usb_tentacle)
@@ -138,8 +138,8 @@ def powercycle(
 
 @app.command(help="Bring and PICO_INFRA into boot mode.")
 def bootmode_infra(
-    serials: _SerialsAnnotation = None,
-    poweron: _PoweronAnnotation = False,
+    serials: SerialsAnnotation = None,
+    poweron: PoweronAnnotation = False,
     picotool_cmd: _PicotoolCmdAnnotation = False,
 ) -> None:
     for usb_tentacle in iter_usb_tentacles(poweron=poweron, serials=serials):
@@ -150,8 +150,8 @@ def bootmode_infra(
 
 @app.command(help="Bring and PICO_PROBE into boot mode.")
 def bootmode_probe(
-    serials: _SerialsAnnotation = None,
-    poweron: _PoweronAnnotation = False,
+    serials: SerialsAnnotation = None,
+    poweron: PoweronAnnotation = False,
     picotool_cmd: _PicotoolCmdAnnotation = False,
 ) -> None:
     for usb_tentacle in iter_usb_tentacles(poweron=poweron, serials=serials):
@@ -165,8 +165,8 @@ def bootmode_probe(
 @app.command(help="Flash firmware to PICO_INFRA.")
 def flash_infra(
     firmware_url: str = "https://micropython.org/resources/firmware/RPI_PICO-20251209-v1.27.0.uf2",
-    serials: _SerialsAnnotation = None,
-    poweron: _PoweronAnnotation = False,
+    serials: SerialsAnnotation = None,
+    poweron: PoweronAnnotation = False,
 ) -> None:
     for usb_tentacle in iter_usb_tentacles(poweron=poweron, serials=serials):
         op_flash.do_flash(
@@ -179,8 +179,8 @@ def flash_infra(
 @app.command(help="Flash firmware to PICO_PROBE.")
 def flash_probe(
     firmware_url: str = "https://github.com/raspberrypi/debugprobe/releases/download/debugprobe-v2.3.0/debugprobe_on_pico.uf2",
-    serials: _SerialsAnnotation = None,
-    poweron: _PoweronAnnotation = False,
+    serials: SerialsAnnotation = None,
+    poweron: PoweronAnnotation = False,
 ) -> None:
     for usb_tentacle in iter_usb_tentacles(poweron=poweron, serials=serials):
         op_flash.do_flash(
@@ -196,8 +196,8 @@ def exec_infra(
         str,
         typer.Argument(help="Micropython code to execute on each pico-infra tentacle."),
     ] = "set_relays([(1, True)])",
-    serials: _SerialsAnnotation = None,
-    poweron: _PoweronAnnotation = False,
+    serials: SerialsAnnotation = None,
+    poweron: PoweronAnnotation = False,
 ) -> None:
     for usb_tentacle in iter_usb_tentacles(poweron=poweron, serials=serials):
         ret = do_exec_infra(usb_tentacle=usb_tentacle, code=code)
@@ -214,14 +214,14 @@ def power(
         list[Switch] | None,
         typer.Option(help="Power OFF given usb hub port on all tentacles"),
     ] = None,
-    serials: _SerialsAnnotation = None,
+    serials: SerialsAnnotation = None,
     set_off: TyperAnnotated[
         bool,
         typer.Option(
             help="Power OFF ALL usb hub ports (except infraboot) on ALL tentacles"
         ),
     ] = False,
-    poweron: _PoweronAnnotation = False,
+    poweron: PoweronAnnotation = False,
 ) -> None:
     _on: list[Switch] = [] if on is None else on
     _off: list[Switch] = [] if off is None else off
@@ -248,7 +248,7 @@ def power(
 
 
 @app.command(help="Query connected tentacles.")
-def query(poweron: _PoweronAnnotation = False) -> None:
+def query(poweron: PoweronAnnotation = False) -> None:
     for usb_tentacle in iter_usb_tentacles(poweron=poweron, serials=None):
         tentacle_infra = TentacleInfra.factory_usb_tentacle(usb_tentacle=usb_tentacle)
         try:

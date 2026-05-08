@@ -215,7 +215,7 @@ class TentacleInfra:
         from .util_mcu_pico import (
             RPI_PICO_USB_ID,
             pico_udev_filter_boot_mode,
-            picotool_flash_micropython,
+            picotool_flash,
         )
 
         self.mp_remote_close()
@@ -245,7 +245,7 @@ class TentacleInfra:
             self.switches.infraboot = True
 
         with udev.guard as guard:
-            picotool_flash_micropython(
+            picotool_flash(
                 event=event,
                 directory_logs=directory_test,
                 filename_firmware=filename_firmware,
