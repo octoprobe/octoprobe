@@ -73,6 +73,24 @@ class TentacleDebugprobe:
             assert self._tty is not None
 
 
+class TentacleSigrokGusmanb(TentacleDebugprobe):
+    TAG = "sigrok-gusmanb"
+    USB_ID = util_mcu_debugprobe.RPI_ULA_USB_ID.application
+
+
 class TentacleSigrokULA(TentacleDebugprobe):
     TAG = "sigrok-ula"
     USB_ID = util_mcu_debugprobe.RPI_ULA_USB_ID.application
+
+
+class TentacleSigrokPico(TentacleDebugprobe):
+    TAG = "sigrok-pico"
+    USB_ID = util_mcu_debugprobe.RPI_SIGROK_PICOPROBE_ID.application
+
+
+LIST_DEBUGPROBES = (
+    TentacleDebugprobe,
+    TentacleSigrokGusmanb,
+    TentacleSigrokPico,
+    TentacleSigrokULA,
+)

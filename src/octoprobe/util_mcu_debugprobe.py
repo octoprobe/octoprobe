@@ -33,6 +33,10 @@ RPI_ULA_USB_ID = BootApplicationUsbID(
     boot=UsbID(_RPI_DEBUGPROBE_VENDOR, 0x2E8A),
     application=UsbID(0x16C0, 0x27DD),
 )
+RPI_SIGROK_PICOPROBE_ID = BootApplicationUsbID(
+    boot=UsbID(_RPI_DEBUGPROBE_VENDOR, 0x2E8A),
+    application=UsbID(0x2E8A, 0x000A),
+)
 
 
 class Rp2UdevBootModeEvent(UdevEventBase):
