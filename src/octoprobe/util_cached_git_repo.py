@@ -75,6 +75,14 @@ https://github.com/micropython/micropython.git~17468@v1.24-release
 https://github.com/micropython/micropython.git~17468@7118942a8c03413e0e85b9b42fc9e1b167966d57
 """
 
+RE_USERREPO_FROM_URL = re.compile(
+    r"https://github.com/(?P<user>.+?)/(?P<repo>.+?)\.git"
+)
+"""
+url: https://github.com/micropython/micropython.git
+repo: micropython/micropython
+"""
+
 RE_IS_GITHUB_URL = re.compile(r"/(tree|pull|commit|commits)/")
 """
 It is a github url if it contains '/tree/' or '/pull/'
@@ -165,6 +173,24 @@ class GitSpec:
     "17468"
     branch: str | None
     "v1.25.0"
+
+    @property
+    def user(self) -> str:
+        """
+        micropython/micropython
+        """
+        match = RE_USERREPO_FROM_URL.match(self.url)
+        assert match is not None
+        return match.group("user")
+
+    @property
+    def repo(self) -> str:
+        """
+        micropython/micropython
+        """
+        match = RE_USERREPO_FROM_URL.match(self.url)
+        assert match is not None
+        return match.group("repo")
 
     @property
     def is_commit_hash(self) -> bool:
