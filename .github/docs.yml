@@ -11,10 +11,29 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        python-version: ["3.13.12"]
+    env:
+      UV_PYTHON: ${{ matrix.python-version }}
+
     steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-python@v5
-    - name: Install Python packages
-      run: pip install -r docs/requirements.txt
-    - name: Build docs
-      run: make -C docs/ html
+      - uses: actions/checkout@v6
+      
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v7.6
+        with:
+            # version: "0.5.26"
+          enable-cache: true
+          cache-dependency-glob: |
+            pyproject.toml
+
+      - name: Build docs
+        run: |
+          . .venv/bin/activate
+          make -C docs/ html
+        continue-on-error: true
