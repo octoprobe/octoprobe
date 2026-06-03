@@ -301,7 +301,7 @@ print('{VERSION_IMPLEMENTATION_SEPARATOR}'.join(l))
         Return True if 'cmd' succeeds
         """
         try:
-            _ret = self.mp_remote.exec_raw(cmd)
+            _ret = self.mp_remote.exec_raw2_unwrapped(cmd)
             return True
         except ExceptionCmdFailed as e:
             msg = f"{self.label}: '{cmd}: {e}"

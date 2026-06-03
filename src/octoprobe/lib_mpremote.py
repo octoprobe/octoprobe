@@ -323,6 +323,17 @@ class MpRemote:
         timeout: int | None,
         soft_reset: bool | None,
     ) -> str:
+        return self.exec_raw2_unwrapped(
+            cmd=cmd, follow=follow, timeout=timeout, soft_reset=soft_reset
+        )
+
+    def exec_raw2_unwrapped(
+        self,
+        cmd: str,
+        follow: bool = True,
+        timeout: int | None = 2,
+        soft_reset: bool | None = None,
+    ) -> str:
         assert isinstance(cmd, str)
         assert isinstance(follow, bool)
         assert isinstance(timeout, int | None)
