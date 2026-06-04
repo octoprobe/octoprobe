@@ -5,10 +5,10 @@ import typing
 from typing import Optional
 
 import typer
+from git_cached_repo.git_cached_repo import CachedGitRepo
 from mpremote.transport_serial import TransportError
 
 from octoprobe.util_baseclasses import OctoprobeAppExitException
-from octoprobe.util_cached_git_repo import CachedGitRepo
 from octoprobe.util_constants import DIRECTORY_OCTOPROBE_GIT_CACHE
 
 from ..lib_tentacle_infra import TentacleInfra

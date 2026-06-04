@@ -285,7 +285,6 @@
                 "--repos=https://github.com/micropython/micropython.git@v1.25.0",
                 "--repos=https://github.com/dpgeorge/micropython.git@qemu-sparc",
                 "--repos=https://github.com/micropython/micropython.git~17418",
-                "--repos=https://github.com/micropython/micropython.git~17384@master",
             ],
             "env": {
                 "PYTHONPATH": "${workspaceFolder}/src"

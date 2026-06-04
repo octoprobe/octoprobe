@@ -13,6 +13,9 @@
 			"path": "../testbed_showcase"
 		},
 		{
+			"path": "../git_cached_repo"
+		},
+		{
 			"path": "../tentacle"
 		}
 	],

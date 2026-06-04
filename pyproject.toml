@@ -31,6 +31,7 @@ classifiers = [
 ]
 
 dependencies = [
+    "git_cached_repo@git+https://github.com/octoprobe/git_cached_repo@main",
     "esptool",
     "Jinja2",
     # "mpremote@git+https://github.com/micropython/micropython@master#egg=mpremote&subdirectory=tools/mpremote",
