@@ -139,11 +139,12 @@ class SphinxProject:
             shutil.copy2(REPO_ORIGIN.docs_dir / filename, self.repo.docs_dir / filename)
 
     def do_upload(self) -> None:
-        html_dir = self.repo.get_dir("_build/html")
-
-        print(f"Directory upload: {html_dir}")
+        print(f"Building docs for: {self.repo.directory}")
         subprocess.run(["make", "-C", str(self.repo.docs_dir), "clean"], check=True)
         subprocess.run(["make", "-C", str(self.repo.docs_dir), "html"], check=True)
+
+        html_dir = self.repo.get_dir("_build/html")
+        print(f"Directory upload: {html_dir}")
 
         # Stream the built HTML to the remote server via SSH, re-rooting the
         # tar archive under the repo name on the remote side.
@@ -173,7 +174,14 @@ class SphinxProject:
 
 
 def main() -> None:
+    repos_available: list[Repo] = []
     for repo in REPOS:
+        if not repo.docs_dir.is_dir():
+            print(f"Skipping missing docs directory: {repo.docs_dir}")
+            continue
+        repos_available.append(repo)
+
+    for repo in repos_available:
         project = SphinxProject(repo)
         project.create_top_redirects()
         project.create_index_top()
@@ -181,7 +189,7 @@ def main() -> None:
             continue
         project.copy_shared_files()
 
-    for repo in REPOS:
+    for repo in repos_available:
         project = SphinxProject(repo)
         project.do_upload()
 
