@@ -187,6 +187,9 @@ class UdevPoller:
         self.epoll = select.epoll()
         self.epoll.register(self.monitor.fileno(), select.POLLIN)
 
+    def __repr__(self) -> str:
+        return "UdevPoller"
+
     def __enter__(self) -> Self:
         return self
 
