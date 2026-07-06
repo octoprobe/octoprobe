@@ -114,7 +114,7 @@ class TentacleDut:
         >>> import sys
         >>> sys.version
         '3.4.0; MicroPython v1.20.0 on 2023-04-26'
-        >>> sys.implementation[2]
+        >>> sys.implementation._machine
         'Raspberry Pi Pico2 with RP2350-RISCV'
 
         Will return both strings with a ',' inbetween.
@@ -128,7 +128,7 @@ try:
 except AttributeError:
     pass
 l.append(sys.version)
-l.append(sys.implementation[2])
+l.append(sys.implementation._machine)
 print('{VERSION_IMPLEMENTATION_SEPARATOR}'.join(l))
         """
         version_implementation = self.mp_remote.exec_raw(cmd=cmd, timeout=2)

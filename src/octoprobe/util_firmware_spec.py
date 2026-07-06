@@ -49,7 +49,7 @@ class FirmwareSpecBase(abc.ABC):
     >>> import sys
     >>> sys.version
     '3.4.0; MicroPython v1.20.0 on 2023-04-26'
-    >>> sys.implementation
+    >>> sys.implementation._machine
     'Raspberry Pi Pico2 with RP2350-RISCV'
 
     'full_version_text' will be:

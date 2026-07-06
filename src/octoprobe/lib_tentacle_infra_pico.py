@@ -157,7 +157,7 @@ def set_relays_pulse(relays, initial_closed, durations_ms) -> None:
     def get_micropython_version(self) -> str:
         self.assert_base_code_loaded()
         return self._infra.mp_remote.read_str(
-            "sys.version + ',' + sys.implementation[2]"
+            "sys.version + ',' + sys.implementation._machine"
         )
 
     def exception_if_files_on_flash(self) -> None:
