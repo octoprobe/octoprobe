@@ -128,7 +128,7 @@ try:
 except AttributeError:
     pass
 l.append(sys.version)
-l.append(sys.implementation._machine)
+l.append(sys.implementation._build)
 print('{VERSION_IMPLEMENTATION_SEPARATOR}'.join(l))
         """
         version_implementation = self.mp_remote.exec_raw(cmd=cmd, timeout=2)
