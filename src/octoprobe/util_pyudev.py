@@ -244,12 +244,11 @@ class UdevPoller:
         begin_s = time.monotonic()
         while True:
             duration_s = time.monotonic() - begin_s
+            duration_text = f"{text_where}: {text_expect}: duration_s {duration_s:0.2f}s of {timeout_s:0.2f}s"
             if duration_s > timeout_s:
-                raise UdevTimoutException(
-                    f"{text_where}: {text_expect}: duration_s {duration_s:0.3f}s of {timeout_s:0.3f}s."
-                )
+                raise UdevTimoutException(duration_text)
             events = self.epoll.poll(timeout=0.5)
-            duration_text = f"{duration_s:0.2f}s of {timeout_s:0.2f}s"
+            duration_text = f"{text_where}: {text_expect}: duration_s {duration_s:0.2f}s of {timeout_s:0.2f}s"
             if len(events) == 0:
                 logger.debug(duration_text)
                 continue
