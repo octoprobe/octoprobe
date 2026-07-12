@@ -15,7 +15,7 @@ from .util_baseclasses import OctoprobeTestException, VersionMismatchException
 from .util_constants import TAG_MCU, TAG_PROGRAMMER
 from .util_dut_programmers import dut_programmer_factory
 from .util_firmware_spec import FirmwareDownloadSpec, FirmwareSpecBase
-from .util_pyudev import UdevPoller, UdevTimoutException
+from .util_pyudev import UdevPoller, UdevTimeoutException
 
 logger = logging.getLogger(__file__)
 
@@ -243,7 +243,7 @@ print('{VERSION_IMPLEMENTATION_SEPARATOR}'.join(l))
                         logger.info(f"{self.label}: Firmware is already installed")
                         return
 
-        except (UdevTimoutException, TransportError) as e:
+        except (UdevTimeoutException, TransportError) as e:
             logger.warning(f"{self.label}: Seems to have NO firmware installed: {e!r}")
 
         with tentacle.active_led_on:
@@ -258,7 +258,7 @@ print('{VERSION_IMPLEMENTATION_SEPARATOR}'.join(l))
                         directory_logs=directory_logs,
                         firmware_spec=firmware_spec,
                     )
-            except UdevTimoutException as e:
+            except UdevTimeoutException as e:
                 msg = f"Failed to flash the firmware. Is USB connected? {e!r}"
                 logger.warning(f"{self.label}: {msg}")
                 raise OctoprobeTestException(msg) from e

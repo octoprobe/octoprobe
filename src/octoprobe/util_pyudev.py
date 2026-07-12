@@ -33,7 +33,7 @@ class UdevFailException(Exception):
     pass
 
 
-class UdevTimoutException(Exception):
+class UdevTimeoutException(Exception):
     pass
 
 
@@ -131,7 +131,7 @@ class UdevFilter:
                     return mount_point
             time.sleep(0.1)
 
-        raise UdevTimoutException(f"Waiting for '{device_node}' to be mounted.")
+        raise UdevTimeoutException(f"Waiting for '{device_node}' to be mounted.")
 
     def matches(self, device_event: pyudev.Device) -> bool:
         if device_event.action not in self.actions:
@@ -246,7 +246,7 @@ class UdevPoller:
             duration_s = time.monotonic() - begin_s
             duration_text = f"{text_where}: {text_expect}: duration_s {duration_s:0.2f}s of {timeout_s:0.2f}s"
             if duration_s > timeout_s:
-                raise UdevTimoutException(duration_text)
+                raise UdevTimeoutException(duration_text)
             events = self.epoll.poll(timeout=0.5)
             duration_text = f"{text_where}: {text_expect}: duration_s {duration_s:0.2f}s of {timeout_s:0.2f}s"
             if len(events) == 0:
