@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import pathlib
+import re
 import subprocess
 import time
 import typing
@@ -9,6 +10,23 @@ import typing
 from .util_constants_uart_flakiness import SUBPROCESS_TERMINATE_PAUSE_S
 
 logger = logging.getLogger(__file__)
+
+TAG_LOG_START = "###-LOG-START-###"
+TAG_LOG_END = "###-LOG-END-###"
+
+
+def extract_test_output(logfile: pathlib.Path) -> str:
+    text = logfile.read_text()
+    match = re.search(
+        f"({TAG_LOG_START})(?P<testoutput>.*?)({TAG_LOG_END})",
+        text,
+        re.MULTILINE | re.DOTALL,
+    )
+    if not match:
+        raise ValueError(
+            f"{logfile}: Expected tags '{TAG_LOG_START}' and '{TAG_LOG_END}' not found!"
+        )
+    return match.group("testoutput")
 
 
 class SubprocessExitCodeException(Exception):
@@ -70,7 +88,7 @@ def subprocess_run(
                         f.write(f"export {k}={v}\n")
                 f.write("\n")
                 f.write(f"{' '.join(args)}\n")
-                f.write("\n\n")
+                f.write(f"{TAG_LOG_START}\n\n")
                 f.flush()
                 try:
                     proc = subprocess.run(
@@ -85,10 +103,11 @@ def subprocess_run(
                         stdout=f,
                         stderr=subprocess.STDOUT,
                     )
-                    f.write(f"\n\nreturncode={proc.returncode}\n")
+                    f.write(f"\n\n{TAG_LOG_END}\n")
+                    f.write(f"returncode={proc.returncode}\n")
                     f.write(f"duration={time.monotonic() - begin_s:0.3f}s\n")
                 except subprocess.TimeoutExpired:
-                    f.write("\n\n")
+                    f.write(f"\n\n{TAG_LOG_END}\n")
                     f.write(f"TimeoutExpired after {timeout_s=}\n")
                     # Does it take some time for the subprocess to fully die?
                     # To be sure, we wait some time.
