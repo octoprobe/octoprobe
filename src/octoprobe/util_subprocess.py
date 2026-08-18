@@ -18,7 +18,7 @@ TAG_LOG_END = "###-LOG-END-###"
 def extract_test_output(logfile: pathlib.Path) -> str:
     text = logfile.read_text()
     match = re.search(
-        f"({TAG_LOG_START})(?P<testoutput>.*?)({TAG_LOG_END})",
+        f"({TAG_LOG_START}\n\n)(?P<testoutput>.*?)(\n\n{TAG_LOG_END})",
         text,
         re.MULTILINE | re.DOTALL,
     )
