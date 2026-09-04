@@ -157,7 +157,7 @@ class DutMicropythonEsp32(DutMcu):
             event = guard.expect_event(
                 udev_filter=udev_filter,
                 text_where=tentacle.dut.label,
-                text_expect="Expect ESP32/ESP32_C3/ESP32_S3 to become visible",
+                text_expect="Expect ESP32/ESP32_Cx/ESP32_Sx to become visible",
                 timeout_s=6.0,
             )
 
