@@ -21,7 +21,7 @@ from .util_micropython_boards import BoardVariant, board_variants
 if typing.TYPE_CHECKING:
     from .lib_tentacle import TentacleBase
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 FIRMWARE_DOWNLOAD_EXTENSION = ".json"
 MICROPYTHON_FULL_VERSION_TEXT_FORCE = "requires_firmware_flashing"

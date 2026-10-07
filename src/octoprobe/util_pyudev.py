@@ -14,7 +14,7 @@ from typing import Any, Self
 
 import pyudev
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 
 _RE_USB_LOCATION = re.compile(r".*/(?P<location>\d+-\d+(\.\d+)*)")

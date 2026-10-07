@@ -7,7 +7,7 @@ from . import util_mcu, util_mcu_debugprobe
 from .usb_tentacle.usb_constants import Switch
 from .util_pyudev import UdevPoller
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 if typing.TYPE_CHECKING:
     from .lib_tentacle import TentacleBase

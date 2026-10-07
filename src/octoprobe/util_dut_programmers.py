@@ -11,7 +11,7 @@ if typing.TYPE_CHECKING:
     pass
 
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 
 def _get_programmers() -> list[type[DutProgrammerABC]]:

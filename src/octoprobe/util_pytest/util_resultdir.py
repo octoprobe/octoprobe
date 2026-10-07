@@ -6,7 +6,7 @@ import pathlib
 
 from octoprobe.util_constants import DirectoryTag
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 
 class ResultFile:

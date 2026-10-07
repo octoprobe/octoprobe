@@ -23,7 +23,7 @@ from .util_pyudev import UdevPoller
 
 DIRECTORY_OF_THIS_FILE = pathlib.Path(__file__).parent
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 FILENAME_FIRMWARE_SPEC = DIRECTORY_OF_THIS_FILE / "util_tentacle_infra_firmware.json"
 

@@ -22,7 +22,7 @@ from .util_ftrace_marker import FTRACE_MARKER
 from .util_jinja2 import render
 
 # pylint: disable=W0123 # Use of eval (eval-used)
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 
 class ExceptionMpRemote(Exception):

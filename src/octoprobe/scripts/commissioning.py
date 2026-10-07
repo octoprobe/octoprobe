@@ -10,7 +10,7 @@ from ..usb_tentacle.usb_tentacle import UsbTentacle, UsbTentacles
 from ..util_firmware_spec import FirmwareDownloadSpec
 from ..util_pyudev import UdevPoller
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 DIRECTORY_OF_THIS_FILE = pathlib.Path(__file__).parent
 FILENAME_LOGGING_JSON = DIRECTORY_OF_THIS_FILE / "commissioning_logging.json"

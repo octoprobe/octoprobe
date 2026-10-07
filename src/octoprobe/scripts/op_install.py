@@ -12,7 +12,7 @@ from ..util_constants import (
     DIRECTORY_OCTOPROBE_DOWNLOADS_MACHINE_BIN,
 )
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 
 URL_RELEASE_DEFAULT = (

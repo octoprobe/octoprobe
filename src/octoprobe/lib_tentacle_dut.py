@@ -17,7 +17,7 @@ from .util_dut_programmers import dut_programmer_factory
 from .util_firmware_spec import FirmwareDownloadSpec, FirmwareSpecBase
 from .util_pyudev import UdevPoller, UdevTimeoutException
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 if typing.TYPE_CHECKING:
     from .lib_tentacle import TentacleBase

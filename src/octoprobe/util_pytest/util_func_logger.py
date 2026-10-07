@@ -6,7 +6,7 @@ from collections.abc import Callable
 
 from octoprobe.util_pytest.util_logging_handler_color import EnumColors
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 
 def func_logger[**P, R](func: Callable[P, R]) -> Callable[P, R]:

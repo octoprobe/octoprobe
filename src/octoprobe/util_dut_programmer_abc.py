@@ -12,7 +12,7 @@ if typing.TYPE_CHECKING:
     from .lib_tentacle import TentacleBase
 
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 
 IDX1_RELAYS_DUT_BOOT = 1

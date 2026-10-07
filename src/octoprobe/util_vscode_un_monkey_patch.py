@@ -32,7 +32,7 @@ See https://github.com/microsoft/debugpy/blob/main/src/debugpy/_vendored/pydevd/
 
 import logging
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 
 def un_monkey_patch() -> None:

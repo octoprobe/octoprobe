@@ -13,7 +13,7 @@ from .util_baseclasses import OctoprobeAppExitException
 from .util_constants_uart_flakiness import TIMEOUT_AFTER_DUT_OFF_S
 from .util_pyudev import UdevPoller
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 FULL_POWERCYCLE_ALL_TENTACLES = False
 

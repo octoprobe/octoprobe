@@ -16,7 +16,7 @@ from serial.tools import list_ports_linux
 
 from ..util_ftrace_marker import FTRACE_MARKER
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 
 class HubPortNumber(enum.IntEnum):

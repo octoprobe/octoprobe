@@ -9,7 +9,7 @@ import typing
 
 from .util_constants_uart_flakiness import SUBPROCESS_TERMINATE_PAUSE_S
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 TAG_LOG_START = "###-LOG-START-###"
 TAG_LOG_END = "###-LOG-END-###"

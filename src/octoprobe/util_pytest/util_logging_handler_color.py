@@ -11,7 +11,7 @@ import typing
 
 from rich.style import Style
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 
 _STYLE_FALLBACK = Style(color="purple")

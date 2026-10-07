@@ -40,7 +40,7 @@ from ..usb_tentacle.usb_constants import Switch
 from ..util_serialnumber import SERIALNUMBER_SHORT, get_serial_delimited
 from . import usb_constants
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 
 # Specification of a raspberry pi pico soldered on to the tentacle

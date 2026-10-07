@@ -22,7 +22,7 @@ from collections.abc import Iterator
 from .lib_tentacle import TentacleUsbPort
 from .util_baseclasses import OctoprobeAppExitException
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 
 class JournalctlObserver:

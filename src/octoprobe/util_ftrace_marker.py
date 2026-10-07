@@ -5,7 +5,7 @@ import logging
 import os
 import pathlib
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 ENV_OCTOPROBE_ENABLE_FTRACE_MARKER = "OCTOPROBE_ENABLE_FTRACE_MARKER"
 

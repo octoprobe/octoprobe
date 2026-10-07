@@ -21,7 +21,7 @@ from .util_firmware_spec import FirmwareSpecBase
 from .util_pyudev import UdevPoller
 from .util_serialnumber import SERIALNUMBER_SHORT
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass(frozen=True, repr=True)

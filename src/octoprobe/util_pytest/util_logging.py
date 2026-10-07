@@ -16,7 +16,7 @@ FORMATTER = logging.Formatter(FORMAT)
 COLOR_FORMATTER = ColorFormatter(FORMAT)
 ROOT_LOGGER = logging.getLogger()
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 
 def init_logging() -> None:
