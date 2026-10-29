@@ -8,6 +8,7 @@ Replaces run_sphinx_copy.sh and run_sphinx_upload.sh.
 from __future__ import annotations
 
 import dataclasses
+import os
 import shutil
 import subprocess
 from collections.abc import Iterator
@@ -140,8 +141,18 @@ class SphinxProject:
 
     def do_upload(self) -> None:
         print(f"Building docs for: {self.repo.directory}")
-        subprocess.run(["make", "-C", str(self.repo.docs_dir), "clean"], check=True)
-        subprocess.run(["make", "-C", str(self.repo.docs_dir), "html"], check=True)
+        # Pass the pretty project name to conf.py.
+        env = os.environ | {"SPHINX_DIRECTORY": self.repo.directory}
+        subprocess.run(
+            ["make", "-C", str(self.repo.docs_dir), "clean"],
+            check=True,
+            env=env,
+        )
+        subprocess.run(
+            ["make", "-C", str(self.repo.docs_dir), "html"],
+            check=True,
+            env=env,
+        )
 
         html_dir = self.repo.get_dir("_build/html")
         print(f"Directory upload: {html_dir}")
