@@ -9,6 +9,8 @@ _DIRECTORY_REPO = pathlib.Path(__file__).parent.parent
 assert (_DIRECTORY_REPO / ".git").is_dir(), _DIRECTORY_REPO
 sys.path.insert(0, str(_DIRECTORY_REPO))
 sys.path.insert(0, str(_DIRECTORY_REPO / "src"))
+# The repo directory name, e.g. "octoprobe" or "tentacle".
+_REPO_NAME = _DIRECTORY_REPO.name
 
 # # TODO(hansm): Include the correct version
 # from sphinx.locale import _
@@ -25,6 +27,12 @@ author = "Hans Märki"
 copyright = "2024-2026 Hans Märki"
 language = "en"
 
+# https://sphinx-sitemap.readthedocs.io/en/latest/
+sitemap_indent = 2
+# Default scheme is "{lang}{version}{link}" which adds "en/" to every URL.
+sitemap_url_scheme = "{link}"
+html_baseurl = f"https://www.octoprobe.org/{_REPO_NAME}/"
+
 extensions = [
     "sphinx_rtd_theme",
     "sphinx.ext.autodoc",
@@ -34,6 +42,7 @@ extensions = [
     "sphinx.ext.todo",
     "sphinx.ext.viewcode",
     # "sphinxmermaid",
+    "sphinx_sitemap",
     "sphinxcontrib.mermaid",
 ]
 
