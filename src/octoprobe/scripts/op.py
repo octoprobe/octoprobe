@@ -239,6 +239,7 @@ def power(
     ):
         tentacle_infra = TentacleInfra.factory_usb_tentacle(usb_tentacle=usb_tentacle)
         tentacle_infra.load_base_code_if_needed()
+        tentacle_infra.power_dut_probe_off_v09()
         if set_off:
             tentacle_infra.switches.default_off_infra_on()
         for switch in _on:

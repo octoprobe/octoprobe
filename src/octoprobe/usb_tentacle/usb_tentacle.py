@@ -453,37 +453,24 @@ class UsbTentacleSwitches(dict[Switch, UsbTentacleSwitch]):
     "Only tentacle v0.3"
     led_error = UsbTentacleSwitchProperty(switch=Switch.LED_ERROR)
     "Only tentacle v0.3"
+    proberun = UsbTentacleSwitchProperty(switch=Switch.PICO_PROBE_RUN)
+    "Only tentacle >=v0.9. Previously 'led_error'!"
 
     def __init__(self, usb_tentacle: UsbTentacle) -> None:
-        self._add(
-            UsbTentacleSwitch(
-                switch=Switch.PICO_INFRA,
-                usb_tentacle=usb_tentacle,
-                hub_port=HubPortNumber.PORT1_INFRA,
+        for switch, hub_port in (
+            (Switch.PICO_INFRA, HubPortNumber.PORT1_INFRA),
+            (Switch.PICO_INFRA_BOOT, HubPortNumber.PORT2_INFRABOOT),
+            (Switch.DUT, HubPortNumber.PORT3_DUT),
+            (Switch.LED_ERROR, HubPortNumber.PORT4_PROBE_LEDERROR),
+            (Switch.PICO_PROBE_RUN, HubPortNumber.PORT4_PROBE_LEDERROR),
+        ):
+            self._add(
+                UsbTentacleSwitch(
+                    switch=switch,
+                    usb_tentacle=usb_tentacle,
+                    hub_port=hub_port,
+                )
             )
-        )
-        self._add(
-            UsbTentacleSwitch(
-                switch=Switch.PICO_INFRA_BOOT,
-                usb_tentacle=usb_tentacle,
-                hub_port=HubPortNumber.PORT2_INFRABOOT,
-            )
-        )
-
-        self._add(
-            UsbTentacleSwitch(
-                switch=Switch.DUT,
-                usb_tentacle=usb_tentacle,
-                hub_port=HubPortNumber.PORT3_DUT,
-            )
-        )
-        self._add(
-            UsbTentacleSwitch(
-                switch=Switch.LED_ERROR,
-                usb_tentacle=usb_tentacle,
-                hub_port=HubPortNumber.PORT4_PROBE_LEDERROR,
-            )
-        )
 
     def _add(self, usb_tentacle_switch: UsbTentacleSwitch) -> None:
         self[usb_tentacle_switch.switch] = usb_tentacle_switch

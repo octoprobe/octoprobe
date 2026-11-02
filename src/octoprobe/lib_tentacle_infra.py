@@ -9,6 +9,7 @@ import typing
 from octoprobe.util_constants_uart_flakiness import DUT_POWER_OFF_TIME_MIN_S
 
 from .lib_mpremote import MpRemote
+from .usb_tentacle.usb_baseclasses import HubPortNumber
 from .usb_tentacle.usb_constants import (
     HwVersion,
     Switch,
@@ -123,6 +124,30 @@ class TentacleInfra:
     def load_base_code_if_needed(self) -> None:
         self.connect_mpremote_if_needed()
         self.mcu_infra.load_base_code()
+
+    def power_dut_probe_off_v09(self) -> None:
+        """
+        Tentacle v0.9 needs first to power off USB HUB plug 3 (DUT) and 4 (PROBE).
+        Now DUT_PROBE_ENABLE has to be set to 1.
+        This then will allow USB HUB plug 3 (DUT) and 4 (PROBE) to control the power.
+        """
+        if self.mcu_infra.hw_version < HwVersion.V09:
+            return
+
+        enable_dut_probe = self.mp_remote.read_bool(expr="get_enable_dut_probe()")
+
+        if enable_dut_probe:
+            # enable_dut_probe has already been initialized
+            return
+
+        for hub_port in (HubPortNumber.PORT3_DUT, HubPortNumber.PORT4_PROBE_LEDERROR):
+            self.usb_tentacle.tentacle_hub_location.set_power(
+                hub_port=hub_port,
+                on=False,
+                label=self.usb_tentacle.serial_short,
+            )
+
+        self.mp_remote.eval_expression(expr="enable_dut_probe()", check_result=True)
 
     def connect_mpremote_if_needed(self) -> None:
         changed_counter = self.usb_tentacle.switches[Switch.PICO_INFRA].changed_counter
@@ -325,20 +350,32 @@ class TentacleInfraSwitch(SwitchABC):
 class TentacleInfraSwitchDUT(TentacleInfraSwitch):
     def set(self, on: bool) -> bool:
         assert self.switch is Switch.DUT
-        # Tentacle v0.3
         changed = self._tentacle_infra.usb_tentacle.switches[self.switch].set(on=on)
-        if self._tentacle_infra.mcu_infra.hw_version is not HwVersion.V03:
-            # Tentacle >= v0.5
+        if HwVersion.V03 < self._tentacle_infra.mcu_infra.hw_version <= HwVersion.V08:
             changed = super().set(on=on)
 
         if DUT_POWER_OFF_TIME_MIN_S is not None:
             if changed:
                 self._tentacle_infra.switches.delay_set_dut_on(on=on)
 
+        # Tentacle v0.3, >v0.9
         return changed
 
     def get(self) -> bool:
         return self._tentacle_infra.usb_tentacle.switches[self.switch].get()
+
+
+class TentacleInfraSwitchPROBE_RUN(TentacleInfraSwitch):
+    def set(self, on: bool) -> bool:
+        assert self.switch is Switch.PICO_PROBE_RUN
+
+        # Tentacle:  <=0.8
+        changed = super().set(on=on)
+        if self._tentacle_infra.mcu_infra.hw_version >= HwVersion.V09:
+            # Tentacle >=v0.9
+            changed = self._tentacle_infra.usb_tentacle.switches[self.switch].set(on=on)
+
+        return changed
 
 
 class TentacleInfraSwitchLED_ERROR(TentacleInfraSwitch):
@@ -481,7 +518,6 @@ class TentacleInfraSwitches(dict[Switch, TentacleInfraSwitch]):
 
         for switch in (
             Switch.LED_ACTIVE,
-            Switch.PICO_PROBE_RUN,
             Switch.PICO_PROBE_BOOT,
         ):
             add(
@@ -499,18 +535,17 @@ class TentacleInfraSwitches(dict[Switch, TentacleInfraSwitch]):
                 )
             )
 
-        add(
-            TentacleInfraSwitchDUT(
-                switch=Switch.DUT,
-                tentacle_infra=tentacle_infra,
+        for infra_class, switch in (
+            (TentacleInfraSwitchDUT, Switch.DUT),
+            (TentacleInfraSwitchPROBE_RUN, Switch.PICO_PROBE_RUN),
+            (TentacleInfraSwitchLED_ERROR, Switch.LED_ERROR),
+        ):
+            add(
+                infra_class(
+                    switch=switch,
+                    tentacle_infra=tentacle_infra,
+                )
             )
-        )
-        add(
-            TentacleInfraSwitchLED_ERROR(
-                switch=Switch.LED_ERROR,
-                tentacle_infra=tentacle_infra,
-            )
-        )
 
         for switch_delegate in (Switch.PICO_INFRA, Switch.PICO_INFRA_BOOT):
             add(

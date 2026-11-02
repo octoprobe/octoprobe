@@ -35,4 +35,5 @@ class DutProgrammerABC(abc.ABC):
         tentacle: TentacleBase,
         udev: UdevPoller,
     ) -> UdevEventBase:
-        raise NotImplementedError()
+        msg = f"{self.LABEL}: enter_boot_mode() is not supported"
+        raise NotImplementedError(msg)

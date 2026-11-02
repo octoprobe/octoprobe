@@ -34,11 +34,13 @@ for _gpio in (29, 28, 27, 26, 25):
 files_on_flash = len(os.listdir())
 
 pin_LED_ACTIVE = Pin('GPIO24', Pin.OUT)
-pin_LED_ERROR = Pin('GPIO20', Pin.OUT) # Not connected on v0.3
-pin_DUT = Pin('GPIO23', Pin.OUT) # Not connected on v0.3
-pin_PICO_PROBE_RUN = Pin('GPIO22', Pin.OUT) # Not connected on v0.3
+pin_LED_ERROR = Pin('GPIO20', Pin.OUT) # >v0.3
+pin_DUT = Pin('GPIO23', Pin.OUT) # >v0.3, <=v0.8. Power DUT
+pin_PICO_PROBE_RUN = Pin('GPIO22', Pin.OUT) # >v0.3, <=v0.8
 # If pico_probe is powered, it should start in application mode
-pin_PICO_PROBE_BOOT = Pin('GPIO21', Pin.OUT, value=1) # Not connected on v0.3
+pin_PICO_PROBE_BOOT = Pin('GPIO21', Pin.OUT, value=1) # >v0.3
+pin_DUT_PROBE_ENABLE = Pin('GPIO19') # >=v0.9
+
 
 {% for gpio in (1, 2, 3, 4, 5, 6, 7) %}
 pin_RELAY{{ loop.index }} = Pin('GPIO{{ gpio }}', Pin.OUT)
@@ -51,14 +53,14 @@ pin_relays = {
 }
 
 def set_switch(pin, on:bool) -> bool:
-   "return True when the value changed)"
-   changed = on != pin.value()
-   pin.value(on)
-   return changed
+    "return True when the value changed)"
+    changed = on != pin.value()
+    pin.value(on)
+    return changed
 
 def get_relays(relays) -> bool:
-   "return True when relays is closed"
-   return pin_relays[i].value()
+    "return True when relays is closed"
+    return pin_relays[i].value()
 
 def set_relays(list_relays) -> bool:
     "return True if at least one relay changed."
@@ -76,6 +78,14 @@ def set_relays_pulse(relays, initial_closed, durations_ms) -> None:
     for duration_ms in durations_ms:
        time.sleep_ms(duration_ms)
        pin.toggle()
+
+def enable_dut_probe() -> None:
+    # Starting from Tentacle v0.9, the DUT power has to be enabled at least the first time
+    # reinit from Pin.IN to PIN.OUT
+    pin_DUT_PROBE_ENABLE.init(Pin.OUT, value=1)
+
+def get_enable_dut_probe() -> bool:
+    return bool(pin_DUT_PROBE_ENABLE.value())
 """
 
     def __init__(self, tentacle_infra: TentacleInfra) -> None:
@@ -141,6 +151,7 @@ def set_relays_pulse(relays, initial_closed, durations_ms) -> None:
                 1: HwVersion.V05,
                 2: HwVersion.V06,
                 3: HwVersion.V07,
+                4: HwVersion.V09,
             }[self.gpio_hw_version]
         except KeyError as e:
             raise ValueError(
