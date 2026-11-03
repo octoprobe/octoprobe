@@ -59,6 +59,11 @@ ESP32_S3_USB_ID = BootApplicationUsbID(
     application=UsbID(0x303A, 0x4001),
 )
 
+ESP32_H2_USB_ID = BootApplicationUsbID(
+    boot=UsbID(0x303A, 0x1001),
+    application=UsbID(0x303A, 0x1001),
+)
+
 LOLIN_C3_MINI_USB_ID = BootApplicationUsbID(
     boot=UsbID(0x303A, 0x1001),
     application=UsbID(0x303A, 0x1001),

@@ -124,6 +124,7 @@ class TentacleInfra:
     def load_base_code_if_needed(self) -> None:
         self.connect_mpremote_if_needed()
         self.mcu_infra.load_base_code()
+        self.power_dut_probe_off_v09()
 
     def power_dut_probe_off_v09(self) -> None:
         """

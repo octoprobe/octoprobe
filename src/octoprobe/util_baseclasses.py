@@ -91,6 +91,11 @@ class BootApplicationUsbID:
     usb id's in application mode
     """
 
+    def boot_equals_application(self) -> bool:
+        return (self.boot.vendor_id == self.application.vendor_id) and (
+            self.boot.product_id == self.application.product_id
+        )
+
 
 @dataclasses.dataclass(frozen=True)
 class PropertyString:
