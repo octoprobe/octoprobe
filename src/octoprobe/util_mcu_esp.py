@@ -49,6 +49,14 @@ ESP32_C5_USB_ID = BootApplicationUsbID(
 Connected to 'USB'
 """
 
+ESP32_C6_USB_ID = BootApplicationUsbID(
+    boot=UsbID(0x303A, 0x1001),
+    application=UsbID(0x303A, 0x1001),
+)
+"""
+Connected to 'USB'
+"""
+
 ESP32_S2_USB_ID = BootApplicationUsbID(
     boot=UsbID(0x303A, 0x0002),
     application=UsbID(0x303A, 0x4001),
