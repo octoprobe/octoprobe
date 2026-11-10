@@ -111,8 +111,9 @@ html_context = {
     # ]
 }
 
+html_static_path = ["_static/"]
+html_css_files = ["custom.css"]
 if "READTHEDOCS" not in os.environ:
-    html_static_path = ["_static/"]
     html_js_files = ["debug.js"]
     html_context["DEBUG"] = True
 html_favicon = "_static/shortcut-icon.png"

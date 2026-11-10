@@ -1,0 +1,17 @@
+/* Use full browser width */
+.wy-nav-content {
+    max-width: none !important;
+}
+
+.wy-nav-content-wrap {
+    background-color: #f3f4f6;
+}
+
+.document {
+    max-width: 100% !important;
+}
+
+/* Optional: add some padding so content doesn't touch the edges on very wide screens */
+.wy-nav-content {
+    padding: 1.618em 2em;
+}

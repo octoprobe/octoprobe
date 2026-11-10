@@ -18,13 +18,13 @@ from ..util_tentacle_label.label_data import LabelData, LabelsData
 THIS_FILE = pathlib.Path(__file__)
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class LayoutLine:
     y: float
     fontsize: float
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class LayoutLabelBolzoneDue:
     """
     The geomatrical layout of a bolzone_duo label.
@@ -66,7 +66,7 @@ class LayoutLabelBolzoneDue:
             )
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class RendererLabelBolzoneDuo:
     """
     Layout with three lines and left and right text
