@@ -25,23 +25,27 @@ class LayoutLine:
 
 
 @dataclasses.dataclass(frozen=True)
-class LayoutLabelBolzoneDue:
+class LayoutLabelBolzone:
     """
-    The geomatrical layout of a bolzone_duo label.
+    The geomatrical layout of a bolzone label.
     """
 
-    width = 88.0 * units.mm
-    height = 15.5 * units.mm
-    width_l = 5.0 * units.mm
-    width_margin = 8.0 * units.mm
-    x_l = 0.0
-    x_r = x_l + width
-    x_l_line = x_l + width_l
-    x_r_line = x_r - width_l
-    x_l_label = x_l + width_margin
-    x_r_label = x_r - width_margin
-    y_t = height
-    y_b = 0
+    width: float = 88.0 * units.mm
+    height: float = 15.5 * units.mm
+    width_l: float = 5.0 * units.mm
+    width_margin: float = 8.0 * units.mm
+    x_l: float = 0.0
+    x_r: float = x_l + width
+    x_l_line: float = x_l + width_l
+    x_r_line: float = x_r - width_l
+    x_l_label: float = x_l + width_margin
+    x_r_label: float = x_r - width_margin
+    y_b: float = 0
+    y_text_start: float = 0
+
+    @property
+    def y_t(self) -> float:
+        return self.height
 
     @property
     def polylines(self) -> Iterator[shapes.PolyLine]:
@@ -67,15 +71,22 @@ class LayoutLabelBolzoneDue:
 
 
 @dataclasses.dataclass(frozen=True)
-class RendererLabelBolzoneDuo:
+class LayoutLabelBolzoneDue(LayoutLabelBolzone):
+    """
+    The geomatrical layout of a bolzone_duo label.
+    """
+
+    height: float = 33.0 * units.mm
+    y_text_start: float = 22.0
+
+
+@dataclasses.dataclass(frozen=True)
+class RendererLabelBolzone:
     """
     Layout with three lines and left and right text
     """
 
-    label = LayoutLabelBolzoneDue()
-    line_a = LayoutLine(y=10.0 * units.mm, fontsize=14.0)
-    line_b = LayoutLine(y=5.5 * units.mm, fontsize=10.0)
-    line_c = LayoutLine(y=1.5 * units.mm, fontsize=10.0)
+    layout_label: LayoutLabelBolzone
 
     def text(
         self,
@@ -84,13 +95,13 @@ class RendererLabelBolzoneDuo:
         flip: bool = False,
         bold: bool = False,
     ) -> shapes.String:
-        x = self.label.x_r_label if flip else self.label.x_l_label
+        x = self.layout_label.x_r_label if flip else self.layout_label.x_l_label
         anchor = "end" if flip else "start"
         font = "Helvetica-Bold" if bold else "Helvetica"
 
         return shapes.String(
             x,
-            text_line.y,
+            text_line.y + self.layout_label.y_text_start,
             text=text,
             fontSize=text_line.fontsize,
             textAnchor=anchor,  # type: ignore[arg-type]
@@ -98,33 +109,37 @@ class RendererLabelBolzoneDuo:
         )
 
     def draw(self, label: LabelData) -> shapes.Drawing:
-        d = shapes.Drawing(self.label.width, self.label.height)
+        d = shapes.Drawing(self.layout_label.width, self.layout_label.height)
 
-        for polyline in self.label.polylines:
+        for polyline in self.layout_label.polylines:
             d.add(polyline)
 
-        d.add(self.text(self.line_a, text=label.serial, bold=True))
-        d.add(self.text(self.line_a, text=label.tentacle_tag, flip=True, bold=True))
+        line_a = LayoutLine(y=10.0 * units.mm, fontsize=14.0)
+        line_b = LayoutLine(y=5.5 * units.mm, fontsize=10.0)
+        line_c = LayoutLine(y=1.5 * units.mm, fontsize=10.0)
 
-        d.add(self.text(self.line_b, text=label.testbed_instance))
-        d.add(self.text(self.line_b, text=label.description, flip=True))
+        d.add(self.text(line_a, text=label.serial, bold=True))
+        d.add(self.text(line_a, text=label.tentacle_tag, flip=True, bold=True))
 
-        d.add(self.text(self.line_c, text=label.testbed_name))
-        d.add(self.text(self.line_c, text=label.tentacle_type, flip=True))
+        d.add(self.text(line_b, text=label.testbed_instance))
+        d.add(self.text(line_b, text=label.description, flip=True))
+
+        d.add(self.text(line_c, text=label.testbed_name))
+        d.add(self.text(line_c, text=label.tentacle_type, flip=True))
 
         return d
 
 
 def create_report(
     filename: pathlib.Path,
-    layout: RendererLabelBolzoneDuo,
+    layout_label: LayoutLabelBolzone,
     labels: LabelsData,
 ) -> None:
     """
     Creates a pdf report with labels to be placed on the tentacle
     """
     assert isinstance(filename, pathlib.Path)
-    assert isinstance(layout, RendererLabelBolzoneDuo)
+    assert isinstance(layout_label, LayoutLabelBolzone)
     assert isinstance(labels, LabelsData)
 
     filename.parent.mkdir(parents=True, exist_ok=True)
@@ -142,15 +157,16 @@ def create_report(
         bottomMargin=10.0 * units.mm,
     )
 
+    renderer = RendererLabelBolzone(layout_label=layout_label)
     all_labels: list[shapes.Drawing] = []
     for label in labels:
-        all_labels.append(layout.draw(label=label))
+        all_labels.append(renderer.draw(label=label))
 
     labels_rows = list(itertools.batched(all_labels, 2, strict=False))
     table = Table(
         labels_rows,
-        colWidths=(layout.label.width, layout.label.width),
-        rowHeights=layout.label.height,
+        colWidths=(layout_label.width, layout_label.width),
+        rowHeights=layout_label.height,
     )
 
     doc.build([table])
@@ -188,7 +204,9 @@ def main() -> None:
 
     filename = THIS_FILE.with_suffix(".pdf")
 
-    create_report(filename=filename, layout=RendererLabelBolzoneDuo(), labels=labels)
+    create_report(
+        filename=filename, layout_label=LayoutLabelBolzoneDue(), labels=labels
+    )
 
 
 if __name__ == "__main__":
