@@ -60,7 +60,7 @@ def set_switch(pin, on:bool) -> bool:
 
 def get_relays(relays) -> bool:
     "return True when relays is closed"
-    return pin_relays[i].value()
+    return bool(pin_relays[relays].value())
 
 def set_relays(list_relays) -> bool:
     "return True if at least one relay changed."

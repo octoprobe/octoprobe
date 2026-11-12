@@ -230,7 +230,7 @@ def power(
     for switch in _on:
         switches_text += f"+{switch.value}"
     for switch in _off:
-        switches_text += f"+{switch.value}"
+        switches_text += f"-{switch.value}"
 
     for usb_tentacle in iter_usb_tentacles(
         poweron=poweron,
