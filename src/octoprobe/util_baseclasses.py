@@ -149,6 +149,10 @@ class TentacleSpecBase(abc.ABC):
     futs: list[enum.StrEnum]
     doc: str
     tags: str
+    solder_version_latest: str
+    """
+    The most recent solder version of this tentacle, for example "v1.2".
+    """
     relays_closed: dict[enum.StrEnum | None, list[int]] = dataclasses.field(
         default_factory=lambda: {None: []}
     )
@@ -173,6 +177,7 @@ class TentacleSpecBase(abc.ABC):
         assert isinstance(self.futs, list)
         assert isinstance(self.doc, str)
         assert isinstance(self.tags, str)
+        assert isinstance(self.solder_version_latest, str)
         assert isinstance(self.relays_closed, dict)
         assert isinstance(self.mcu_usb_id, BootApplicationUsbID | None)
         assert isinstance(self.programmer_args, list)
