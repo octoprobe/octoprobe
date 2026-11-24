@@ -65,15 +65,30 @@ class DirectoryTag(enum.StrEnum):
     """
 
     F = "F"
-    "Firmware Source Git Repo"
+    """
+    Firmware Source Git Repo
+    Example: /home/githubrunner/octoprobe_downloads/git-cache/work/firmware_github-com-micropython-micropython
+    """
     R = "R"
-    "Results (Testresults direcory)"
+    """
+    Results (Testresults direcory)
+    Example: /home/githubrunner/actions-runner/_work/testbed_micropython/testbed_micropython/testresults
+    """
     T = "T"
-    "Tests Source Git Repo"
+    """
+    Tests Source Git Repo
+    Example: /home/githubrunner/octoprobe_downloads/git-cache/work/tests_github-com-micropython-micropython
+    """
     P = "P"
-    "Python venv directory"
+    """
+    Python venv directory
+    Example: /home/githubrunner/testbed_micropython/.venv/bin
+    """
     W = "W"
-    "Working directory"
+    """
+    Working directory
+    Example: /home/githubrunner/actions-runner/_work/testbed_micropython/testbed_micropython
+    """
 
     def description(self) -> str:
         return {
