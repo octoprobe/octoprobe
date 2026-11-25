@@ -89,6 +89,8 @@ class DutProgrammerBossac(DutProgrammerABC):
 
         event = self.enter_boot_mode(tentacle=tentacle, udev=udev)
         assert isinstance(event, UdevApplicationModeEvent)
+        # Give some time for the device to settle after entering boot mode
+        time.sleep(1.0)
         filename_dfu = firmware_spec.filename
         # See: https://micropython.org/download/ARDUINO_NANO_33_BLE_SENSE/
         args = [
