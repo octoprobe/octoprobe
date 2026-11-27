@@ -32,6 +32,15 @@ The ESP32_DEVKIT uses a UART Bridge Controller CP2102.
 Therefore the above usb-vender/usb-product equal.
 """
 
+ESP32_C2_USB_ID = BootApplicationUsbID(
+    boot=UsbID(0x10C4, 0xEA60),
+    application=UsbID(0x10C4, 0xEA60),
+)
+"""
+The ESP32_C3_DEVKIT uses a UART Bridge Controller CP2102.
+Therefore the above usb-vender/usb-product equal.
+"""
+
 ESP32_C3_USB_ID = BootApplicationUsbID(
     boot=UsbID(0x10C4, 0xEA60),
     application=UsbID(0x10C4, 0xEA60),

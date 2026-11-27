@@ -216,6 +216,7 @@ class TentacleInstance:
     hw_version_expected: HwVersion
     testbed_name: str
     testbed_instance: str
+    print_label: bool = True
 
     # @property
     # def serial_delimited(self) -> str:
@@ -240,7 +241,9 @@ class TentacleInstance:
 class TentaclesInventory(dict[str, TentacleInstance]):
     @property
     def labels_data(self) -> LabelsData:
-        return LabelsData([instance.label_data for instance in self.values()])
+        return LabelsData(
+            [instance.label_data for instance in self.values() if instance.print_label]
+        )
 
     def get_by_serial_delimited(self, serial_delimited: str) -> TentacleInstance:
         """
@@ -274,16 +277,26 @@ class TentaclesCollector:
     def add_testbed_instance(
         self,
         testbed_instance: str,
-        tentacles: list[tuple[str, HwVersion, str, TentacleSpecBase]],
+        tentacles: list[
+            tuple[str, HwVersion, str, TentacleSpecBase]
+            | tuple[str, HwVersion, str, TentacleSpecBase, bool]
+        ],
     ) -> TentaclesCollector:
         assert isinstance(testbed_instance, str)
         assert isinstance(tentacles, list)
 
-        for serial, hw_version_expected, solder_version, tentacle_spec in tentacles:
+        for elems in tentacles:
+            serial = elems[0]
+            hw_version_expected = elems[1]
+            solder_version = elems[2]
+            tentacle_spec = elems[3]
+            print_label = elems[4] if len(elems) == 5 else False
+
             assert isinstance(serial, str)
             assert isinstance(hw_version_expected, str)
             assert isinstance(solder_version, str)
             assert isinstance(tentacle_spec, TentacleSpecBase)
+            assert isinstance(print_label, bool)
             tentacle_instance = TentacleInstance(
                 serial=serial,
                 hw_version_expected=hw_version_expected,
@@ -291,6 +304,7 @@ class TentaclesCollector:
                 tentacle_spec=tentacle_spec,
                 testbed_name=self.testbed_name,
                 testbed_instance=testbed_instance,
+                print_label=print_label,
             )
             assert tentacle_instance.serial not in self.inventory, (
                 f"Duplicated tentacle serial {tentacle_instance.serial}!"
